@@ -74,6 +74,7 @@
     loadTheme(m.themeId || (comp ? comp.themeId : m.competitionId));
     el.compLabel.textContent = comp ? comp.shortName : "";
     for (const [side, t] of [["home", m.home], ["away", m.away]]) {
+      bug.style.setProperty("--" + side + "-crest", t.crestFile ? "url(/crests/" + encodeURIComponent(t.crestFile) + ")" : "none");
       bug.style.setProperty("--" + side + "-primary", t.primaryColour);
       bug.style.setProperty("--" + side + "-secondary", t.secondaryColour);
       bug.style.setProperty("--" + side + "-text", t.textColour);
@@ -98,7 +99,11 @@
     if (key && key !== lastGoalKey && renderedRevision !== -1) {
       const box = m.lastGoal.side === "home" ? el.homeScore : el.awayScore;
       box.classList.remove("goal"); void box.offsetWidth; box.classList.add("goal");
-      bug.classList.add("goal-" + m.lastGoal.side);
+      bug.style.setProperty("--goal-crest", "var(--" + m.lastGoal.side + "-crest)");
+      bug.style.setProperty("--goal-primary", "var(--" + m.lastGoal.side + "-primary)");
+      bug.style.setProperty("--goal-text", "var(--" + m.lastGoal.side + "-text)");
+      bug.classList.add("goal-" + m.lastGoal.side, "goal");
+      setTimeout(() => bug.classList.remove("goal"), 4000);
       setTimeout(() => bug.classList.remove("goal-" + m.lastGoal.side), 4000);
     }
     lastGoalKey = key;

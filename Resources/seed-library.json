@@ -120,10 +120,11 @@
   {
    "name": "Olympique de Marseille",
    "shortName": "Marseille",
-   "defaultCode": "OM",
+   "defaultCode": "MAR",
    "codes": {
     "champions-league": "MAR",
-    "europa-league": "MAR"
+    "europa-league": "MAR",
+    "ligue1": "OM"
    },
    "primaryColour": "#2FAEE0",
    "secondaryColour": "#FFFFFF",
@@ -140,10 +141,11 @@
   {
    "name": "Olympique Lyonnais",
    "shortName": "Lyon",
-   "defaultCode": "OL",
+   "defaultCode": "LYO",
    "codes": {
     "champions-league": "LYO",
-    "europa-league": "LYO"
+    "europa-league": "LYO",
+    "ligue1": "OL"
    },
    "primaryColour": "#1B3F94",
    "secondaryColour": "#DA291C",
@@ -160,7 +162,7 @@
   {
    "name": "AS Monaco",
    "shortName": "Monaco",
-   "defaultCode": "ASM",
+   "defaultCode": "MON",
    "codes": {
     "champions-league": "MON"
    },
@@ -179,7 +181,7 @@
   {
    "name": "LOSC Lille",
    "shortName": "Lille",
-   "defaultCode": "LOSC",
+   "defaultCode": "LIL",
    "codes": {
     "champions-league": "LIL",
     "europa-league": "LIL"
@@ -199,7 +201,7 @@
   {
    "name": "OGC Nice",
    "shortName": "Nice",
-   "defaultCode": "OGCN",
+   "defaultCode": "NIC",
    "codes": {
     "champions-league": "NIC",
     "europa-league": "NIC"
@@ -219,7 +221,7 @@
   {
    "name": "RC Lens",
    "shortName": "Lens",
-   "defaultCode": "RCL",
+   "defaultCode": "LEN",
    "codes": {
     "champions-league": "LEN"
    },
@@ -238,7 +240,7 @@
   {
    "name": "Stade Rennais FC",
    "shortName": "Rennes",
-   "defaultCode": "SRFC",
+   "defaultCode": "REN",
    "codes": {
     "champions-league": "REN"
    },
@@ -257,7 +259,7 @@
   {
    "name": "RC Strasbourg Alsace",
    "shortName": "Strasbourg",
-   "defaultCode": "RCSA",
+   "defaultCode": "STR",
    "codes": {
     "conference-league": "STR"
    },
@@ -276,7 +278,7 @@
   {
    "name": "Toulouse FC",
    "shortName": "Toulouse",
-   "defaultCode": "TFC",
+   "defaultCode": "TOU",
    "codes": {},
    "primaryColour": "#5E2C8B",
    "secondaryColour": "#FFFFFF",
@@ -293,7 +295,7 @@
   {
    "name": "FC Nantes",
    "shortName": "Nantes",
-   "defaultCode": "FCN",
+   "defaultCode": "NAN",
    "codes": {},
    "primaryColour": "#FFD500",
    "secondaryColour": "#00843D",
@@ -306,7 +308,7 @@
   {
    "name": "Stade Brestois 29",
    "shortName": "Brest",
-   "defaultCode": "SB29",
+   "defaultCode": "BRE",
    "codes": {
     "champions-league": "BRE"
    },
@@ -325,7 +327,7 @@
   {
    "name": "AJ Auxerre",
    "shortName": "Auxerre",
-   "defaultCode": "AJA",
+   "defaultCode": "AUX",
    "codes": {},
    "primaryColour": "#0E4C92",
    "secondaryColour": "#FFFFFF",
@@ -338,7 +340,7 @@
   {
    "name": "Angers SCO",
    "shortName": "Angers",
-   "defaultCode": "SCO",
+   "defaultCode": "ANG",
    "codes": {},
    "primaryColour": "#000000",
    "secondaryColour": "#FFFFFF",
@@ -351,7 +353,7 @@
   {
    "name": "Le Havre AC",
    "shortName": "Le Havre",
-   "defaultCode": "HAC",
+   "defaultCode": "HAV",
    "codes": {},
    "primaryColour": "#7BC1E4",
    "secondaryColour": "#1E3A8A",
@@ -364,7 +366,7 @@
   {
    "name": "FC Metz",
    "shortName": "Metz",
-   "defaultCode": "FCM",
+   "defaultCode": "MET",
    "codes": {},
    "primaryColour": "#7D1D3F",
    "secondaryColour": "#FFFFFF",
@@ -377,7 +379,7 @@
   {
    "name": "FC Lorient",
    "shortName": "Lorient",
-   "defaultCode": "FCL",
+   "defaultCode": "LOR",
    "codes": {},
    "primaryColour": "#F58220",
    "secondaryColour": "#000000",
@@ -403,7 +405,7 @@
   {
    "name": "AS Saint-Étienne",
    "shortName": "Saint-Étienne",
-   "defaultCode": "ASSE",
+   "defaultCode": "STE",
    "codes": {},
    "primaryColour": "#0B8A3C",
    "secondaryColour": "#FFFFFF",
@@ -416,7 +418,7 @@
   {
    "name": "Stade de Reims",
    "shortName": "Reims",
-   "defaultCode": "SDR",
+   "defaultCode": "REI",
    "codes": {},
    "primaryColour": "#D6001C",
    "secondaryColour": "#FFFFFF",
@@ -625,10 +627,8 @@
   {
    "name": "FC Barcelona",
    "shortName": "Barcelona",
-   "defaultCode": "FCB",
-   "codes": {
-    "champions-league": "BAR"
-   },
+   "defaultCode": "BAR",
+   "codes": {},
    "primaryColour": "#A50044",
    "secondaryColour": "#004D98",
    "textColour": "#FFFFFF",

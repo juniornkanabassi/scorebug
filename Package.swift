@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "Scorebug",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "Scorebug", targets: ["Scorebug"]),
         .executable(name: "CoreChecks", targets: ["CoreChecks"]),

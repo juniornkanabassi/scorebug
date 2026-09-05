@@ -1,18 +1,18 @@
 {
   "id": "champions-league",
   "name": "Champions League",
-  "clockStyle": "freezeAndCount",
-  "verified": false,
+  "clockStyle": "runOn",
+  "verified": true,
   "geometry": {
     "h": {
-      "left": 58,
-      "top": 53,
+      "left": 40,
+      "top": 36,
       "scale": 1
     },
     "v": {
       "top": 400,
       "maxWidth": 800,
-      "scale": 1.15
+      "scale": 1.35
     }
   },
   "scorersEverySeconds": 90,

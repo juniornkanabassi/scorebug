@@ -12,7 +12,7 @@ body[data-orientation="v"] .bug { left: 50%; top: var(--bug-top, 400px); max-wid
 body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(--bug-scale, 1)) translateY(-14px); }
 
 /* The main block is a grid. Every element has a named area; themes set grid-template-areas and hide what they do not use. */
-.main { display: grid; grid-template-areas: "comp home hs sep as away clock added"; grid-auto-columns: max-content; align-items: stretch; }
+.main { position: relative; display: grid; grid-template-areas: "comp home hs sep as away clock added"; grid-auto-columns: max-content; align-items: stretch; }
 .comp { grid-area: comp; } .team.home { grid-area: home; } .score.home { grid-area: hs; } .sep { grid-area: sep; }
 .score.away { grid-area: as; } .team.away { grid-area: away; } .clock { grid-area: clock; } .added { grid-area: added; }
 .comp, .team, .score, .sep, .clock, .added { display: flex; align-items: center; justify-content: center; }
@@ -41,3 +41,6 @@ body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(-
 
 @keyframes goal-flash { 0% { transform: scale(1); } 25% { transform: scale(1.3); } 100% { transform: scale(1); } }
 .score.goal .digit { display: inline-block; animation: goal-flash 700ms cubic-bezier(.2,.9,.3,1.4); }
+
+/* GOAL wipes: themes style .main::after and turn it on with .bug.goal */
+.main::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; }

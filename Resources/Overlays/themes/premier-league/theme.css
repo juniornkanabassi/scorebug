@@ -1,27 +1,35 @@
-/* Premier League, Premier League Productions world feed look (Junior's reference image). Club-colour plates with three-letter codes and
-   large white scores, a purple centre block with the crown, and a purple clock plate hanging below the centre. */
-body[data-theme="premier-league"] .bug { --h: 66px; --pl-purple: #37003C; --pl-pink: #E90052; --pl-green: #00FF85; --kick-pending: #5b3a5e; --kick-scored: #00FF85; --kick-missed: #E90052;
-  font-weight: 800; letter-spacing: 0.02em; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.45)); }
-body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); position: relative; margin-bottom: calc(var(--h) * 0.6); }
+/* Premier League 2026-27, Premier League Productions world feed. Verified against Arsenal's highlights (AVL 0 | 0 ARS) and the
+   Footy Headlines goal-animation composite: two rounded club-colour plates, code then score, a notch between them, purple clock
+   plate centred beneath, and a GOAL wipe in the scoring club's colours with its crest. */
+body[data-theme="premier-league"] .bug { --h: 40px; --pl-purple: #37003C; --pl-green: #00FF85; --pl-pink: #E90052;
+  --kick-pending: #5b3a5e; --kick-scored: #00FF85; --kick-missed: #E90052;
+  font-family: "Helvetica Neue", "Arial Rounded MT Bold", Arial, sans-serif; font-weight: 800; letter-spacing: 0.03em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35)); }
+body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 0.72); }
 body[data-theme="premier-league"] .comp, body[data-theme="premier-league"] .team .name, body[data-theme="premier-league"] .team .crest { display: none; }
-body[data-theme="premier-league"] .team { height: var(--h); padding: 0 30px; font-size: calc(var(--h) * 0.6); }
-body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: 6px 0 0 6px; }
-body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 6px 6px 0; }
-body[data-theme="premier-league"] .score { height: var(--h); min-width: calc(var(--h) * 0.9); font-size: calc(var(--h) * 0.84); color: #fff; }
-body[data-theme="premier-league"] .score.home { background: var(--home-primary); padding-right: 14px; }
-body[data-theme="premier-league"] .score.away { background: var(--away-primary); padding-left: 14px; }
-body[data-theme="premier-league"] .sep { height: var(--h); width: calc(var(--h) * 1.35); margin: 0 calc(var(--h) * -0.18); background: var(--pl-purple); position: relative; z-index: 1;
-  clip-path: polygon(0 0, 100% 0, calc(100% - var(--h) * 0.18) 100%, calc(var(--h) * 0.18) 100%); }
-body[data-theme="premier-league"] .sep span { width: calc(var(--h) * 0.46); height: calc(var(--h) * 0.4); background: #fff;
-  clip-path: polygon(0 100%, 0 30%, 25% 55%, 50% 0, 75% 55%, 100% 30%, 100% 100%); }
-body[data-theme="premier-league"] .clock { grid-area: sep; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; margin-top: -1px; height: calc(var(--h) * 0.6); padding: 0 24px; min-width: calc(var(--h) * 2.3); background: var(--pl-purple); border-radius: 0 0 8px 8px; font-size: calc(var(--h) * 0.46); font-variant-numeric: tabular-nums; }
+body[data-theme="premier-league"] .team { padding: 0 16px; font-size: calc(var(--h) * 0.62); }
+body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: 7px 0 0 7px; padding-right: 12px; }
+body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 7px 7px 0; padding-left: 12px; }
+body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 0.95); font-size: calc(var(--h) * 0.66); font-weight: 900; }
+body[data-theme="premier-league"] .score.home { background: var(--home-primary); color: var(--home-text); border-radius: 0 7px 7px 0; }
+body[data-theme="premier-league"] .score.home .digit { background: rgba(0,0,0,0.16); border-radius: 4px; padding: 3px 7px; }
+body[data-theme="premier-league"] .score.away { background: var(--away-primary); color: var(--away-text); border-radius: 7px 0 0 7px; }
+body[data-theme="premier-league"] .score.away .digit { background: rgba(0,0,0,0.16); border-radius: 4px; padding: 3px 7px; }
+/* the notch: a small gap with a triangle bite taken out of the plate edges */
+body[data-theme="premier-league"] .sep { width: 6px; position: relative; }
+body[data-theme="premier-league"] .sep span { position: absolute; left: -7px; top: 32%; width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 8px solid var(--home-primary); filter: brightness(0.75); }
+body[data-theme="premier-league"] .clock { grid-area: sep; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; height: calc(var(--h) * 0.7); padding: 0 18px; min-width: calc(var(--h) * 2.6); background: var(--pl-purple); border-radius: 0 0 8px 8px; font-size: calc(var(--h) * 0.5); font-variant-numeric: tabular-nums; }
 body[data-theme="premier-league"] .clock.stopped { color: var(--pl-green); }
-body[data-theme="premier-league"] .added { height: var(--h); padding: 0 16px; margin-left: 6px; background: var(--pl-purple); color: #fff; border-radius: 6px; gap: 10px; font-size: calc(var(--h) * 0.5); }
-body[data-theme="premier-league"] .added .counter { color: var(--pl-green); font-size: calc(var(--h) * 0.36); }
+body[data-theme="premier-league"] .added { height: var(--h); margin-left: 6px; padding: 0 12px; background: var(--pl-purple); border-radius: 7px; gap: 8px; font-size: calc(var(--h) * 0.5); }
+body[data-theme="premier-league"] .added .counter { color: var(--pl-green); font-size: calc(var(--h) * 0.38); }
 body[data-theme="premier-league"] .added .counter:empty { display: none; }
-body[data-theme="premier-league"] .bug.goal-home .score.home, body[data-theme="premier-league"] .bug.goal-away .score.away { animation: pl-goal 2.5s ease-out; }
-@keyframes pl-goal { 0%, 70% { background: var(--pl-pink); } 100% { } }
-body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 16px; padding: 8px 16px; background: var(--pl-purple); border-radius: 6px; font-size: calc(var(--h) * 0.42); }
-body[data-theme="premier-league"] .scorers { margin-top: 6px; gap: 24px; padding: 8px 16px; background: rgba(55,0,60,0.94); border-radius: 6px; font-size: calc(var(--h) * 0.32); font-weight: 600; }
+/* GOAL: the scoring club's colour sweeps the whole bar, crest at the centre cut, GOAL to the right. */
+body[data-theme="premier-league"] .main::after { content: "GOAL"; display: flex; align-items: center; justify-content: flex-end; padding-right: 22px; box-sizing: border-box;
+  background: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); border-radius: 7px; font-size: calc(var(--h) * 0.66); letter-spacing: 0.08em;
+  background-image: var(--goal-crest, none); background-repeat: no-repeat; background-size: auto 80%; background-position: 46% center;
+  clip-path: inset(0 100% 0 0 round 7px); transition: none; }
+body[data-theme="premier-league"] .bug.goal .main::after { opacity: 1; animation: pl-wipe 3.6s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes pl-wipe { 0% { clip-path: inset(0 100% 0 0 round 7px); } 12% { clip-path: inset(0 0 0 0 round 7px); } 82% { clip-path: inset(0 0 0 0 round 7px); } 100% { clip-path: inset(0 0 0 100% round 7px); } }
+body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; padding: 6px 14px; background: var(--pl-purple); border-radius: 7px; font-size: calc(var(--h) * 0.5); }
+body[data-theme="premier-league"] .scorers { margin-top: 6px; gap: 20px; padding: 6px 14px; background: rgba(55,0,60,0.94); border-radius: 7px; font-size: calc(var(--h) * 0.4); font-weight: 600; }
 body[data-theme="premier-league"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }

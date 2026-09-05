@@ -2,17 +2,17 @@
   "id": "premier-league",
   "name": "Premier League",
   "clockStyle": "runOn",
-  "verified": false,
+  "verified": true,
   "geometry": {
     "h": {
       "left": 58,
-      "top": 40,
+      "top": 60,
       "scale": 1
     },
     "v": {
       "top": 400,
       "maxWidth": 800,
-      "scale": 1.15
+      "scale": 1.35
     }
   },
   "scorersEverySeconds": 90,

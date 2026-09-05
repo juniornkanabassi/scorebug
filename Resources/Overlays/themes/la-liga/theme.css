@@ -1,23 +1,33 @@
-/* LaLiga (2023 identity): a gradient league block, club codes on white, scores on charcoal, clock on charcoal. Interpretation, verify. */
-body[data-theme="la-liga"] .bug { --h: 58px; --ll-dark: #1B1B1B; --ll-a: #FF4B44; --ll-b: #FF7F30; --ll-c: #6A3BFF; --ll-d: #00B8FF;
-  --kick-pending: #4a4a4a; --kick-scored: #2BD576; --kick-missed: #FF4B44; font-weight: 800; letter-spacing: 0.02em; filter: drop-shadow(0 5px 14px rgba(0,0,0,0.45)); }
-body[data-theme="la-liga"] .main { grid-template-areas: "comp home hs sep as away clock added"; height: var(--h); border-radius: 8px; overflow: hidden; }
-body[data-theme="la-liga"] .team .name, body[data-theme="la-liga"] .team .crest, body[data-theme="la-liga"] .sep span, body[data-theme="la-liga"] .comp .label { display: none; }
-body[data-theme="la-liga"] .comp { width: calc(var(--h) * 1.15); background: linear-gradient(135deg, var(--ll-a), var(--ll-b) 35%, var(--ll-c) 70%, var(--ll-d)); }
-body[data-theme="la-liga"] .comp .mark { width: calc(var(--h) * 0.5); height: calc(var(--h) * 0.5); border: 4px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
-body[data-theme="la-liga"] .team { padding: 0 24px; background: #fff; color: var(--ll-dark); font-size: calc(var(--h) * 0.52); }
-body[data-theme="la-liga"] .team.home { box-shadow: inset 6px 0 0 var(--home-primary); }
-body[data-theme="la-liga"] .team.away { box-shadow: inset -6px 0 0 var(--away-primary); }
-body[data-theme="la-liga"] .score { min-width: calc(var(--h) * 0.9); background: var(--ll-dark); font-size: calc(var(--h) * 0.6); }
-body[data-theme="la-liga"] .sep { width: 2px; background: #3a3a3a; }
-body[data-theme="la-liga"] .clock { padding: 0 18px; min-width: calc(var(--h) * 1.9); background: var(--ll-dark); border-left: 2px solid #3a3a3a; font-size: calc(var(--h) * 0.5); font-variant-numeric: tabular-nums; }
-body[data-theme="la-liga"] .clock.stopped { color: var(--ll-b); }
-body[data-theme="la-liga"] .added { padding: 0 16px; background: linear-gradient(135deg, var(--ll-a), var(--ll-b)); gap: 10px; font-size: calc(var(--h) * 0.46); }
-body[data-theme="la-liga"] .added .counter { font-size: calc(var(--h) * 0.34); opacity: 0.9; }
+/* LaLiga 2025-26 world feed. Verified against the LALIGA EA SPORTS highlights (RMA 1 / BAR 0): a two-by-two block, black square
+   with the league mark, black club cells that alternate between crest and code with a club-colour tab, white score cells with
+   black digits, and a white clock plate under the mark. Goal: a diagonal black-and-white wipe sweeps across. */
+body[data-theme="la-liga"] .bug { --h: 52px; --ll-black: #0F0F0F; --ll-white: #F4F4F4; --kick-pending: #555; --kick-scored: #2BD576; --kick-missed: #FF4B44;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-stretch: condensed; font-weight: 900; letter-spacing: 0.02em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
+body[data-theme="la-liga"] .main { grid-template-areas: "comp home hs" "clock away as" "added added added"; grid-template-columns: calc(var(--h) * 1.9) calc(var(--h) * 1.35) calc(var(--h) * 1.05); grid-template-rows: var(--h) var(--h) auto; }
+body[data-theme="la-liga"] .sep, body[data-theme="la-liga"] .team .name, body[data-theme="la-liga"] .comp .label { display: none; }
+body[data-theme="la-liga"] .comp { background: var(--ll-black); }
+body[data-theme="la-liga"] .comp .mark { width: calc(var(--h) * 0.7); height: calc(var(--h) * 0.7); background: #fff; clip-path: polygon(0 0, 30% 0, 30% 45%, 55% 45%, 55% 0, 100% 0, 100% 100%, 0 100%, 0 70%, 70% 70%, 70% 100%, 0 100%); transform: skewX(-18deg); }
+body[data-theme="la-liga"] .team { position: relative; background: var(--ll-black); color: #fff; font-size: calc(var(--h) * 0.42); padding: 0; }
+body[data-theme="la-liga"] .team .crest { position: absolute; width: calc(var(--h) * 0.72); height: calc(var(--h) * 0.72); animation: ll-swap 14s infinite; }
+body[data-theme="la-liga"] .team .code { position: absolute; animation: ll-swap 14s infinite reverse; }
+body[data-theme="la-liga"] .team .crest.monogram { animation: none; opacity: 0; }
+body[data-theme="la-liga"] .team .crest.monogram + .code { animation: none; opacity: 1; }
+@keyframes ll-swap { 0%, 45% { opacity: 1; } 50%, 95% { opacity: 0; } 100% { opacity: 1; } }
+body[data-theme="la-liga"] .team.home::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--home-primary); }
+body[data-theme="la-liga"] .team.away::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--away-primary); }
+body[data-theme="la-liga"] .team.away { border-top: 1px solid #2a2a2a; }
+body[data-theme="la-liga"] .score { background: var(--ll-white); color: #111; font-size: calc(var(--h) * 0.62); }
+body[data-theme="la-liga"] .score.away { border-top: 2px solid #111; }
+body[data-theme="la-liga"] .clock { background: var(--ll-white); color: #111; font-size: calc(var(--h) * 0.5); font-weight: 800; font-variant-numeric: tabular-nums; }
+body[data-theme="la-liga"] .clock.stopped { color: #c00; }
+body[data-theme="la-liga"] .added { height: calc(var(--h) * 0.7); justify-content: flex-start; padding: 0 12px; background: var(--ll-black); color: #fff; gap: 8px; font-size: calc(var(--h) * 0.42); }
+body[data-theme="la-liga"] .added .counter { color: #bbb; font-size: calc(var(--h) * 0.34); }
 body[data-theme="la-liga"] .added .counter:empty { display: none; }
-body[data-theme="la-liga"] .bug.goal-home .team.home, body[data-theme="la-liga"] .bug.goal-away .team.away { animation: ll-goal 2.4s ease-out; }
-@keyframes ll-goal { 0%, 65% { background: var(--ll-a); color: #fff; } 100% { } }
-body[data-theme="la-liga"] .shootout { margin-top: 5px; gap: 16px; padding: 7px 16px; background: var(--ll-dark); border-radius: 8px; font-size: calc(var(--h) * 0.42); }
-body[data-theme="la-liga"] .scorers { margin-top: 5px; gap: 24px; padding: 7px 16px; background: rgba(27,27,27,0.94); border-radius: 8px; font-size: calc(var(--h) * 0.32); font-weight: 600; }
+/* Goal: diagonal black band sweeps across the block. */
+body[data-theme="la-liga"] .main::after { content: ""; background: linear-gradient(115deg, transparent 0 38%, #fff 38% 42%, #0F0F0F 42% 62%, #fff 62% 66%, transparent 66%); background-size: 260% 100%; background-position: 120% 0; opacity: 0; }
+body[data-theme="la-liga"] .bug.goal .main::after { opacity: 1; animation: ll-sweep 1.6s ease-in-out 1; }
+@keyframes ll-sweep { 0% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
+body[data-theme="la-liga"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 14px; background: var(--ll-black); font-size: calc(var(--h) * 0.45); }
+body[data-theme="la-liga"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(15,15,15,0.95); font-size: calc(var(--h) * 0.36); font-weight: 600; }
 body[data-theme="la-liga"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="la-liga"] .shootout, body[data-orientation="v"][data-theme="la-liga"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }

@@ -1,33 +1,39 @@
-/* Champions League, UEFA 2024-27 world feed: white block with the starball, royal blue bar with the codes, navy chevron score box, navy clock. */
-body[data-theme="champions-league"] .bug, body[data-theme="europa-league"] .bug, body[data-theme="conference-league"] .bug {
-  --h: 60px; --uefa-navy: #071450; --uefa-blue: #1A2FE0; --uefa-blue-2: #0B1FBF; --uefa-light: #F1F2F7; --uefa-cyan: #3AD0FF;
+/* UEFA Champions League 2024-27 world feed (Vasava identity). Verified against the 2025 final: blue square with the starball,
+   white clock plate, a gap, then a navy bar with home code, the two scores split by faint chevrons, away code and a colour tab
+   at the right edge. GOAL: the navy bar wipes to an italic GOAL. Europa and Conference reuse it with their colours. */
+body[data-family="uefa"] .bug { --h: 40px; --uefa-navy: #0B1F8F; --uefa-navy-2: #061366; --uefa-blue: #1F3BFF; --uefa-light: #FFFFFF; --uefa-accent: #F59E0B;
   --kick-pending: #2a3a8a; --kick-scored: #29D65E; --kick-missed: #FF3B4E;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-stretch: condensed; font-weight: 700; letter-spacing: 0.04em; filter: drop-shadow(0 5px 14px rgba(0,0,0,0.5)); }
-body[data-theme="europa-league"] .bug { --uefa-blue: #F26A21; --uefa-blue-2: #D9551A; --uefa-navy: #1A1A1A; --uefa-cyan: #FFC14D; }
-body[data-theme="conference-league"] .bug { --uefa-blue: #00A86B; --uefa-blue-2: #008C58; --uefa-navy: #0B2A1F; --uefa-cyan: #B8FF5A; }
-body[data-family="uefa"] .main { grid-template-areas: "comp home hs sep as away clock added"; height: var(--h); }
-body[data-family="uefa"] .team .name, body[data-family="uefa"] .team .crest, body[data-family="uefa"] .sep span { display: none; }
-body[data-family="uefa"] .comp { width: calc(var(--h) * 1.6); background: var(--uefa-light); margin-right: 8px; }
-body[data-family="uefa"] .comp .label { display: none; }
-body[data-family="uefa"] .comp .mark { width: calc(var(--h) * 0.62); height: calc(var(--h) * 0.62); border-radius: 50%; background: #0a0a0a; position: relative; overflow: hidden; }
-body[data-family="uefa"] .comp .mark::before { content: "★ ★ ★\A★ ★ ★\A★ ★ ★"; white-space: pre; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; font-size: calc(var(--h) * 0.19); line-height: 1; letter-spacing: -0.05em; transform: rotate(18deg); }
-body[data-family="uefa"] .team { padding: 0 26px; font-size: calc(var(--h) * 0.56); color: #fff; }
-body[data-family="uefa"] .team.home { background: linear-gradient(90deg, var(--uefa-blue-2), var(--uefa-blue)); }
-body[data-family="uefa"] .team.away { background: linear-gradient(90deg, var(--uefa-blue), var(--uefa-blue-2)); }
-body[data-family="uefa"] .score { min-width: calc(var(--h) * 0.9); background: var(--uefa-navy); font-size: calc(var(--h) * 0.6); }
-body[data-family="uefa"] .score.home { clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%); margin-left: -18px; padding-left: 10px; }
-body[data-family="uefa"] .score.away { clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 100%, 0 100%); margin-right: -18px; padding-right: 10px; }
-body[data-family="uefa"] .sep { width: 4px; background: var(--uefa-navy); }
-body[data-family="uefa"] .clock { margin-left: 8px; padding: 0 18px; min-width: calc(var(--h) * 1.9); background: var(--uefa-navy); font-size: calc(var(--h) * 0.52); font-variant-numeric: tabular-nums; }
-body[data-family="uefa"] .clock.stopped { color: var(--uefa-cyan); }
-body[data-family="uefa"] .added { padding: 0 16px; background: var(--uefa-blue); gap: 10px; font-size: calc(var(--h) * 0.46); animation: uefa-in 300ms ease-out; }
-body[data-family="uefa"] .added .counter { color: var(--uefa-light); opacity: 0.85; font-size: calc(var(--h) * 0.36); }
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-stretch: condensed; font-weight: 500; letter-spacing: 0.05em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.45)); }
+body[data-theme="europa-league"] .bug { --uefa-navy: #1A1A1A; --uefa-navy-2: #000; --uefa-blue: #F26A21; }
+body[data-theme="conference-league"] .bug { --uefa-navy: #0B3D2E; --uefa-navy-2: #062A1F; --uefa-blue: #00A86B; }
+body[data-family="uefa"] .main { grid-template-areas: "comp clock added home hs as away"; height: var(--h); }
+body[data-family="uefa"] .team .name, body[data-family="uefa"] .team .crest, body[data-family="uefa"] .comp .label, body[data-family="uefa"] .sep { display: none; }
+body[data-family="uefa"] .comp { width: var(--h); background: var(--uefa-blue); }
+body[data-family="uefa"] .comp .mark { width: calc(var(--h) * 0.62); height: calc(var(--h) * 0.62); border-radius: 50%; background: #fff; position: relative; overflow: hidden; }
+body[data-family="uefa"] .comp .mark::before { content: "★ ★\A★ ★ ★\A★ ★"; white-space: pre; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--uefa-blue); font-size: calc(var(--h) * 0.2); line-height: 0.9; letter-spacing: -0.08em; transform: rotate(15deg); }
+body[data-family="uefa"] .clock { padding: 0 12px; min-width: calc(var(--h) * 2.1); background: var(--uefa-light); color: #111; font-size: calc(var(--h) * 0.6); font-weight: 500; font-variant-numeric: tabular-nums; }
+body[data-family="uefa"] .clock.stopped { color: var(--uefa-navy); }
+body[data-family="uefa"] .added { padding: 0 10px; background: var(--uefa-light); color: var(--uefa-navy); gap: 8px; font-size: calc(var(--h) * 0.5); border-left: 2px solid #ddd; }
+body[data-family="uefa"] .added .counter { font-size: calc(var(--h) * 0.38); color: #444; }
 body[data-family="uefa"] .added .counter:empty { display: none; }
-@keyframes uefa-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
-body[data-family="uefa"] .bug.goal-home .team.home, body[data-family="uefa"] .bug.goal-away .team.away { animation: uefa-goal 2.6s ease-out; }
-@keyframes uefa-goal { 0%, 65% { background: var(--uefa-light); color: var(--uefa-navy); } 100% { } }
-body[data-family="uefa"] .shootout { margin-top: 5px; gap: 16px; padding: 7px 16px; background: var(--uefa-navy); font-size: calc(var(--h) * 0.42); }
+body[data-family="uefa"] .team { padding: 0 18px; color: #fff; font-size: calc(var(--h) * 0.6); background: linear-gradient(180deg, var(--uefa-navy), var(--uefa-navy-2)); }
+body[data-family="uefa"] .team.home { margin-left: 10px; padding-right: 26px; }
+body[data-family="uefa"] .team.away { padding-left: 26px; position: relative; padding-right: 26px; }
+body[data-family="uefa"] .team.away::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 7px; background: var(--away-primary); }
+body[data-family="uefa"] .team.home::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0; }
+body[data-family="uefa"] .score { min-width: calc(var(--h) * 0.85); color: #fff; font-size: calc(var(--h) * 0.6); background: linear-gradient(180deg, var(--uefa-navy), var(--uefa-navy-2)); position: relative; }
+body[data-family="uefa"] .score.home::before, body[data-family="uefa"] .score.away::after { content: ""; position: absolute; top: 15%; bottom: 15%; width: 10px; border: 1px solid rgba(255,255,255,0.25); border-right: none; border-radius: 6px 0 0 6px; }
+body[data-family="uefa"] .score.home::before { left: -4px; }
+body[data-family="uefa"] .score.away::after { right: -4px; transform: scaleX(-1); }
+body[data-family="uefa"] .score.home { border-right: 1px solid rgba(255,255,255,0.35); }
+/* GOAL wipe over the navy bar only (clock and mark stay). */
+body[data-family="uefa"] .main::after { content: "GOAL"; left: calc(var(--h) + var(--h) * 2.1 + 10px); display: flex; align-items: center; justify-content: center; background: var(--uefa-navy);
+  color: #fff; font-style: italic; font-weight: 700; font-size: calc(var(--h) * 0.72); letter-spacing: 0.12em; clip-path: inset(0 100% 0 0); }
+body[data-family="uefa"] .bug.has-added .main::after { left: calc(var(--h) + var(--h) * 2.1 + 10px + var(--h) * 1.4); }
+body[data-family="uefa"] .bug.goal .main::after { opacity: 1; animation: uefa-wipe 3.2s cubic-bezier(.3,.7,.2,1) forwards; }
+@keyframes uefa-wipe { 0% { clip-path: inset(0 100% 0 0); } 14% { clip-path: inset(0 0 0 0); } 78% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 0 0 100%); } }
+body[data-family="uefa"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 14px; background: var(--uefa-navy); font-size: calc(var(--h) * 0.55); }
 body[data-family="uefa"] .kick { border-radius: 2px; transform: rotate(45deg) scale(0.75); }
-body[data-family="uefa"] .scorers { margin-top: 5px; gap: 24px; padding: 7px 16px; background: rgba(7,20,80,0.94); font-size: calc(var(--h) * 0.32); font-weight: 600; letter-spacing: 0.02em; }
+body[data-family="uefa"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(11,31,143,0.94); font-size: calc(var(--h) * 0.42); font-weight: 500; letter-spacing: 0.03em; }
 body[data-family="uefa"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-family="uefa"] .shootout, body[data-orientation="v"][data-family="uefa"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }

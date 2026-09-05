@@ -1,9 +1,18 @@
-// App entry. Window, menu bar item, --data-directory argument. See ARCHITECTURE.md "Control panel".
+// App entry. Standard macOS structure: sidebar and detail, toolbar, Settings window on Cmd-comma, menu bar item.
 import SwiftUI
 import ScorebugCore
 
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { true }
+}
+
 @main
 struct ScorebugApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model: AppModel
 
     init() {
@@ -14,21 +23,33 @@ struct ScorebugApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Scorebug") {
-            ContentView().environmentObject(model).frame(minWidth: 1040, minHeight: 700).preferredColorScheme(.dark)
+        WindowGroup("Scorebug", id: "main") {
+            ContentView().environmentObject(model).frame(minWidth: 960, minHeight: 640)
         }
-        .defaultSize(width: 1240, height: 820)
+        .defaultSize(width: 1180, height: 820)
+        .defaultLaunchBehavior(.presented)
+        .restorationBehavior(.disabled)
 
         MenuBarExtra("Scorebug", systemImage: model.serverRunning ? "sportscourt.fill" : "sportscourt") {
+            MenuBarContent().environmentObject(model)
+        }
+    }
+}
+
+struct MenuBarContent: View {
+    @EnvironmentObject var model: AppModel
+    @Environment(\.openWindow) private var openWindow
+    var body: some View {
+        Group {
             Text(model.serverStatus)
             Divider()
             ForEach([1, 2], id: \.self) { slot in
                 let m = model.match(slot)
-                Text("Slot \(slot): \(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)")
+                Text("\(slot == 1 ? "Primary" : "Secondary"): \(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)")
             }
             Divider()
-            Button("Open Scorebug") { NSApp.activate(ignoringOtherApps: true) }
-            Button("Quit") { NSApp.terminate(nil) }
+            Button("Open Scorebug") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
+            Button("Quit Scorebug") { NSApp.terminate(nil) }.keyboardShortcut("q")
         }
     }
 }
@@ -37,52 +58,45 @@ enum SidebarSection: Hashable { case slot(Int), library, settings }
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
-    @State private var section: SidebarSection = .slot(1)
+    @State private var section: SidebarSection? = .slot(1)
 
     var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 6).fill(Uno.accentGradient).frame(width: 22, height: 22)
-                        .overlay(Text("S").font(.system(size: 13, weight: .black)).foregroundStyle(.white))
-                    Text("Scorebug").font(.system(size: 15, weight: .bold)).foregroundStyle(Uno.text)
-                }.padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 14)
-                sidebarItem(.slot(1), "Primary Scorebug", "1.square.fill")
-                sidebarItem(.slot(2), "Secondary Scorebug", "2.square.fill")
-                sidebarItem(.library, "Library", "books.vertical.fill")
-                sidebarItem(.settings, "Settings", "gearshape.fill")
-                Spacer()
-                HStack(spacing: 6) {
-                    Circle().fill(model.serverRunning ? Uno.green : Uno.red).frame(width: 7, height: 7)
-                    Text(model.serverStatus).font(.system(size: 11)).foregroundStyle(Uno.muted).lineLimit(2)
-                }.padding(14)
-            }
-            .frame(width: 210).background(Uno.panel)
-            Rectangle().fill(Uno.line).frame(width: 1)
-            Group {
-                switch section {
-                case .slot(let s): SlotView(slot: s).id(s)
-                case .library: LibraryView()
-                case .settings: SettingsView()
+        NavigationSplitView {
+            List(selection: $section) {
+                Section("Matches") {
+                    ForEach([1, 2], id: \.self) { slot in
+                        let m = model.match(slot)
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(slot == 1 ? "Primary" : "Secondary")
+                                Text("\(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                        } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square") }
+                        .tag(SidebarSection.slot(slot))
+                    }
                 }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).background(Uno.bg)
+                Section {
+                    Label("Library", systemImage: "books.vertical").tag(SidebarSection.library)
+                    Label("Settings", systemImage: "gearshape").tag(SidebarSection.settings)
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+            .safeAreaInset(edge: .bottom) {
+                HStack(spacing: 6) {
+                    Circle().fill(model.serverRunning ? Color.green : Color.red).frame(width: 7, height: 7)
+                    Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+            }
+        } detail: {
+            switch section {
+            case .slot(let s): SlotView(slot: s).id(s)
+            case .library: LibraryView()
+            case .settings: SettingsView()
+            case nil: ContentUnavailableView("Choose a match", systemImage: "sportscourt")
+            }
         }
-        .background(Uno.bg)
         .alert("Scorebug", isPresented: Binding(get: { model.lastError != nil }, set: { if !$0 { model.lastError = nil } })) {
             Button("OK") { model.lastError = nil }
         } message: { Text(model.lastError ?? "") }
-    }
-
-    private func sidebarItem(_ s: SidebarSection, _ title: String, _ symbol: String) -> some View {
-        Button { section = s } label: {
-            HStack(spacing: 10) {
-                Image(systemName: symbol).font(.system(size: 13)).frame(width: 18)
-                Text(title).font(.system(size: 13, weight: section == s ? .semibold : .regular))
-                Spacer()
-            }
-            .foregroundStyle(section == s ? Uno.text : Uno.muted)
-            .padding(.horizontal, 12).frame(height: 34)
-            .background(section == s ? Uno.panel2 : .clear).clipShape(RoundedRectangle(cornerRadius: 8))
-        }.buttonStyle(.plain).padding(.horizontal, 8)
     }
 }
