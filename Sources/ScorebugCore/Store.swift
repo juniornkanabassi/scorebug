@@ -135,15 +135,21 @@ public enum SeedLibrary {
         var name: String; var shortName: String; var defaultCode: String; var codes: [String: String]?
         var primaryColour: String; var secondaryColour: String?; var textColour: String?
         var competitionIds: [String]?; var crestSource: String?; var sourceIds: [String: String]?
+        var confederation: String?; var squad: [String]?
     }
     private struct SeedFile: Decodable { var schema: Int; var competitions: [Competition]; var clubs: [SeedClub] }
 
     public static func load(from url: URL?) -> Library? {
         guard let url, let data = try? Data(contentsOf: url), let seed = try? JSONDecoder().decode(SeedFile.self, from: data) else { return nil }
-        let clubs = seed.clubs.map { c in
+        var clubs = seed.clubs.map { c in
             Club(name: c.name, shortName: c.shortName, defaultCode: c.defaultCode, codes: c.codes ?? [:], primaryColour: c.primaryColour,
                  secondaryColour: c.secondaryColour ?? "#FFFFFF", textColour: c.textColour ?? "#FFFFFF", crestSource: c.crestSource,
-                 sourceIds: c.sourceIds ?? [:], competitionIds: c.competitionIds ?? [])
+                 sourceIds: c.sourceIds ?? [:], competitionIds: c.competitionIds ?? [], confederation: c.confederation, squad: c.squad)
+        }
+        // Optional squads file beside the seed: { "Paris Saint-Germain": ["K. Mbappé", ...] } keyed by club name.
+        let squadsURL = url.deletingLastPathComponent().appendingPathComponent("squads.json")
+        if let data = try? Data(contentsOf: squadsURL), let squads = try? JSONDecoder().decode([String: [String]].self, from: data) {
+            for i in clubs.indices where clubs[i].squad == nil { clubs[i].squad = squads[clubs[i].name] }
         }
         return Library(competitions: seed.competitions, clubs: clubs)
     }

@@ -148,10 +148,12 @@ public struct TeamEntry: Codable, Sendable, Equatable {
     public var secondaryColour: String
     public var textColour: String
     public var crestFile: String?
+    /// Current squad copied from the club, "K. Mbappé" style, for the scorer picker. Optional since schema 1.
+    public var squad: [String]?
 
-    public init(clubId: UUID? = nil, name: String, shortName: String? = nil, code: String, primaryColour: String = "#222222", secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil) {
+    public init(clubId: UUID? = nil, name: String, shortName: String? = nil, code: String, primaryColour: String = "#222222", secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, squad: [String]? = nil) {
         self.clubId = clubId; self.name = name; self.shortName = shortName ?? name; self.code = code
-        self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour; self.crestFile = crestFile
+        self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour; self.crestFile = crestFile; self.squad = squad
     }
 
     public static let placeholderHome = TeamEntry(name: "Home", shortName: "Home", code: "HOM", primaryColour: "#1D4ED8")
@@ -210,17 +212,21 @@ public struct Club: Codable, Sendable, Identifiable, Equatable {
     public var crestSource: String?
     public var sourceIds: [String: String]
     public var competitionIds: [String]
+    /// For national teams: UEFA, CONMEBOL, CONCACAF, CAF, AFC or OFC. Nil for clubs. Optional since schema 1.
+    public var confederation: String?
+    /// Current squad, one entry per player as "K. Mbappé". Optional since schema 1.
+    public var squad: [String]?
 
-    public init(id: UUID = UUID(), name: String, shortName: String, defaultCode: String, codes: [String: String] = [:], primaryColour: String, secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, crestSource: String? = nil, sourceIds: [String: String] = [:], competitionIds: [String] = []) {
+    public init(id: UUID = UUID(), name: String, shortName: String, defaultCode: String, codes: [String: String] = [:], primaryColour: String, secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, crestSource: String? = nil, sourceIds: [String: String] = [:], competitionIds: [String] = [], confederation: String? = nil, squad: [String]? = nil) {
         self.id = id; self.name = name; self.shortName = shortName; self.defaultCode = defaultCode; self.codes = codes
         self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour
-        self.crestFile = crestFile; self.crestSource = crestSource; self.sourceIds = sourceIds; self.competitionIds = competitionIds
+        self.crestFile = crestFile; self.crestSource = crestSource; self.sourceIds = sourceIds; self.competitionIds = competitionIds; self.confederation = confederation; self.squad = squad
     }
 
     public func code(for competitionId: String) -> String { codes[competitionId] ?? defaultCode }
 
     public func entry(for competitionId: String) -> TeamEntry {
-        TeamEntry(clubId: id, name: name, shortName: shortName, code: code(for: competitionId), primaryColour: primaryColour, secondaryColour: secondaryColour, textColour: textColour, crestFile: crestFile)
+        TeamEntry(clubId: id, name: name, shortName: shortName, code: code(for: competitionId), primaryColour: primaryColour, secondaryColour: secondaryColour, textColour: textColour, crestFile: crestFile, squad: squad)
     }
 }
 

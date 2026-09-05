@@ -14,6 +14,7 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp -R Resources/Overlays "$APP/Contents/Resources/Overlays"
 cp Resources/seed-library.json "$APP/Contents/Resources/seed-library.json"
+[[ -f Resources/squads.json ]] && cp Resources/squads.json "$APP/Contents/Resources/squads.json"
 /usr/bin/codesign --force --sign - "$APP"
 osascript -e 'tell application id "local.scorebug.mac" to quit' >/dev/null 2>&1 || true
 sleep 1
