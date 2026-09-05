@@ -91,12 +91,15 @@ enum CompetitionColours {
 }
 
 /// The competition's official mark when imported, otherwise a coloured tile with its short name.
+/// `plate`, when true, sets the mark on a small light backing plate so a dark broadcast mark (the
+/// Premier League lion, drawn dark-on-transparent) still reads clearly on the app's dark match card.
 struct CompetitionMark: View {
     @EnvironmentObject var model: AppModel
     let competition: Competition
     var size: CGFloat = 28
+    var plate: Bool = false
     var body: some View {
-        Group {
+        let mark = Group {
             if let f = competition.logoFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(f)) {
                 Image(nsImage: img).resizable().scaledToFit()
             } else {
@@ -104,6 +107,12 @@ struct CompetitionMark: View {
                     .overlay(Text(competition.shortName.prefix(4)).font(.system(size: size * 0.34, weight: .heavy)).foregroundStyle(.white).minimumScaleFactor(0.5).padding(2))
             }
         }.frame(width: size, height: size)
+        if plate {
+            mark.padding(size * 0.16)
+                .background(RoundedRectangle(cornerRadius: size * 0.22).fill(Color.white))
+        } else {
+            mark
+        }
     }
 }
 
@@ -139,6 +148,15 @@ func squadNameMatches(_ name: String, query: String) -> Bool {
         if surname.hasPrefix(q) { return true }
     }
     return false
+}
+
+extension View {
+    /// A small capsule badge: the live phase status ("First half", "Half time"...) shown under the clock,
+    /// and anywhere else a compact status needs to sit apart from plain text.
+    func pillBadge() -> some View {
+        self.padding(.horizontal, 10).padding(.vertical, 4)
+            .background(Capsule().fill(Color.secondary.opacity(0.15)))
+    }
 }
 
 extension Color {

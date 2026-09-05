@@ -2,6 +2,18 @@
 import SwiftUI
 import ScorebugCore
 
+/// Short segmented-control label for a period; `.title` (from ScorebugCore) stays the tooltip's full name.
+extension Period {
+    var shortLabel: String {
+        switch self {
+        case .firstHalf: return "1H"
+        case .secondHalf: return "2H"
+        case .extraFirst: return "ET1"
+        case .extraSecond: return "ET2"
+        }
+    }
+}
+
 struct SlotView: View {
     @EnvironmentObject var model: AppModel
     let slot: Int
@@ -21,7 +33,6 @@ struct SlotView: View {
                 clockSection
                 goalsSection
                 shootoutSection
-                designSection
             }
             .formStyle(.grouped)
             .frame(minHeight: 320)
@@ -68,16 +79,21 @@ struct SlotView: View {
             }.labelsHidden().frame(maxWidth: 220)
             // A placeholder reads "Home" or "Away" in full; a chosen club shows its broadcast code.
             Text(team.clubId == nil ? team.name : team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
-            HStack(spacing: 14) {
-                Button { model.apply(.goal(side, -1), slot: slot) } label: { Image(systemName: "minus").frame(width: 14) }
-                    .controlSize(.large).disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
-                Text("\(match.score(side))").scaledFont(size: 48, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 60)
+            Text("\(match.score(side))").scaledFont(size: 48, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 60)
+            // The plus is the button pressed live, over and over, so it gets the large, unmissable
+            // hit target (44x44 pt minimum, per Apple's own floor for a control meant to be hit
+            // quickly and often); the minus is only ever an undo, so it stays small and secondary.
+            HStack(spacing: 16) {
+                Button { model.apply(.goal(side, -1), slot: slot) } label: { Image(systemName: "minus").scaledFont(.callout, weight: .semibold) }
+                    .buttonStyle(.bordered).controlSize(.small).frame(width: 28, height: 28)
+                    .disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
                 Button {
                     model.apply(.goal(side, 1), slot: slot)
                     // Open the new goal's scorer popover without making the plus button wait on it.
                     scorerPopoverGoalId = match.lastGoal?.goalId
-                } label: { Image(systemName: "plus").frame(width: 14) }
-                    .controlSize(.large).buttonStyle(.borderedProminent).disabled(match.phase == .shootout).help("Goal for \(team.shortName)")
+                } label: { Image(systemName: "plus").scaledFont(.title2, weight: .bold) }
+                    .buttonStyle(.borderedProminent).frame(width: 44, height: 44)
+                    .disabled(match.phase == .shootout).help("Goal for \(team.shortName)")
             }
         }
         .frame(maxWidth: .infinity)
@@ -87,52 +103,80 @@ struct SlotView: View {
     private var centreColumn: some View {
         VStack(spacing: 12) {
             HStack(spacing: 10) {
-                if let c = competition { CompetitionMark(competition: c, size: 30) }
+                // On a small light plate: a dark broadcast mark (the Premier League lion, drawn
+                // dark-on-transparent) would otherwise disappear against this dark card.
+                if let c = competition { CompetitionMark(competition: c, size: 30, plate: true) }
                 Picker("Competition", selection: Binding(get: { match.competitionId }, set: { model.setCompetition($0, slot: slot) })) {
                     ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
                 }.labelsHidden().frame(maxWidth: 210)
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
-            HStack(spacing: 8) {
-                Button(match.clock.running ? "Pause" : "Play") { model.apply(.play, slot: slot) }.disabled(match.currentPeriod == nil)
+            HStack(spacing: 16) {
+                Button { model.apply(.play, slot: slot) } label: {
+                    Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill")
+                }.disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
                 Button("End half") { model.apply(.endPeriod, slot: slot) }.disabled(match.currentPeriod == nil)
-                Button("Swap") { model.apply(.swapTeams, slot: slot) }.help("Swap home and away")
             }
+            // Swapping ends is rare and deliberate, unlike Play/End half which are pressed live and
+            // often, so it sits apart and smaller rather than sharing weight with them.
+            Button("Swap", systemImage: "arrow.left.arrow.right") { model.apply(.swapTeams, slot: slot) }
+                .controlSize(.small).buttonStyle(.plain).foregroundStyle(.secondary)
+                .help("Swap home and away")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
     }
 
     /// Manual clock correction, for when play was pressed late and the bug needs to line up with the
-    /// broadcast: small nudge buttons for quick offsets, and "Set time…" for typing an exact value.
+    /// broadcast: one bordered group of symbol buttons for quick offsets (a divider marks the halfway
+    /// point between subtracting and adding time), then "Set time…" for typing an exact value.
     private var clockNudgeRow: some View {
-        HStack(spacing: 6) {
-            clockNudgeButton("−1 min", -60)
-            clockNudgeButton("−10 s", -10)
-            clockNudgeButton("−1 s", -1)
-            clockNudgeButton("+1 s", 1)
-            clockNudgeButton("+10 s", 10)
-            clockNudgeButton("+1 min", 60)
+        HStack(spacing: 10) {
+            ControlGroup {
+                clockNudgeButton(-60, "1 min")
+                clockNudgeButton(-10, "10 s")
+                clockNudgeButton(-1, "1 s")
+            }
+            Divider().frame(height: 20)
+            ControlGroup {
+                clockNudgeButton(1, "1 s")
+                clockNudgeButton(10, "10 s")
+                clockNudgeButton(60, "1 min")
+            }
             SetClockButton(match: match, slot: slot)
         }
+        .fixedSize()
     }
 
-    private func clockNudgeButton(_ title: String, _ delta: Int) -> some View {
-        Button(title) { model.apply(.adjustClock(deltaSeconds: delta), slot: slot) }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(match.currentPeriod == nil)
+    private func clockNudgeButton(_ delta: Int, _ amount: String) -> some View {
+        Button { model.apply(.adjustClock(deltaSeconds: delta), slot: slot) } label: {
+            // Text, not a Label: ControlGroup on macOS collapses Labels to their icons, and the amount must stay visible.
+            Text("\(delta < 0 ? "−" : "+")\(amount)").monospacedDigit().frame(minWidth: 44)
+        }
+        .disabled(match.currentPeriod == nil)
+        .help("\(delta < 0 ? "Subtract" : "Add") \(amount) \(delta < 0 ? "from" : "to") the clock")
     }
 
     // MARK: Clock
 
     private var clockSection: some View {
         Section("Clock") {
-            LabeledContent("Start") { HStack { ForEach(Period.allCases, id: \.self) { p in periodButton(p) } } }
+            LabeledContent("Period") {
+                // Optional selection: while no period is live (pre-match, half time, full time) no
+                // segment is highlighted, matching the old buttons' "none active" state.
+                Picker("Period", selection: Binding<Period?>(
+                    get: { match.currentPeriod },
+                    set: { if let p = $0 { model.apply(.startPeriod(p), slot: slot) } }
+                )) {
+                    ForEach(Period.allCases, id: \.self) { p in
+                        Text(p.shortLabel).help(p.title).tag(Period?.some(p))
+                    }
+                }.labelsHidden().pickerStyle(.segmented).frame(maxWidth: 260)
+            }
             LabeledContent("Adjust") { clockNudgeRow }
             LabeledContent("Added time") {
-                HStack {
+                HStack(spacing: 12) {
                     Stepper(value: Binding(get: { match.addedMinutes ?? 0 }, set: { model.apply(.setAddedMinutes($0), slot: slot) }), in: 0...15) {
                         Text(match.addedMinutes.map { "+\($0) min" } ?? "None").monospacedDigit().frame(minWidth: 64, alignment: .leading)
                     }
@@ -142,14 +186,6 @@ struct SlotView: View {
             if let t = themeConfig {
                 Text(t.clockStyle == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").scaledFont(.caption).foregroundStyle(.secondary)
             }
-        }
-    }
-
-    @ViewBuilder private func periodButton(_ p: Period) -> some View {
-        if match.phase == p.phase {
-            Button(p.title) { model.apply(.startPeriod(p), slot: slot) }.buttonStyle(.borderedProminent)
-        } else {
-            Button(p.title) { model.apply(.startPeriod(p), slot: slot) }.buttonStyle(.bordered)
         }
     }
 
@@ -198,21 +234,6 @@ struct SlotView: View {
         }
     }
 
-    // MARK: Design
-
-    private var designSection: some View {
-        Section("Design") {
-            Picker("Score bug", selection: Binding<String>(get: { match.themeId ?? "" }, set: { model.apply(.setTheme($0.isEmpty ? nil : $0), slot: slot) })) {
-                Text("Follow competition").tag("")
-                Divider()
-                ForEach(model.resolver.availableThemeIds(), id: \.self) { id in Text(model.resolver.themeConfig(id: id)?.name ?? id).tag(id) }
-            }
-            if let t = themeConfig {
-                LabeledContent("Placement", value: "Horizontal \(t.geometry["h"]?.left ?? 0), \(t.geometry["h"]?.top ?? 0) px. Vertical centred, top \(t.geometry["v"]?.top ?? 0) px, max width \(t.geometry["v"]?.maxWidth ?? 0) px.")
-            }
-            Text("Official competition marks (the lion, the starball) can be imported in Library › Competitions and replace the drawn glyph.").scaledFont(.caption).foregroundStyle(.secondary)
-        }
-    }
 }
 
 /// The ticking clock and phase label, alone. This is the only part of a slot that changes four times a second,
@@ -232,7 +253,7 @@ struct ClockReadout: View {
                 if let a = display.added { Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(.orange) }
                 if let c = display.addedCounter { Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary) }
             }.frame(height: 20)
-            Text(phaseTitle).scaledFont(.callout).foregroundStyle(.secondary)
+            Text(phaseTitle).scaledFont(.callout, weight: .medium).pillBadge()
         }
         .onReceive(timer) { tick = $0 }
     }

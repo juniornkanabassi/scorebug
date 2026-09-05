@@ -9,6 +9,7 @@ struct LibraryView: View {
     @State private var selected: UUID?
     @State private var mode = 0
     @State private var selectedCompetition: String?
+    @State private var competitionSearch = ""
 
     @State private var search = ""
     @State private var selectedCompetitions: Set<String> = []
@@ -24,19 +25,48 @@ struct LibraryView: View {
         .navigationTitle("Library")
     }
 
-    // MARK: Competitions tab (unchanged)
+    // MARK: Competitions tab
+
+    private var filteredCompetitions: [Competition] {
+        let q = competitionSearch.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return model.library.competitions }
+        return model.library.competitions.filter { $0.name.lowercased().contains(q) || $0.shortName.lowercased().contains(q) }
+    }
 
     private var competitions: some View {
         HSplitView {
-            List(model.library.competitions, selection: $selectedCompetition) { c in
-                HStack { CompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }.tag(c.id)
-            }.frame(minWidth: 260, idealWidth: 300)
+            VStack(spacing: 0) {
+                // The filter sits ahead of the list, same reading order as the Clubs tab.
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    TextField("Search competitions", text: $competitionSearch).textFieldStyle(.plain)
+                    if !competitionSearch.isEmpty {
+                        Button { competitionSearch = "" } label: { Image(systemName: "xmark.circle.fill") }
+                            .buttonStyle(.plain).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(6)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
+                .padding(10)
+                Divider()
+                // 22 pt marks (CompetitionMark's own `size` is the one source of truth for that; it is
+                // never scaled up by anything here), full name, short code.
+                List(filteredCompetitions, selection: $selectedCompetition) { c in
+                    HStack { CompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }.tag(c.id)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(minWidth: 260, idealWidth: 300, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Editor stays on the right.
             Group {
                 if let id = selectedCompetition, let c = model.library.competitions.first(where: { $0.id == id }) { CompetitionEditor(competition: c).id(id) }
                 else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
-            }.frame(minWidth: 420)
+            }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
         }
-        // Greedy frame on purpose: an HSplitView inside a VStack otherwise sizes to its content and the list collapses.
+        // Greedy frame on the HSplitView itself is not enough: each pane's own root view must also
+        // carry maxHeight: .infinity, or NSSplitView sizes that pane to the view's ideal (fitting)
+        // height and centres it in the leftover space instead of stretching it — see clubsSplit's
+        // longer note below, where this same defect was reproduced and proved.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -90,16 +120,31 @@ struct LibraryView: View {
     private var clubsSplit: some View {
         HSplitView {
             VStack(spacing: 0) {
-                searchField
-                filterControls
-                if hasActiveFilters { chipsRow }
+                toolbarRow
+                Picker("", selection: $clubsNationsFilter) {
+                    ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
+                }.pickerStyle(.segmented).labelsHidden().padding(.horizontal, 10).padding(.top, 8)
                 countsRow
                 Divider()
                 Group { if viewMode == .list { clubList } else { clubGrid } }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Divider()
                 addRemoveRow
             }
-            .frame(minWidth: 300, idealWidth: 340)
+            // The reproduced bug: this pane's root view must itself carry maxHeight: .infinity, or
+            // NSSplitView sizes the pane to the VStack's own ideal (fitting) height instead of the
+            // pane's real height. With 165 clubs the ideal height of the fixed rows above and below
+            // the list (search, filters, chips, counts, add/remove) already accounts for the whole
+            // reduced height NSSplitView gives this pane, leaving nothing for the list itself, which
+            // renders at zero height while the fixed rows sit vertically centred in the pane — exactly
+            // "the toolbar centred in the pane, rows never show". Confirmed by screenshot with and
+            // without this fix (agent-ui/library-bug-*-before.png vs library-fixed-*.png in the
+            // scratchpad): the same collapse also happened, less visibly, on the Competitions list
+            // above, which showed a few rows but not enough to fill the pane, for the identical reason.
+            // The outer `.frame(maxWidth: .infinity, maxHeight: .infinity)` on the HSplitView below only
+            // sizes the split view itself relative to its own parent; it does not, by itself, make
+            // either pane's content greedy.
+            .frame(minWidth: 300, idealWidth: 340, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(shortcutButtons)
             Group {
                 if let id = selected, let club = model.library.clubs.first(where: { $0.id == id }) {
@@ -107,10 +152,60 @@ struct LibraryView: View {
                 } else {
                     ContentUnavailableView("Choose a club", systemImage: "shield")
                 }
-            }.frame(minWidth: 420)
+            }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
         }
         // Greedy frame on purpose: an HSplitView inside a VStack otherwise sizes to its content and the list collapses.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Search, the competitions/nations tick-menus, the view-mode toggle and the removable chips as one
+    /// toolbar block, so the pane reads as one filter bar instead of a stack of unrelated rows. The
+    /// All/Clubs/National teams choice is a separate row directly below (see clubsSplit).
+    private var toolbarRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            searchField
+            HStack(spacing: 8) {
+                competitionsMenu
+                nationsMenu
+                Spacer()
+                Picker("", selection: $viewMode) {
+                    Image(systemName: "list.bullet").tag(LibraryViewMode.list)
+                    Image(systemName: "square.grid.2x2").tag(LibraryViewMode.icons)
+                }.pickerStyle(.segmented).labelsHidden().frame(width: 76)
+            }
+            if hasActiveFilters { chipsRow }
+        }
+        .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 6)
+    }
+
+    private var competitionsMenu: some View {
+        Menu {
+            ForEach(model.library.competitions) { comp in
+                Toggle(isOn: bindingFor(comp.id, in: $selectedCompetitions)) {
+                    HStack { CompetitionMark(competition: comp, size: 16); Text(comp.name) }
+                }
+            }
+            if !selectedCompetitions.isEmpty {
+                Divider()
+                Button("Show All Competitions") { selectedCompetitions.removeAll() }
+            }
+        } label: {
+            Label("Competitions", systemImage: "trophy")
+        }
+    }
+
+    private var nationsMenu: some View {
+        Menu {
+            ForEach(confederationsPresent, id: \.self) { conf in
+                Toggle(conf, isOn: bindingFor(conf, in: $selectedConfederations))
+            }
+            if !selectedConfederations.isEmpty {
+                Divider()
+                Button("Show All Nations") { selectedConfederations.removeAll() }
+            }
+        } label: {
+            Label("Nations", systemImage: "globe")
+        }.disabled(confederationsPresent.isEmpty)
     }
 
     private var searchField: some View {
@@ -124,51 +219,6 @@ struct LibraryView: View {
         }
         .padding(6)
         .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
-        .padding(.horizontal, 10).padding(.top, 10)
-    }
-
-    private var filterControls: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Menu {
-                    ForEach(model.library.competitions) { comp in
-                        Toggle(isOn: bindingFor(comp.id, in: $selectedCompetitions)) {
-                            HStack { CompetitionMark(competition: comp, size: 16); Text(comp.name) }
-                        }
-                    }
-                    if !selectedCompetitions.isEmpty {
-                        Divider()
-                        Button("Show All Competitions") { selectedCompetitions.removeAll() }
-                    }
-                } label: {
-                    Label("Competitions", systemImage: "trophy")
-                }
-
-                Menu {
-                    ForEach(confederationsPresent, id: \.self) { conf in
-                        Toggle(conf, isOn: bindingFor(conf, in: $selectedConfederations))
-                    }
-                    if !selectedConfederations.isEmpty {
-                        Divider()
-                        Button("Show All Nations") { selectedConfederations.removeAll() }
-                    }
-                } label: {
-                    Label("Nations", systemImage: "globe")
-                }.disabled(confederationsPresent.isEmpty)
-
-                Spacer()
-
-                Picker("", selection: $viewMode) {
-                    Image(systemName: "list.bullet").tag(LibraryViewMode.list)
-                    Image(systemName: "square.grid.2x2").tag(LibraryViewMode.icons)
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 76)
-            }
-
-            Picker("", selection: $clubsNationsFilter) {
-                ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
-            }.pickerStyle(.segmented).labelsHidden()
-        }
-        .padding(.horizontal, 10).padding(.top, 8)
     }
 
     private var chipsRow: some View {
