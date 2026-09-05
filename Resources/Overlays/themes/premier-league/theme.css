@@ -7,51 +7,72 @@ body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-g
   font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: 0.02em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
 body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 0.72); }
 body[data-theme="premier-league"] .comp, body[data-theme="premier-league"] .team .name, body[data-theme="premier-league"] .team .crest { display: none; }
-body[data-theme="premier-league"] .team { padding: 0 32px; font-size: calc(var(--h) * 0.6); }
+/* Round 4: re-measured pixel-for-pixel against the owner's own reference (SCR-20260904-qprh.png), which
+   turns out to have NO separate dark/navy "score box" -- the white score digits sit directly on the
+   continuing home/away primary colour, all the way in to where the roundel overlaps the seam at the
+   bar's exact centre (verified: the blue/yellow meet exactly at the bar's horizontal midpoint, hidden
+   behind the disc). Round 1-3 kept a --pl-dark score/sep background on the strength of a visual read
+   of blurrier secondary references; this round's direct RGB sampling of the primary reference overrides
+   that. Code cap height measured 0.71h (was rendering ~0.48h) -- font-size raised accordingly. */
+body[data-theme="premier-league"] .team { padding: 0 calc(var(--h) * 0.29); font-size: calc(var(--h) * 0.9); }
 /* Code lettering: heavier than the body weight and tracked wider, matching the Optus/Figma references' shouty club codes. */
 body[data-theme="premier-league"] .team .code { font-weight: 900; letter-spacing: 0.04em; }
 /* Chevron cut depth scales with --h (was a fixed 16px) so the notch reads the same proportion of the
    bar at every geometry scale -- the broadcast reference's notch reaches noticeably further into the
-   score cell than a fixed-px cut allows once the bar is scaled up. */
-body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: 8px 0 0 8px; padding-right: 34px;
-  clip-path: polygon(0 0, 100% 0, calc(100% - var(--h) * 0.32) 50%, 100% 100%, 0 100%); margin-right: -8px; }
-body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 8px 8px 0; padding-left: 34px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, calc(var(--h) * 0.32) 50%); margin-left: -8px; }
-body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.22); background: var(--pl-dark); color: #fff; font-size: calc(var(--h) * 1.04); font-weight: 900; }
-body[data-theme="premier-league"] .score.home { padding-left: 14px; }
-body[data-theme="premier-league"] .score.away { padding-right: 14px; }
-/* the lion roundel: white disc overlapping the bar, purple mark inside (official mark used when imported) */
-body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.0); background: var(--pl-dark); position: relative; z-index: 2; overflow: visible; }
-body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.3); height: calc(var(--h) * 1.3); transform: translate(-50%, -50%);
+   score cell than a fixed-px cut allows once the bar is scaled up. Corner radius measured ~0.15-0.16h
+   against the reference (both the bar and the clock plate share this radius) -- was a fixed 8px (0.17h
+   at the base --h, coincidentally close, but not expressed relatively). */
+body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: calc(var(--h) * 0.16) 0 0 calc(var(--h) * 0.16); padding-right: calc(var(--h) * 0.55);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--h) * 0.32) 50%, 100% 100%, 0 100%); margin-right: calc(var(--h) * -0.16); }
+body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 calc(var(--h) * 0.16) calc(var(--h) * 0.16) 0; padding-left: calc(var(--h) * 0.55);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, calc(var(--h) * 0.32) 50%); margin-left: calc(var(--h) * -0.16); }
+/* Score digits measured 1.27h tall (allowed to overrun the bar top/bottom, not clipped) -- font-size raised
+   to match. Background: no separate dark box in the reference (see note above) -- each score cell now
+   continues its own team's primary colour, matching the continuous blue/yellow read behind "0 0" in the
+   reference. Text stays white on both sides, matching the reference (unconditionally white even over the
+   away team's own colour in the source frame, not team-text-driven). */
+body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.85); color: #fff; font-size: calc(var(--h) * 1.58); font-weight: 900; }
+body[data-theme="premier-league"] .score.home { padding-left: calc(var(--h) * 0.3); background: var(--home-primary); }
+body[data-theme="premier-league"] .score.away { padding-right: calc(var(--h) * 0.3); background: var(--away-primary); }
+/* the lion roundel: white disc overlapping the bar, purple mark inside (official mark used when imported).
+   .sep's own background is a hard-split gradient (not --pl-dark) so home/away colour continues right up to
+   the bar's centre seam behind the disc, matching the reference's continuous colour (no dark centre chip). */
+body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.0); background: linear-gradient(to right, var(--home-primary) 50%, var(--away-primary) 50%); position: relative; z-index: 2; overflow: visible; }
+/* Roundel diameter measured 1.18h against the reference (was 1.3h -- slightly oversized). */
+body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.18); height: calc(var(--h) * 1.18); transform: translate(-50%, -50%);
   border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none);
   box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
 body[data-theme="premier-league"] .bug:not(.has-comp-logo) .sep span::after { content: ""; position: absolute; inset: 18%; background: var(--pl-purple);
   clip-path: polygon(50% 0, 62% 22%, 84% 10%, 78% 36%, 100% 46%, 84% 60%, 88% 100%, 62% 86%, 50% 100%, 38% 86%, 12% 100%, 16% 60%, 0 46%, 22% 36%, 16% 10%, 38% 22%); }
-/* Clock plate: broadcast reference (SCR-20260904-qprh.png, pl26-1.jpg) measures this at ~0.76-0.9x
-   the bar height and rounded on all four corners, not just the bottom two -- both corrected here. */
+/* Clock plate: round-4 direct measurement of the reference (flush under the bar, corner rounding fitted
+   from the pixel data) puts this at 0.78h tall, 3.10h wide (was 0.74h/2.9h -- close, small bump) and its
+   digits at 0.56h cap height, needing a larger font-size than the previous 0.56h em to actually reach that
+   cap height (measured empirically against our own render, not assumed from the typeface's cap ratio). */
 body[data-theme="premier-league"] .clock { grid-area: sep; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; z-index: 1;
-  height: calc(var(--h) * 0.74); padding: 0 22px; min-width: calc(var(--h) * 2.9); background: var(--pl-purple); border-radius: calc(var(--h) * 0.17); font-size: calc(var(--h) * 0.56); font-weight: 700; font-variant-numeric: tabular-nums; }
+  height: calc(var(--h) * 0.78); padding: 0 calc(var(--h) * 0.48); min-width: calc(var(--h) * 3.0); background: var(--pl-purple); border-radius: calc(var(--h) * 0.16); font-size: calc(var(--h) * 0.72); font-weight: 700; font-variant-numeric: tabular-nums; }
 body[data-theme="premier-league"] .clock.stopped { color: var(--pl-green); }
 body[data-theme="premier-league"] .added { height: var(--h); margin-left: 8px; padding: 0 14px; background: var(--pl-purple); border-radius: 8px; gap: 8px; font-size: calc(var(--h) * 0.54); }
 body[data-theme="premier-league"] .added .counter { color: var(--pl-green); font-size: calc(var(--h) * 0.38); }
 body[data-theme="premier-league"] .added .counter:empty { display: none; }
-/* GOAL: club colour sweeps from the plate across the whole bar; crest sits at the cut; GOAL to the right. */
-body[data-theme="premier-league"] .main::after { content: "GOAL"; z-index: 3; display: flex; align-items: center; justify-content: flex-end; padding-right: 26px; box-sizing: border-box;
-  background: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); border-radius: 8px; font-size: calc(var(--h) * 0.66); font-weight: 900; letter-spacing: 0.06em;
-  background-image: var(--goal-crest, none); background-repeat: no-repeat; background-size: auto 96%; background-position: 38% center; clip-path: inset(0 100% 0 0 round 8px); }
+/* GOAL: club colour sweeps from the plate across the whole bar; crest sits at the cut; GOAL to the right.
+   Round 4: GOAL wordmark and corner radius scaled up by the same ~1.5x the code lettering grew, so it
+   still reads in proportion to the now-larger team codes and score digits either side of it. */
+body[data-theme="premier-league"] .main::after { content: "GOAL"; z-index: 3; display: flex; align-items: center; justify-content: flex-end; padding-right: calc(var(--h) * 0.58); box-sizing: border-box;
+  background: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); border-radius: calc(var(--h) * 0.16); font-size: calc(var(--h) * 1.0); font-weight: 900; letter-spacing: 0.06em;
+  background-image: var(--goal-crest, none); background-repeat: no-repeat; background-size: auto 96%; background-position: 38% center; clip-path: inset(0 100% 0 0 round calc(var(--h) * 0.16)); }
 body[data-theme="premier-league"] .bug.goal .main::after { opacity: 1; animation: pl-wipe 4s cubic-bezier(.25,.8,.2,1) forwards; }
 body[data-theme="premier-league"] .sep span { transition: opacity 200ms ease; }
 body[data-theme="premier-league"] .bug.goal .sep span { opacity: 0; transition-delay: 150ms; }
-@keyframes pl-wipe { 0% { clip-path: inset(0 100% 0 0 round 8px); } 9% { clip-path: inset(0 0 0 0 round 8px); } 86% { clip-path: inset(0 0 0 0 round 8px); } 100% { clip-path: inset(0 0 0 100% round 8px); } }
+@keyframes pl-wipe { 0% { clip-path: inset(0 100% 0 0 round calc(var(--h) * 0.16)); } 9% { clip-path: inset(0 0 0 0 round calc(var(--h) * 0.16)); } 86% { clip-path: inset(0 0 0 0 round calc(var(--h) * 0.16)); } 100% { clip-path: inset(0 0 0 100% round calc(var(--h) * 0.16)); } }
 body[data-theme="premier-league"] .bug.goal .main::after { animation-timing-function: cubic-bezier(.16,.9,.2,1); }
 /* Away goal: the footyheadlines composite and the MUN/FUL broadcast reference both show the scoring
    club's OWN plate staying put on its own side while the rest of the bar is consumed -- so for an
    away goal the sweep has to originate at the away plate (right) and travel left, with "GOAL"
    landing at the far LEFT edge instead of the right. Mirrors pl-wipe/its text alignment; overlay.js
    already adds "goal-away" alongside "goal", so no shared-file change was needed for this. */
-body[data-theme="premier-league"] .bug.goal-away .main::after { justify-content: flex-start; padding-left: 26px; padding-right: 0; background-position: 62% center; }
+body[data-theme="premier-league"] .bug.goal-away .main::after { justify-content: flex-start; padding-left: calc(var(--h) * 0.58); padding-right: 0; background-position: 62% center; }
 body[data-theme="premier-league"] .bug.goal-away .main::after { animation-name: pl-wipe-away; }
-@keyframes pl-wipe-away { 0% { clip-path: inset(0 0 0 100% round 8px); } 9% { clip-path: inset(0 0 0 0 round 8px); } 86% { clip-path: inset(0 0 0 0 round 8px); } 100% { clip-path: inset(0 100% 0 0 round 8px); } }
+@keyframes pl-wipe-away { 0% { clip-path: inset(0 0 0 100% round calc(var(--h) * 0.16)); } 9% { clip-path: inset(0 0 0 0 round calc(var(--h) * 0.16)); } 86% { clip-path: inset(0 0 0 0 round calc(var(--h) * 0.16)); } 100% { clip-path: inset(0 100% 0 0 round calc(var(--h) * 0.16)); } }
 body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; padding: 6px 14px; background: var(--pl-purple); border-radius: 8px; font-size: calc(var(--h) * 0.48); }
 body[data-theme="premier-league"] .scorers { margin-top: 6px; gap: 20px; padding: 6px 14px; background: rgba(55,0,60,0.94); border-radius: 8px; font-size: calc(var(--h) * 0.38); font-weight: 600; }
 body[data-theme="premier-league"] .scorers .list.away { text-align: right; }
