@@ -1,2344 +1,2346 @@
 {
- "schema": 1,
- "competitions": [
-  {
-   "id": "ligue1",
-   "name": "Ligue 1",
-   "shortName": "L1",
-   "themeId": "ligue1",
-   "sourceIds": {
-    "footballData": "FL1",
-    "espn": "fra.1"
-   }
-  },
-  {
-   "id": "premier-league",
-   "name": "Premier League",
-   "shortName": "PL",
-   "themeId": "premier-league",
-   "sourceIds": {
-    "footballData": "PL",
-    "espn": "eng.1"
-   }
-  },
-  {
-   "id": "champions-league",
-   "name": "Champions League",
-   "shortName": "UCL",
-   "themeId": "champions-league",
-   "sourceIds": {
-    "footballData": "CL",
-    "espn": "uefa.champions"
-   }
-  },
-  {
-   "id": "europa-league",
-   "name": "Europa League",
-   "shortName": "UEL",
-   "themeId": "europa-league",
-   "sourceIds": {
-    "espn": "uefa.europa"
-   }
-  },
-  {
-   "id": "conference-league",
-   "name": "Conference League",
-   "shortName": "UECL",
-   "themeId": "conference-league",
-   "sourceIds": {
-    "espn": "uefa.europa.conf"
-   }
-  },
-  {
-   "id": "la-liga",
-   "name": "LaLiga",
-   "shortName": "LaLiga",
-   "themeId": "la-liga",
-   "sourceIds": {
-    "footballData": "PD",
-    "espn": "esp.1"
-   }
-  },
-  {
-   "id": "serie-a",
-   "name": "Serie A",
-   "shortName": "SA",
-   "themeId": "stealth",
-   "sourceIds": {
-    "footballData": "SA",
-    "espn": "ita.1"
-   }
-  },
-  {
-   "id": "bundesliga",
-   "name": "Bundesliga",
-   "shortName": "BL",
-   "themeId": "stealth",
-   "sourceIds": {
-    "footballData": "BL1",
-    "espn": "ger.1"
-   }
-  },
-  {
-   "id": "club-world-cup",
-   "name": "Club World Cup",
-   "shortName": "CWC",
-   "themeId": "stealth",
-   "sourceIds": {
-    "espn": "fifa.cwc"
-   }
-  },
-  {
-   "id": "international",
-   "name": "International",
-   "shortName": "INT",
-   "themeId": "stealth",
-   "sourceIds": {
-    "footballData": "WC",
-    "espn": "fifa.world"
-   }
-  }
- ],
- "clubs": [
-  {
-   "name": "Paris Saint-Germain",
-   "shortName": "PSG",
-   "defaultCode": "PSG",
-   "codes": {},
-   "primaryColour": "#004170",
-   "secondaryColour": "#DA291C",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "PSG.png"
-  },
-  {
-   "name": "Olympique de Marseille",
-   "shortName": "Marseille",
-   "defaultCode": "MAR",
-   "codes": {
-    "ligue1": "OM"
-   },
-   "primaryColour": "#2FAEE0",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1",
-    "europa-league"
-   ],
-   "crestSource": "Olympique de Marseille.png"
-  },
-  {
-   "name": "Olympique Lyonnais",
-   "shortName": "Lyon",
-   "defaultCode": "LYO",
-   "codes": {
-    "ligue1": "OL"
-   },
-   "primaryColour": "#1B3F94",
-   "secondaryColour": "#DA291C",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1",
-    "europa-league"
-   ],
-   "crestSource": "Olympique Lyonnais.png"
-  },
-  {
-   "name": "AS Monaco",
-   "shortName": "Monaco",
-   "defaultCode": "MON",
-   "codes": {},
-   "primaryColour": "#E51B22",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1",
-    "conference-league"
-   ],
-   "crestSource": "AS Monaco.png"
-  },
-  {
-   "name": "LOSC Lille",
-   "shortName": "Lille",
-   "defaultCode": "LIL",
-   "codes": {},
-   "primaryColour": "#E01E13",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1",
-    "champions-league"
-   ],
-   "crestSource": "Lille.png"
-  },
-  {
-   "name": "OGC Nice",
-   "shortName": "Nice",
-   "defaultCode": "NIC",
-   "codes": {},
-   "primaryColour": "#D2001C",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "OGC Nice.png"
-  },
-  {
-   "name": "RC Lens",
-   "shortName": "Lens",
-   "defaultCode": "LEN",
-   "codes": {},
-   "primaryColour": "#FFD100",
-   "secondaryColour": "#D31E1B",
-   "textColour": "#000000",
-   "competitionIds": [
-    "ligue1",
-    "champions-league"
-   ],
-   "crestSource": "RC Lens.png"
-  },
-  {
-   "name": "Stade Rennais FC",
-   "shortName": "Rennes",
-   "defaultCode": "REN",
-   "codes": {},
-   "primaryColour": "#E30613",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1",
-    "europa-league"
-   ],
-   "crestSource": "Stade Rennais FC.png"
-  },
-  {
-   "name": "RC Strasbourg Alsace",
-   "shortName": "Strasbourg",
-   "defaultCode": "STR",
-   "codes": {},
-   "primaryColour": "#1E90FF",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "RC Strasbourg.png"
-  },
-  {
-   "name": "Toulouse FC",
-   "shortName": "Toulouse",
-   "defaultCode": "TOU",
-   "codes": {},
-   "primaryColour": "#5E2C8B",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "Tolouse FC.png"
-  },
-  {
-   "name": "FC Nantes",
-   "shortName": "Nantes",
-   "defaultCode": "NAN",
-   "codes": {},
-   "primaryColour": "#FFD500",
-   "secondaryColour": "#00843D",
-   "textColour": "#000000",
-   "competitionIds": [],
-   "crestSource": null
-  },
-  {
-   "name": "Stade Brestois 29",
-   "shortName": "Brest",
-   "defaultCode": "BRE",
-   "codes": {},
-   "primaryColour": "#E2001A",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "Stade Brestois 29.png"
-  },
-  {
-   "name": "AJ Auxerre",
-   "shortName": "Auxerre",
-   "defaultCode": "AUX",
-   "codes": {},
-   "primaryColour": "#0E4C92",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "AJ Auxerre.png"
-  },
-  {
-   "name": "Angers SCO",
-   "shortName": "Angers",
-   "defaultCode": "ANG",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "Angers SCO.png"
-  },
-  {
-   "name": "Le Havre AC",
-   "shortName": "Le Havre",
-   "defaultCode": "HAV",
-   "codes": {},
-   "primaryColour": "#7BC1E4",
-   "secondaryColour": "#1E3A8A",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": null
-  },
-  {
-   "name": "FC Metz",
-   "shortName": "Metz",
-   "defaultCode": "MET",
-   "codes": {},
-   "primaryColour": "#7D1D3F",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [],
-   "crestSource": null
-  },
-  {
-   "name": "FC Lorient",
-   "shortName": "Lorient",
-   "defaultCode": "LOR",
-   "codes": {},
-   "primaryColour": "#F58220",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": null
-  },
-  {
-   "name": "Paris FC",
-   "shortName": "Paris FC",
-   "defaultCode": "PFC",
-   "codes": {},
-   "primaryColour": "#0F2B5B",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "Paris FC.png"
-  },
-  {
-   "name": "AS Saint-Étienne",
-   "shortName": "Saint-Étienne",
-   "defaultCode": "STE",
-   "codes": {},
-   "primaryColour": "#0B8A3C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [],
-   "crestSource": "AS Saint-Étienne.png"
-  },
-  {
-   "name": "Stade de Reims",
-   "shortName": "Reims",
-   "defaultCode": "REI",
-   "codes": {},
-   "primaryColour": "#D6001C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [],
-   "crestSource": "Stade de Reims.png"
-  },
-  {
-   "name": "Arsenal",
-   "shortName": "Arsenal",
-   "defaultCode": "ARS",
-   "codes": {},
-   "primaryColour": "#EF0107",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "champions-league"
-   ],
-   "crestSource": "Arsenal.png"
-  },
-  {
-   "name": "Aston Villa",
-   "shortName": "Aston Villa",
-   "defaultCode": "AVL",
-   "codes": {},
-   "primaryColour": "#670E36",
-   "secondaryColour": "#95BFE5",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "champions-league"
-   ],
-   "crestSource": "Aston Villa FC.png"
-  },
-  {
-   "name": "Chelsea",
-   "shortName": "Chelsea",
-   "defaultCode": "CHE",
-   "codes": {},
-   "primaryColour": "#034694",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Chelsea.png"
-  },
-  {
-   "name": "Crystal Palace",
-   "shortName": "Crystal Palace",
-   "defaultCode": "CRY",
-   "codes": {},
-   "primaryColour": "#1B458F",
-   "secondaryColour": "#C4122E",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "europa-league"
-   ],
-   "crestSource": "Crystal Palace FC.png"
-  },
-  {
-   "name": "Everton",
-   "shortName": "Everton",
-   "defaultCode": "EVE",
-   "codes": {},
-   "primaryColour": "#003399",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Everton FC.png"
-  },
-  {
-   "name": "Liverpool",
-   "shortName": "Liverpool",
-   "defaultCode": "LIV",
-   "codes": {},
-   "primaryColour": "#C8102E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "champions-league"
-   ],
-   "crestSource": "Liverpool.png"
-  },
-  {
-   "name": "Manchester City",
-   "shortName": "Man City",
-   "defaultCode": "MCI",
-   "codes": {},
-   "primaryColour": "#6CABDD",
-   "secondaryColour": "#1C2C5B",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Manchester City.png"
-  },
-  {
-   "name": "Manchester United",
-   "shortName": "Man United",
-   "defaultCode": "MUN",
-   "codes": {},
-   "primaryColour": "#DA291C",
-   "secondaryColour": "#FBE122",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "champions-league"
-   ],
-   "crestSource": "Manchester United.png"
-  },
-  {
-   "name": "Newcastle United",
-   "shortName": "Newcastle",
-   "defaultCode": "NEW",
-   "codes": {},
-   "primaryColour": "#241F20",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Newcastle.png"
-  },
-  {
-   "name": "Southampton",
-   "shortName": "Southampton",
-   "defaultCode": "SOU",
-   "codes": {},
-   "primaryColour": "#D71920",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [],
-   "crestSource": "FC Southampton.png"
-  },
-  {
-   "name": "Tottenham Hotspur",
-   "shortName": "Tottenham",
-   "defaultCode": "TOT",
-   "codes": {},
-   "primaryColour": "#132257",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Tottenham.png"
-  },
-  {
-   "name": "Real Madrid",
-   "shortName": "Real Madrid",
-   "defaultCode": "RMA",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#00529F",
-   "textColour": "#000000",
-   "competitionIds": [
-    "la-liga",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Real Madrid.png"
-  },
-  {
-   "name": "FC Barcelona",
-   "shortName": "Barcelona",
-   "defaultCode": "BAR",
-   "codes": {},
-   "primaryColour": "#A50044",
-   "secondaryColour": "#004D98",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga",
-    "champions-league"
-   ],
-   "crestSource": "FC Barcelona.png"
-  },
-  {
-   "name": "Atlético de Madrid",
-   "shortName": "Atlético",
-   "defaultCode": "ATM",
-   "codes": {},
-   "primaryColour": "#CB3524",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Atletico Madrid.png"
-  },
-  {
-   "name": "Athletic Club",
-   "shortName": "Athletic",
-   "defaultCode": "ATH",
-   "codes": {},
-   "primaryColour": "#EE2523",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Athletic Club.png"
-  },
-  {
-   "name": "Real Sociedad",
-   "shortName": "Real Sociedad",
-   "defaultCode": "RSO",
-   "codes": {},
-   "primaryColour": "#0067B1",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga",
-    "europa-league"
-   ],
-   "crestSource": "Real Sociedad.png"
-  },
-  {
-   "name": "Valencia CF",
-   "shortName": "Valencia",
-   "defaultCode": "VAL",
-   "codes": {},
-   "primaryColour": "#F7A21B",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Valencia CF.png"
-  },
-  {
-   "name": "Girona FC",
-   "shortName": "Girona",
-   "defaultCode": "GIR",
-   "codes": {},
-   "primaryColour": "#CD2534",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [],
-   "crestSource": "Girona FC.png"
-  },
-  {
-   "name": "RCD Espanyol",
-   "shortName": "Espanyol",
-   "defaultCode": "ESP",
-   "codes": {},
-   "primaryColour": "#007FC8",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "RCD Espanyol.png"
-  },
-  {
-   "name": "FC Bayern München",
-   "shortName": "Bayern",
-   "defaultCode": "FCB",
-   "codes": {
-    "champions-league": "BAY"
-   },
-   "primaryColour": "#DC052D",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "FC Bayern München.png"
-  },
-  {
-   "name": "Borussia Dortmund",
-   "shortName": "Dortmund",
-   "defaultCode": "BVB",
-   "codes": {
-    "champions-league": "DOR"
-   },
-   "primaryColour": "#FDE100",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "bundesliga",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Borussia Dortmund.png"
-  },
-  {
-   "name": "Bayer 04 Leverkusen",
-   "shortName": "Leverkusen",
-   "defaultCode": "B04",
-   "codes": {
-    "europa-league": "LEV"
-   },
-   "primaryColour": "#E32221",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga",
-    "europa-league"
-   ],
-   "crestSource": "Bayer 04 Leverkusen.png"
-  },
-  {
-   "name": "RB Leipzig",
-   "shortName": "Leipzig",
-   "defaultCode": "RBL",
-   "codes": {
-    "champions-league": "LEI"
-   },
-   "primaryColour": "#DD0741",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga",
-    "champions-league"
-   ],
-   "crestSource": "RB Leipzig.png"
-  },
-  {
-   "name": "AC Milan",
-   "shortName": "Milan",
-   "defaultCode": "MIL",
-   "codes": {},
-   "primaryColour": "#FB090B",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "europa-league"
-   ],
-   "crestSource": "AC Milan.png"
-  },
-  {
-   "name": "Inter Milan",
-   "shortName": "Inter",
-   "defaultCode": "INT",
-   "codes": {},
-   "primaryColour": "#010E80",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Inter Milan.png"
-  },
-  {
-   "name": "Juventus",
-   "shortName": "Juventus",
-   "defaultCode": "JUV",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "europa-league",
-    "club-world-cup"
-   ],
-   "crestSource": "Juventus.png"
-  },
-  {
-   "name": "SSC Napoli",
-   "shortName": "Napoli",
-   "defaultCode": "NAP",
-   "codes": {},
-   "primaryColour": "#12A0D7",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "champions-league"
-   ],
-   "crestSource": "SSC Napoli.png"
-  },
-  {
-   "name": "Atalanta",
-   "shortName": "Atalanta",
-   "defaultCode": "ATA",
-   "codes": {},
-   "primaryColour": "#1E71B8",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "conference-league"
-   ],
-   "crestSource": "Atalanta.png"
-  },
-  {
-   "name": "FC Porto",
-   "shortName": "Porto",
-   "defaultCode": "POR",
-   "codes": {},
-   "primaryColour": "#003E7E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "champions-league",
-    "club-world-cup"
-   ],
-   "crestSource": "FC Porto.png"
-  },
-  {
-   "name": "S.L. Benfica",
-   "shortName": "Benfica",
-   "defaultCode": "BEN",
-   "codes": {},
-   "primaryColour": "#E30613",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "europa-league",
-    "club-world-cup"
-   ],
-   "crestSource": "S.L. Benfica.png"
-  },
-  {
-   "name": "Sporting CP",
-   "shortName": "Sporting",
-   "defaultCode": "SCP",
-   "codes": {},
-   "primaryColour": "#008057",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "champions-league"
-   ],
-   "crestSource": "Sporting CP.png"
-  },
-  {
-   "name": "PSV Eindhoven",
-   "shortName": "PSV",
-   "defaultCode": "PSV",
-   "codes": {},
-   "primaryColour": "#ED1C24",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "champions-league"
-   ],
-   "crestSource": "PSV Eindhoven.png"
-  },
-  {
-   "name": "FC Red Bull Salzburg",
-   "shortName": "Salzburg",
-   "defaultCode": "RBS",
-   "codes": {},
-   "primaryColour": "#DA291C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "europa-league",
-    "club-world-cup"
-   ],
-   "crestSource": "FC Red Bull Salzburg.png"
-  },
-  {
-   "name": "FK Bodø/Glimt",
-   "shortName": "Bodø/Glimt",
-   "defaultCode": "BOD",
-   "codes": {},
-   "primaryColour": "#FFD700",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "champions-league"
-   ],
-   "crestSource": "FK Bodø:Glimt.png"
-  },
-  {
-   "name": "Al Hilal",
-   "shortName": "Al Hilal",
-   "defaultCode": "HIL",
-   "codes": {},
-   "primaryColour": "#1C4FA1",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Al Hilal.png"
-  },
-  {
-   "name": "Botafogo",
-   "shortName": "Botafogo",
-   "defaultCode": "BOT",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Botafogo.png"
-  },
-  {
-   "name": "Flamengo",
-   "shortName": "Flamengo",
-   "defaultCode": "FLA",
-   "codes": {},
-   "primaryColour": "#C3141B",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Flamengo.png"
-  },
-  {
-   "name": "Fluminense FC",
-   "shortName": "Fluminense",
-   "defaultCode": "FLU",
-   "codes": {},
-   "primaryColour": "#7A2D3E",
-   "secondaryColour": "#00613C",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Fluminense FC.png"
-  },
-  {
-   "name": "Palmeiras",
-   "shortName": "Palmeiras",
-   "defaultCode": "PAL",
-   "codes": {},
-   "primaryColour": "#006437",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Palmeiras.png"
-  },
-  {
-   "name": "CF Pachuca",
-   "shortName": "Pachuca",
-   "defaultCode": "PAC",
-   "codes": {},
-   "primaryColour": "#0F3F8C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "CF Pachuca.png"
-  },
-  {
-   "name": "Inter Miami CF",
-   "shortName": "Inter Miami",
-   "defaultCode": "MIA",
-   "codes": {},
-   "primaryColour": "#F7B5CD",
-   "secondaryColour": "#231F20",
-   "textColour": "#000000",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Inter Miami CF.png"
-  },
-  {
-   "name": "Seattle Sounders",
-   "shortName": "Seattle",
-   "defaultCode": "SEA",
-   "codes": {},
-   "primaryColour": "#5D9741",
-   "secondaryColour": "#005595",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
-   "crestSource": "Seattle Sounders.png"
-  },
-  {
-   "name": "Vancouver Whitecaps FC",
-   "shortName": "Vancouver",
-   "defaultCode": "VAN",
-   "codes": {},
-   "primaryColour": "#00245E",
-   "secondaryColour": "#9DC2EA",
-   "textColour": "#FFFFFF",
-   "competitionIds": [],
-   "crestSource": "Vancouver Whitecaps FC.png"
-  },
-  {
-   "name": "Albania",
-   "shortName": "Albania",
-   "defaultCode": "ALB",
-   "codes": {},
-   "primaryColour": "#E41E20",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Albania.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Argentina",
-   "shortName": "Argentina",
-   "defaultCode": "ARG",
-   "codes": {},
-   "primaryColour": "#75AADB",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Argentina 1.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Austria",
-   "shortName": "Austria",
-   "defaultCode": "AUT",
-   "codes": {},
-   "primaryColour": "#ED2939",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Austria.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Belgium",
-   "shortName": "Belgium",
-   "defaultCode": "BEL",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Belgium.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Bolivia",
-   "shortName": "Bolivia",
-   "defaultCode": "BOL",
-   "codes": {},
-   "primaryColour": "#007934",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Bolivia.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Bosnia and Herzegovina",
-   "shortName": "Bosnia and Herzegovina",
-   "defaultCode": "BIH",
-   "codes": {},
-   "primaryColour": "#002395",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Bosnia and Herzegovina.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Brazil",
-   "shortName": "Brazil",
-   "defaultCode": "BRA",
-   "codes": {},
-   "primaryColour": "#FFDF00",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Brazil.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Canada",
-   "shortName": "Canada",
-   "defaultCode": "CAN",
-   "codes": {},
-   "primaryColour": "#FF0000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Canada.png",
-   "confederation": "CONCACAF"
-  },
-  {
-   "name": "Chile",
-   "shortName": "Chile",
-   "defaultCode": "CHI",
-   "codes": {},
-   "primaryColour": "#D52B1E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Chile.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Colombia",
-   "shortName": "Colombia",
-   "defaultCode": "COL",
-   "codes": {},
-   "primaryColour": "#FCD116",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Colombia.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Croatia",
-   "shortName": "Croatia",
-   "defaultCode": "CRO",
-   "codes": {},
-   "primaryColour": "#FF0000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Croatia.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Czechia",
-   "shortName": "Czechia",
-   "defaultCode": "CZE",
-   "codes": {},
-   "primaryColour": "#11457E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Czechia.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Denmark",
-   "shortName": "Denmark",
-   "defaultCode": "DEN",
-   "codes": {},
-   "primaryColour": "#C60C30",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Denmark.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Ecuador",
-   "shortName": "Ecuador",
-   "defaultCode": "ECU",
-   "codes": {},
-   "primaryColour": "#FFDD00",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Ecuador.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "England",
-   "shortName": "England",
-   "defaultCode": "ENG",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "England.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "France",
-   "shortName": "France",
-   "defaultCode": "FRA",
-   "codes": {},
-   "primaryColour": "#002395",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "France 1.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Georgia",
-   "shortName": "Georgia",
-   "defaultCode": "GEO",
-   "codes": {},
-   "primaryColour": "#FF0000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Georgia.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Germany",
-   "shortName": "Germany",
-   "defaultCode": "GER",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Germany.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Hungary",
-   "shortName": "Hungary",
-   "defaultCode": "HUN",
-   "codes": {},
-   "primaryColour": "#CE2939",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Hungary.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Iceland",
-   "shortName": "Iceland",
-   "defaultCode": "ISL",
-   "codes": {},
-   "primaryColour": "#02529C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Iceland.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Iraq",
-   "shortName": "Iraq",
-   "defaultCode": "IRQ",
-   "codes": {},
-   "primaryColour": "#007A3D",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Iraq.png",
-   "confederation": "AFC"
-  },
-  {
-   "name": "Israel",
-   "shortName": "Israel",
-   "defaultCode": "ISR",
-   "codes": {},
-   "primaryColour": "#0038B8",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Israel.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Italy",
-   "shortName": "Italy",
-   "defaultCode": "ITA",
-   "codes": {},
-   "primaryColour": "#0066CC",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Italy.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Japan",
-   "shortName": "Japan",
-   "defaultCode": "JPN",
-   "codes": {},
-   "primaryColour": "#000080",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Japan.png",
-   "confederation": "AFC"
-  },
-  {
-   "name": "Mexico",
-   "shortName": "Mexico",
-   "defaultCode": "MEX",
-   "codes": {},
-   "primaryColour": "#006847",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Mexico.png",
-   "confederation": "CONCACAF"
-  },
-  {
-   "name": "Morocco",
-   "shortName": "Morocco",
-   "defaultCode": "MAR",
-   "codes": {},
-   "primaryColour": "#C1272D",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Morocco.png",
-   "confederation": "CAF"
-  },
-  {
-   "name": "Netherlands",
-   "shortName": "Netherlands",
-   "defaultCode": "NED",
-   "codes": {},
-   "primaryColour": "#FF7F00",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Netherlands.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Norway",
-   "shortName": "Norway",
-   "defaultCode": "NOR",
-   "codes": {},
-   "primaryColour": "#BA0C2F",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Norway.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Panama",
-   "shortName": "Panama",
-   "defaultCode": "PAN",
-   "codes": {},
-   "primaryColour": "#DA121A",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Panama.png",
-   "confederation": "CONCACAF"
-  },
-  {
-   "name": "Paraguay",
-   "shortName": "Paraguay",
-   "defaultCode": "PAR",
-   "codes": {},
-   "primaryColour": "#D52B1E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Paraguay.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Peru",
-   "shortName": "Peru",
-   "defaultCode": "PER",
-   "codes": {},
-   "primaryColour": "#D91023",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Peru.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Poland",
-   "shortName": "Poland",
-   "defaultCode": "POL",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Poland.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Portugal",
-   "shortName": "Portugal",
-   "defaultCode": "POR",
-   "codes": {},
-   "primaryColour": "#006600",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Portugal.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Romania",
-   "shortName": "Romania",
-   "defaultCode": "ROU",
-   "codes": {},
-   "primaryColour": "#FCD116",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Romania.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Scotland",
-   "shortName": "Scotland",
-   "defaultCode": "SCO",
-   "codes": {},
-   "primaryColour": "#0065BF",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Scotland.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Senegal",
-   "shortName": "Senegal",
-   "defaultCode": "SEN",
-   "codes": {},
-   "primaryColour": "#00853F",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Senegal.png",
-   "confederation": "CAF"
-  },
-  {
-   "name": "Serbia",
-   "shortName": "Serbia",
-   "defaultCode": "SRB",
-   "codes": {},
-   "primaryColour": "#C6363C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Serbia.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Slovakia",
-   "shortName": "Slovakia",
-   "defaultCode": "SVK",
-   "codes": {},
-   "primaryColour": "#0B4EA2",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Slovakia.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Slovenia",
-   "shortName": "Slovenia",
-   "defaultCode": "SVN",
-   "codes": {},
-   "primaryColour": "#005DA4",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Slovenia.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "South Africa",
-   "shortName": "South Africa",
-   "defaultCode": "RSA",
-   "codes": {},
-   "primaryColour": "#007749",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "South Africa.png",
-   "confederation": "CAF"
-  },
-  {
-   "name": "Spain",
-   "shortName": "Spain",
-   "defaultCode": "ESP",
-   "codes": {},
-   "primaryColour": "#AA151B",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Spain.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Sweden",
-   "shortName": "Sweden",
-   "defaultCode": "SWE",
-   "codes": {},
-   "primaryColour": "#006AA7",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Sweden.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Switzerland",
-   "shortName": "Switzerland",
-   "defaultCode": "SUI",
-   "codes": {},
-   "primaryColour": "#FF0000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Switzerland.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Türkiye",
-   "shortName": "Türkiye",
-   "defaultCode": "TUR",
-   "codes": {},
-   "primaryColour": "#E30A17",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Türkiye.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "USA",
-   "shortName": "USA",
-   "defaultCode": "USA",
-   "codes": {},
-   "primaryColour": "#002868",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "USA.png",
-   "confederation": "CONCACAF"
-  },
-  {
-   "name": "Ukraine",
-   "shortName": "Ukraine",
-   "defaultCode": "UKR",
-   "codes": {},
-   "primaryColour": "#005BBB",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Ukraine.png",
-   "confederation": "UEFA"
-  },
-  {
-   "name": "Uruguay",
-   "shortName": "Uruguay",
-   "defaultCode": "URU",
-   "codes": {},
-   "primaryColour": "#7BC4E5",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Uruguay.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Venezuela",
-   "shortName": "Venezuela",
-   "defaultCode": "VEN",
-   "codes": {},
-   "primaryColour": "#7B1113",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "international"
-   ],
-   "crestSource": "Venezuela.png",
-   "confederation": "CONMEBOL"
-  },
-  {
-   "name": "Real Betis",
-   "shortName": "Real Betis",
-   "defaultCode": "BET",
-   "codes": {},
-   "primaryColour": "#00954C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga",
-    "champions-league"
-   ],
-   "crestSource": null
-  },
-  {
-   "name": "Villarreal CF",
-   "shortName": "Villarreal",
-   "defaultCode": "VIL",
-   "codes": {},
-   "primaryColour": "#FFE667",
-   "secondaryColour": "#005187",
-   "textColour": "#000000",
-   "competitionIds": [
-    "la-liga",
-    "champions-league"
-   ],
-   "crestSource": null
-  },
-  {
-   "name": "AFC Bournemouth",
-   "shortName": "Bournemouth",
-   "defaultCode": "BOU",
-   "codes": {},
-   "primaryColour": "#DA291C",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "AFC Bournemouth.png"
-  },
-  {
-   "name": "Brentford",
-   "shortName": "Brentford",
-   "defaultCode": "BRE",
-   "codes": {},
-   "primaryColour": "#D2122E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Brentford.png"
-  },
-  {
-   "name": "Brighton & Hove Albion",
-   "shortName": "Brighton",
-   "defaultCode": "BHA",
-   "codes": {},
-   "primaryColour": "#0057B8",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "conference-league"
-   ],
-   "crestSource": "Brighton & Hove Albion.png"
-  },
-  {
-   "name": "Coventry City",
-   "shortName": "Coventry",
-   "defaultCode": "COV",
-   "codes": {},
-   "primaryColour": "#6CACE4",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Coventry City.png"
-  },
-  {
-   "name": "Fulham",
-   "shortName": "Fulham",
-   "defaultCode": "FUL",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Fulham.png"
-  },
-  {
-   "name": "Hull City",
-   "shortName": "Hull City",
-   "defaultCode": "HUL",
-   "codes": {},
-   "primaryColour": "#F18A00",
-   "secondaryColour": "#000000",
-   "textColour": "#000000",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Hull City.png"
-  },
-  {
-   "name": "Ipswich Town",
-   "shortName": "Ipswich",
-   "defaultCode": "IPS",
-   "codes": {},
-   "primaryColour": "#0044A9",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Ipswich Town.png"
-  },
-  {
-   "name": "Leeds United",
-   "shortName": "Leeds",
-   "defaultCode": "LEE",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#1D428A",
-   "textColour": "#000000",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Leeds United.png"
-  },
-  {
-   "name": "Nottingham Forest",
-   "shortName": "Nottm Forest",
-   "defaultCode": "NFO",
-   "codes": {},
-   "primaryColour": "#DD0000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
-   "crestSource": "Nottingham Forest.png"
-  },
-  {
-   "name": "Sunderland",
-   "shortName": "Sunderland",
-   "defaultCode": "SUN",
-   "codes": {},
-   "primaryColour": "#E03A3E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league",
-    "europa-league"
-   ],
-   "crestSource": "Sunderland.png"
-  },
-  {
-   "name": "Le Mans FC",
-   "shortName": "Le Mans",
-   "defaultCode": "LEM",
-   "codes": {},
-   "primaryColour": "#0033A0",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "Le Mans FC.png"
-  },
-  {
-   "name": "ES Troyes AC",
-   "shortName": "Troyes",
-   "defaultCode": "TRO",
-   "codes": {},
-   "primaryColour": "#002B5C",
-   "secondaryColour": "#6CACE4",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
-   "crestSource": "ES Troyes AC.png"
-  },
-  {
-   "name": "Deportivo Alavés",
-   "shortName": "Alavés",
-   "defaultCode": "ALA",
-   "codes": {},
-   "primaryColour": "#1D4F91",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Deportivo Alavés.png"
-  },
-  {
-   "name": "RC Celta de Vigo",
-   "shortName": "Celta Vigo",
-   "defaultCode": "CEL",
-   "codes": {},
-   "primaryColour": "#77B5E0",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "la-liga",
-    "europa-league"
-   ],
-   "crestSource": "RC Celta de Vigo.png"
-  },
-  {
-   "name": "RC Deportivo de La Coruña",
-   "shortName": "Deportivo",
-   "defaultCode": "DEP",
-   "codes": {},
-   "primaryColour": "#0A3F8C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "RC Deportivo de La Coruña.png"
-  },
-  {
-   "name": "Elche CF",
-   "shortName": "Elche",
-   "defaultCode": "ELC",
-   "codes": {},
-   "primaryColour": "#00A650",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Elche CF.png"
-  },
-  {
-   "name": "Getafe CF",
-   "shortName": "Getafe",
-   "defaultCode": "GET",
-   "codes": {},
-   "primaryColour": "#005999",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga",
-    "conference-league"
-   ],
-   "crestSource": "Getafe CF.png"
-  },
-  {
-   "name": "Levante UD",
-   "shortName": "Levante",
-   "defaultCode": "LEV",
-   "codes": {},
-   "primaryColour": "#001E50",
-   "secondaryColour": "#A6093D",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Levante UD.png"
-  },
-  {
-   "name": "Málaga CF",
-   "shortName": "Málaga",
-   "defaultCode": "MAL",
-   "codes": {},
-   "primaryColour": "#0B4F9C",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Málaga CF.png"
-  },
-  {
-   "name": "CA Osasuna",
-   "shortName": "Osasuna",
-   "defaultCode": "OSA",
-   "codes": {},
-   "primaryColour": "#D91A21",
-   "secondaryColour": "#001A4B",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "CA Osasuna.png"
-  },
-  {
-   "name": "Real Racing Club de Santander",
-   "shortName": "Racing Santander",
-   "defaultCode": "RAC",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Real Racing Club de Santander.png"
-  },
-  {
-   "name": "Rayo Vallecano",
-   "shortName": "Rayo Vallecano",
-   "defaultCode": "RAY",
-   "codes": {},
-   "primaryColour": "#FFFFFF",
-   "secondaryColour": "#E2001A",
-   "textColour": "#000000",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Rayo Vallecano.png"
-  },
-  {
-   "name": "Sevilla FC",
-   "shortName": "Sevilla",
-   "defaultCode": "SEV",
-   "codes": {},
-   "primaryColour": "#D71920",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga"
-   ],
-   "crestSource": "Sevilla FC.png"
-  },
-  {
-   "name": "AS Roma",
-   "shortName": "Roma",
-   "defaultCode": "ROM",
-   "codes": {},
-   "primaryColour": "#8E1F2F",
-   "secondaryColour": "#F0BC42",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "champions-league"
-   ],
-   "crestSource": "AS Roma.png"
-  },
-  {
-   "name": "Bologna FC 1909",
-   "shortName": "Bologna",
-   "defaultCode": "BOL",
-   "codes": {},
-   "primaryColour": "#862633",
-   "secondaryColour": "#1C3F94",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Bologna FC 1909.png"
-  },
-  {
-   "name": "Cagliari Calcio",
-   "shortName": "Cagliari",
-   "defaultCode": "CAG",
-   "codes": {},
-   "primaryColour": "#C51A2E",
-   "secondaryColour": "#001489",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Cagliari Calcio.png"
-  },
-  {
-   "name": "Como 1907",
-   "shortName": "Como",
-   "defaultCode": "COM",
-   "codes": {},
-   "primaryColour": "#0057A8",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a",
-    "champions-league"
-   ],
-   "crestSource": "Como 1907.png"
-  },
-  {
-   "name": "ACF Fiorentina",
-   "shortName": "Fiorentina",
-   "defaultCode": "FIO",
-   "codes": {},
-   "primaryColour": "#572678",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "ACF Fiorentina.png"
-  },
-  {
-   "name": "Frosinone Calcio",
-   "shortName": "Frosinone",
-   "defaultCode": "FRO",
-   "codes": {},
-   "primaryColour": "#FFD100",
-   "secondaryColour": "#003DA5",
-   "textColour": "#000000",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Frosinone Calcio.png"
-  },
-  {
-   "name": "Genoa CFC",
-   "shortName": "Genoa",
-   "defaultCode": "GEN",
-   "codes": {},
-   "primaryColour": "#041E42",
-   "secondaryColour": "#B7312C",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Genoa CFC.png"
-  },
-  {
-   "name": "SS Lazio",
-   "shortName": "Lazio",
-   "defaultCode": "LAZ",
-   "codes": {},
-   "primaryColour": "#7FC3EF",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#000000",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "SS Lazio.png"
-  },
-  {
-   "name": "US Lecce",
-   "shortName": "Lecce",
-   "defaultCode": "LEC",
-   "codes": {},
-   "primaryColour": "#FFE100",
-   "secondaryColour": "#C8102E",
-   "textColour": "#000000",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "US Lecce.png"
-  },
-  {
-   "name": "AC Monza",
-   "shortName": "Monza",
-   "defaultCode": "MON",
-   "codes": {},
-   "primaryColour": "#C8102E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "AC Monza.png"
-  },
-  {
-   "name": "Parma Calcio 1913",
-   "shortName": "Parma",
-   "defaultCode": "PAR",
-   "codes": {},
-   "primaryColour": "#003DA5",
-   "secondaryColour": "#FFE500",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Parma Calcio 1913.png"
-  },
-  {
-   "name": "US Sassuolo Calcio",
-   "shortName": "Sassuolo",
-   "defaultCode": "SAS",
-   "codes": {},
-   "primaryColour": "#0B8A3C",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "US Sassuolo Calcio.png"
-  },
-  {
-   "name": "Torino FC",
-   "shortName": "Torino",
-   "defaultCode": "TOR",
-   "codes": {},
-   "primaryColour": "#7B1E3A",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Torino FC.png"
-  },
-  {
-   "name": "Udinese Calcio",
-   "shortName": "Udinese",
-   "defaultCode": "UDI",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Udinese Calcio.png"
-  },
-  {
-   "name": "Venezia FC",
-   "shortName": "Venezia",
-   "defaultCode": "VEN",
-   "codes": {},
-   "primaryColour": "#E2711D",
-   "secondaryColour": "#1B1B1B",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "serie-a"
-   ],
-   "crestSource": "Venezia FC.png"
-  },
-  {
-   "name": "1. FC Union Berlin",
-   "shortName": "Union Berlin",
-   "defaultCode": "FCU",
-   "codes": {},
-   "primaryColour": "#EB1923",
-   "secondaryColour": "#FFD700",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "1. FC Union Berlin.png"
-  },
-  {
-   "name": "Borussia Mönchengladbach",
-   "shortName": "Gladbach",
-   "defaultCode": "BMG",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#00A650",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "Borussia Mönchengladbach.png"
-  },
-  {
-   "name": "Eintracht Frankfurt",
-   "shortName": "Frankfurt",
-   "defaultCode": "SGE",
-   "codes": {},
-   "primaryColour": "#E1000F",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "Eintracht Frankfurt.png"
-  },
-  {
-   "name": "FC Augsburg",
-   "shortName": "Augsburg",
-   "defaultCode": "FCA",
-   "codes": {},
-   "primaryColour": "#BA3733",
-   "secondaryColour": "#00784A",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "FC Augsburg.png"
-  },
-  {
-   "name": "1. FC Köln",
-   "shortName": "Köln",
-   "defaultCode": "KOE",
-   "codes": {},
-   "primaryColour": "#ED1C24",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "1. FC Köln.png"
-  },
-  {
-   "name": "Hamburger SV",
-   "shortName": "Hamburg",
-   "defaultCode": "HSV",
-   "codes": {},
-   "primaryColour": "#00295A",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "Hamburger SV.png"
-  },
-  {
-   "name": "1. FSV Mainz 05",
-   "shortName": "Mainz 05",
-   "defaultCode": "M05",
-   "codes": {},
-   "primaryColour": "#C3141E",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "1. FSV Mainz 05.png"
-  },
-  {
-   "name": "SC Freiburg",
-   "shortName": "Freiburg",
-   "defaultCode": "SCF",
-   "codes": {},
-   "primaryColour": "#E2001A",
-   "secondaryColour": "#000000",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga",
-    "conference-league"
-   ],
-   "crestSource": "SC Freiburg.png"
-  },
-  {
-   "name": "SC Paderborn 07",
-   "shortName": "Paderborn",
-   "defaultCode": "SCP",
-   "codes": {},
-   "primaryColour": "#001489",
-   "secondaryColour": "#00843D",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "SC Paderborn 07.png"
-  },
-  {
-   "name": "SV 07 Elversberg",
-   "shortName": "Elversberg",
-   "defaultCode": "SVE",
-   "codes": {},
-   "primaryColour": "#000000",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "SV 07 Elversberg.png"
-  },
-  {
-   "name": "FC Schalke 04",
-   "shortName": "Schalke",
-   "defaultCode": "S04",
-   "codes": {},
-   "primaryColour": "#004D9D",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "FC Schalke 04.png"
-  },
-  {
-   "name": "TSG 1899 Hoffenheim",
-   "shortName": "Hoffenheim",
-   "defaultCode": "TSG",
-   "codes": {},
-   "primaryColour": "#1C63B7",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga",
-    "europa-league"
-   ],
-   "crestSource": "TSG 1899 Hoffenheim.png"
-  },
-  {
-   "name": "VfB Stuttgart",
-   "shortName": "Stuttgart",
-   "defaultCode": "VFB",
-   "codes": {},
-   "primaryColour": "#E30613",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga",
-    "champions-league"
-   ],
-   "crestSource": "VfB Stuttgart.png"
-  },
-  {
-   "name": "SV Werder Bremen",
-   "shortName": "Werder Bremen",
-   "defaultCode": "SVW",
-   "codes": {},
-   "primaryColour": "#1D9053",
-   "secondaryColour": "#FFFFFF",
-   "textColour": "#FFFFFF",
-   "competitionIds": [
-    "bundesliga"
-   ],
-   "crestSource": "SV Werder Bremen.png"
-  }
- ]
+  "schema": 1,
+  "competitions": [
+    {
+      "id": "ligue1",
+      "name": "Ligue 1",
+      "shortName": "L1",
+      "themeId": "ligue1",
+      "sourceIds": {
+        "footballData": "FL1",
+        "espn": "fra.1"
+      }
+    },
+    {
+      "id": "premier-league",
+      "name": "Premier League",
+      "shortName": "PL",
+      "themeId": "premier-league",
+      "sourceIds": {
+        "footballData": "PL",
+        "espn": "eng.1"
+      }
+    },
+    {
+      "id": "champions-league",
+      "name": "Champions League",
+      "shortName": "UCL",
+      "themeId": "champions-league",
+      "sourceIds": {
+        "footballData": "CL",
+        "espn": "uefa.champions"
+      }
+    },
+    {
+      "id": "europa-league",
+      "name": "Europa League",
+      "shortName": "UEL",
+      "themeId": "europa-league",
+      "sourceIds": {
+        "espn": "uefa.europa"
+      }
+    },
+    {
+      "id": "conference-league",
+      "name": "Conference League",
+      "shortName": "UECL",
+      "themeId": "conference-league",
+      "sourceIds": {
+        "espn": "uefa.europa.conf"
+      }
+    },
+    {
+      "id": "la-liga",
+      "name": "LaLiga",
+      "shortName": "LaLiga",
+      "themeId": "la-liga",
+      "sourceIds": {
+        "footballData": "PD",
+        "espn": "esp.1"
+      }
+    },
+    {
+      "id": "serie-a",
+      "name": "Serie A",
+      "shortName": "SA",
+      "themeId": "stealth",
+      "sourceIds": {
+        "footballData": "SA",
+        "espn": "ita.1"
+      }
+    },
+    {
+      "id": "bundesliga",
+      "name": "Bundesliga",
+      "shortName": "BL",
+      "themeId": "stealth",
+      "sourceIds": {
+        "footballData": "BL1",
+        "espn": "ger.1"
+      }
+    },
+    {
+      "id": "club-world-cup",
+      "name": "Club World Cup",
+      "shortName": "CWC",
+      "themeId": "stealth",
+      "sourceIds": {
+        "espn": "fifa.cwc"
+      }
+    },
+    {
+      "id": "international",
+      "name": "International",
+      "shortName": "INT",
+      "themeId": "stealth",
+      "sourceIds": {
+        "footballData": "WC",
+        "espn": "fifa.world"
+      }
+    }
+  ],
+  "clubs": [
+    {
+      "name": "Paris Saint-Germain",
+      "shortName": "PSG",
+      "defaultCode": "PSG",
+      "codes": {},
+      "primaryColour": "#004170",
+      "secondaryColour": "#DA291C",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "PSG.png"
+    },
+    {
+      "name": "Olympique de Marseille",
+      "shortName": "Marseille",
+      "defaultCode": "MAR",
+      "codes": {
+        "ligue1": "OM"
+      },
+      "primaryColour": "#2FAEE0",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1",
+        "europa-league"
+      ],
+      "crestSource": "Olympique de Marseille.png"
+    },
+    {
+      "name": "Olympique Lyonnais",
+      "shortName": "Lyon",
+      "defaultCode": "LYO",
+      "codes": {
+        "ligue1": "OL"
+      },
+      "primaryColour": "#1B3F94",
+      "secondaryColour": "#DA291C",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1",
+        "europa-league"
+      ],
+      "crestSource": "Olympique Lyonnais.png"
+    },
+    {
+      "name": "AS Monaco",
+      "shortName": "Monaco",
+      "defaultCode": "MON",
+      "codes": {},
+      "primaryColour": "#E51B22",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1",
+        "conference-league"
+      ],
+      "crestSource": "AS Monaco.png"
+    },
+    {
+      "name": "LOSC Lille",
+      "shortName": "Lille",
+      "defaultCode": "LIL",
+      "codes": {},
+      "primaryColour": "#E01E13",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1",
+        "champions-league"
+      ],
+      "crestSource": "Lille.png"
+    },
+    {
+      "name": "OGC Nice",
+      "shortName": "Nice",
+      "defaultCode": "NIC",
+      "codes": {},
+      "primaryColour": "#D2001C",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "OGC Nice.png"
+    },
+    {
+      "name": "RC Lens",
+      "shortName": "Lens",
+      "defaultCode": "LEN",
+      "codes": {},
+      "primaryColour": "#FFD100",
+      "secondaryColour": "#D31E1B",
+      "textColour": "#000000",
+      "competitionIds": [
+        "ligue1",
+        "champions-league"
+      ],
+      "crestSource": "RC Lens.png"
+    },
+    {
+      "name": "Stade Rennais FC",
+      "shortName": "Rennes",
+      "defaultCode": "REN",
+      "codes": {},
+      "primaryColour": "#E30613",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1",
+        "europa-league"
+      ],
+      "crestSource": "Stade Rennais FC.png"
+    },
+    {
+      "name": "RC Strasbourg Alsace",
+      "shortName": "Strasbourg",
+      "defaultCode": "STR",
+      "codes": {},
+      "primaryColour": "#1E90FF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "RC Strasbourg.png"
+    },
+    {
+      "name": "Toulouse FC",
+      "shortName": "Toulouse",
+      "defaultCode": "TOU",
+      "codes": {},
+      "primaryColour": "#5E2C8B",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "Tolouse FC.png"
+    },
+    {
+      "name": "FC Nantes",
+      "shortName": "Nantes",
+      "defaultCode": "NAN",
+      "codes": {},
+      "primaryColour": "#FFD500",
+      "secondaryColour": "#00843D",
+      "textColour": "#000000",
+      "competitionIds": [],
+      "crestSource": null
+    },
+    {
+      "name": "Stade Brestois 29",
+      "shortName": "Brest",
+      "defaultCode": "BRE",
+      "codes": {},
+      "primaryColour": "#E2001A",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "Stade Brestois 29.png"
+    },
+    {
+      "name": "AJ Auxerre",
+      "shortName": "Auxerre",
+      "defaultCode": "AUX",
+      "codes": {},
+      "primaryColour": "#0E4C92",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "AJ Auxerre.png"
+    },
+    {
+      "name": "Angers SCO",
+      "shortName": "Angers",
+      "defaultCode": "ANG",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "Angers SCO.png"
+    },
+    {
+      "name": "Le Havre AC",
+      "shortName": "Le Havre",
+      "defaultCode": "HAV",
+      "codes": {},
+      "primaryColour": "#7BC1E4",
+      "secondaryColour": "#1E3A8A",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": null
+    },
+    {
+      "name": "FC Metz",
+      "shortName": "Metz",
+      "defaultCode": "MET",
+      "codes": {},
+      "primaryColour": "#7D1D3F",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [],
+      "crestSource": null
+    },
+    {
+      "name": "FC Lorient",
+      "shortName": "Lorient",
+      "defaultCode": "LOR",
+      "codes": {},
+      "primaryColour": "#F58220",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": null
+    },
+    {
+      "name": "Paris FC",
+      "shortName": "Paris FC",
+      "defaultCode": "PFC",
+      "codes": {},
+      "primaryColour": "#0F2B5B",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "Paris FC.png"
+    },
+    {
+      "name": "AS Saint-Étienne",
+      "shortName": "Saint-Étienne",
+      "defaultCode": "STE",
+      "codes": {},
+      "primaryColour": "#0B8A3C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [],
+      "crestSource": "AS Saint-Étienne.png"
+    },
+    {
+      "name": "Stade de Reims",
+      "shortName": "Reims",
+      "defaultCode": "REI",
+      "codes": {},
+      "primaryColour": "#D6001C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [],
+      "crestSource": "Stade de Reims.png"
+    },
+    {
+      "name": "Arsenal",
+      "shortName": "Arsenal",
+      "defaultCode": "ARS",
+      "codes": {},
+      "primaryColour": "#EF0107",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "champions-league"
+      ],
+      "crestSource": "Arsenal.png"
+    },
+    {
+      "name": "Aston Villa",
+      "shortName": "Aston Villa",
+      "defaultCode": "AVL",
+      "codes": {},
+      "primaryColour": "#670E36",
+      "secondaryColour": "#95BFE5",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "champions-league"
+      ],
+      "crestSource": "Aston Villa FC.png"
+    },
+    {
+      "name": "Chelsea",
+      "shortName": "Chelsea",
+      "defaultCode": "CHE",
+      "codes": {},
+      "primaryColour": "#034694",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Chelsea.png"
+    },
+    {
+      "name": "Crystal Palace",
+      "shortName": "Crystal Palace",
+      "defaultCode": "CRY",
+      "codes": {},
+      "primaryColour": "#1B458F",
+      "secondaryColour": "#C4122E",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "europa-league"
+      ],
+      "crestSource": "Crystal Palace FC.png"
+    },
+    {
+      "name": "Everton",
+      "shortName": "Everton",
+      "defaultCode": "EVE",
+      "codes": {},
+      "primaryColour": "#003399",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Everton FC.png"
+    },
+    {
+      "name": "Liverpool",
+      "shortName": "Liverpool",
+      "defaultCode": "LIV",
+      "codes": {},
+      "primaryColour": "#C8102E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "champions-league"
+      ],
+      "crestSource": "Liverpool.png"
+    },
+    {
+      "name": "Manchester City",
+      "shortName": "Man City",
+      "defaultCode": "MCI",
+      "codes": {},
+      "primaryColour": "#6CABDD",
+      "secondaryColour": "#1C2C5B",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Manchester City.png"
+    },
+    {
+      "name": "Manchester United",
+      "shortName": "Man United",
+      "defaultCode": "MUN",
+      "codes": {},
+      "primaryColour": "#DA291C",
+      "secondaryColour": "#FBE122",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "champions-league"
+      ],
+      "crestSource": "Manchester United.png"
+    },
+    {
+      "name": "Newcastle United",
+      "shortName": "Newcastle",
+      "defaultCode": "NEW",
+      "codes": {},
+      "primaryColour": "#241F20",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Newcastle.png"
+    },
+    {
+      "name": "Southampton",
+      "shortName": "Southampton",
+      "defaultCode": "SOU",
+      "codes": {},
+      "primaryColour": "#D71920",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [],
+      "crestSource": "FC Southampton.png"
+    },
+    {
+      "name": "Tottenham Hotspur",
+      "shortName": "Tottenham",
+      "defaultCode": "TOT",
+      "codes": {},
+      "primaryColour": "#132257",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Tottenham.png"
+    },
+    {
+      "name": "Real Madrid",
+      "shortName": "Real Madrid",
+      "defaultCode": "RMA",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#00529F",
+      "textColour": "#000000",
+      "competitionIds": [
+        "la-liga",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Real Madrid.png"
+    },
+    {
+      "name": "FC Barcelona",
+      "shortName": "Barcelona",
+      "defaultCode": "BAR",
+      "codes": {},
+      "primaryColour": "#A50044",
+      "secondaryColour": "#004D98",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga",
+        "champions-league"
+      ],
+      "crestSource": "FC Barcelona.png"
+    },
+    {
+      "name": "Atlético de Madrid",
+      "shortName": "Atlético",
+      "defaultCode": "ATM",
+      "codes": {},
+      "primaryColour": "#CB3524",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Atletico Madrid.png"
+    },
+    {
+      "name": "Athletic Club",
+      "shortName": "Athletic",
+      "defaultCode": "ATH",
+      "codes": {},
+      "primaryColour": "#EE2523",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Athletic Club.png"
+    },
+    {
+      "name": "Real Sociedad",
+      "shortName": "Real Sociedad",
+      "defaultCode": "RSO",
+      "codes": {},
+      "primaryColour": "#0067B1",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga",
+        "europa-league"
+      ],
+      "crestSource": "Real Sociedad.png"
+    },
+    {
+      "name": "Valencia CF",
+      "shortName": "Valencia",
+      "defaultCode": "VAL",
+      "codes": {},
+      "primaryColour": "#F7A21B",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Valencia CF.png"
+    },
+    {
+      "name": "Girona FC",
+      "shortName": "Girona",
+      "defaultCode": "GIR",
+      "codes": {},
+      "primaryColour": "#CD2534",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Girona FC.png"
+    },
+    {
+      "name": "RCD Espanyol",
+      "shortName": "Espanyol",
+      "defaultCode": "ESP",
+      "codes": {},
+      "primaryColour": "#007FC8",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "RCD Espanyol.png"
+    },
+    {
+      "name": "FC Bayern München",
+      "shortName": "Bayern",
+      "defaultCode": "FCB",
+      "codes": {
+        "champions-league": "BAY"
+      },
+      "primaryColour": "#DC052D",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "FC Bayern München.png"
+    },
+    {
+      "name": "Borussia Dortmund",
+      "shortName": "Dortmund",
+      "defaultCode": "BVB",
+      "codes": {
+        "champions-league": "DOR"
+      },
+      "primaryColour": "#FDE100",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "bundesliga",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Borussia Dortmund.png"
+    },
+    {
+      "name": "Bayer 04 Leverkusen",
+      "shortName": "Leverkusen",
+      "defaultCode": "B04",
+      "codes": {
+        "europa-league": "LEV"
+      },
+      "primaryColour": "#E32221",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga",
+        "europa-league"
+      ],
+      "crestSource": "Bayer 04 Leverkusen.png"
+    },
+    {
+      "name": "RB Leipzig",
+      "shortName": "Leipzig",
+      "defaultCode": "RBL",
+      "codes": {
+        "champions-league": "LEI"
+      },
+      "primaryColour": "#DD0741",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga",
+        "champions-league"
+      ],
+      "crestSource": "RB Leipzig.png"
+    },
+    {
+      "name": "AC Milan",
+      "shortName": "Milan",
+      "defaultCode": "MIL",
+      "codes": {},
+      "primaryColour": "#FB090B",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "europa-league"
+      ],
+      "crestSource": "AC Milan.png"
+    },
+    {
+      "name": "Inter Milan",
+      "shortName": "Inter",
+      "defaultCode": "INT",
+      "codes": {},
+      "primaryColour": "#010E80",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Inter Milan.png"
+    },
+    {
+      "name": "Juventus",
+      "shortName": "Juventus",
+      "defaultCode": "JUV",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "europa-league",
+        "club-world-cup"
+      ],
+      "crestSource": "Juventus.png"
+    },
+    {
+      "name": "SSC Napoli",
+      "shortName": "Napoli",
+      "defaultCode": "NAP",
+      "codes": {},
+      "primaryColour": "#12A0D7",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "champions-league"
+      ],
+      "crestSource": "SSC Napoli.png"
+    },
+    {
+      "name": "Atalanta",
+      "shortName": "Atalanta",
+      "defaultCode": "ATA",
+      "codes": {},
+      "primaryColour": "#1E71B8",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "conference-league"
+      ],
+      "crestSource": "Atalanta.png"
+    },
+    {
+      "name": "FC Porto",
+      "shortName": "Porto",
+      "defaultCode": "POR",
+      "codes": {},
+      "primaryColour": "#003E7E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league",
+        "club-world-cup"
+      ],
+      "crestSource": "FC Porto.png"
+    },
+    {
+      "name": "S.L. Benfica",
+      "shortName": "Benfica",
+      "defaultCode": "BEN",
+      "codes": {},
+      "primaryColour": "#E30613",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league",
+        "club-world-cup"
+      ],
+      "crestSource": "S.L. Benfica.png"
+    },
+    {
+      "name": "Sporting CP",
+      "shortName": "Sporting",
+      "defaultCode": "SCP",
+      "codes": {},
+      "primaryColour": "#008057",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Sporting CP.png"
+    },
+    {
+      "name": "PSV Eindhoven",
+      "shortName": "PSV",
+      "defaultCode": "PSV",
+      "codes": {},
+      "primaryColour": "#ED1C24",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "PSV Eindhoven.png"
+    },
+    {
+      "name": "FC Red Bull Salzburg",
+      "shortName": "Salzburg",
+      "defaultCode": "RBS",
+      "codes": {},
+      "primaryColour": "#DA291C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league",
+        "club-world-cup"
+      ],
+      "crestSource": "FC Red Bull Salzburg.png"
+    },
+    {
+      "name": "FK Bodø/Glimt",
+      "shortName": "Bodø/Glimt",
+      "defaultCode": "BOD",
+      "codes": {},
+      "primaryColour": "#FFD700",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "FK Bodø:Glimt.png"
+    },
+    {
+      "name": "Al Hilal",
+      "shortName": "Al Hilal",
+      "defaultCode": "HIL",
+      "codes": {},
+      "primaryColour": "#1C4FA1",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Al Hilal.png"
+    },
+    {
+      "name": "Botafogo",
+      "shortName": "Botafogo",
+      "defaultCode": "BOT",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Botafogo.png"
+    },
+    {
+      "name": "Flamengo",
+      "shortName": "Flamengo",
+      "defaultCode": "FLA",
+      "codes": {},
+      "primaryColour": "#C3141B",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Flamengo.png"
+    },
+    {
+      "name": "Fluminense FC",
+      "shortName": "Fluminense",
+      "defaultCode": "FLU",
+      "codes": {},
+      "primaryColour": "#7A2D3E",
+      "secondaryColour": "#00613C",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Fluminense FC.png"
+    },
+    {
+      "name": "Palmeiras",
+      "shortName": "Palmeiras",
+      "defaultCode": "PAL",
+      "codes": {},
+      "primaryColour": "#006437",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Palmeiras.png"
+    },
+    {
+      "name": "CF Pachuca",
+      "shortName": "Pachuca",
+      "defaultCode": "PAC",
+      "codes": {},
+      "primaryColour": "#0F3F8C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "CF Pachuca.png"
+    },
+    {
+      "name": "Inter Miami CF",
+      "shortName": "Inter Miami",
+      "defaultCode": "MIA",
+      "codes": {},
+      "primaryColour": "#F7B5CD",
+      "secondaryColour": "#231F20",
+      "textColour": "#000000",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Inter Miami CF.png"
+    },
+    {
+      "name": "Seattle Sounders",
+      "shortName": "Seattle",
+      "defaultCode": "SEA",
+      "codes": {},
+      "primaryColour": "#5D9741",
+      "secondaryColour": "#005595",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "club-world-cup"
+      ],
+      "crestSource": "Seattle Sounders.png"
+    },
+    {
+      "name": "Vancouver Whitecaps FC",
+      "shortName": "Vancouver",
+      "defaultCode": "VAN",
+      "codes": {},
+      "primaryColour": "#00245E",
+      "secondaryColour": "#9DC2EA",
+      "textColour": "#FFFFFF",
+      "competitionIds": [],
+      "crestSource": "Vancouver Whitecaps FC.png"
+    },
+    {
+      "name": "Albania",
+      "shortName": "Albania",
+      "defaultCode": "ALB",
+      "codes": {},
+      "primaryColour": "#E41E20",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Albania.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Argentina",
+      "shortName": "Argentina",
+      "defaultCode": "ARG",
+      "codes": {},
+      "primaryColour": "#75AADB",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Argentina 1.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Austria",
+      "shortName": "Austria",
+      "defaultCode": "AUT",
+      "codes": {},
+      "primaryColour": "#ED2939",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Austria.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Belgium",
+      "shortName": "Belgium",
+      "defaultCode": "BEL",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Belgium.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Bolivia",
+      "shortName": "Bolivia",
+      "defaultCode": "BOL",
+      "codes": {},
+      "primaryColour": "#007934",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Bolivia.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "shortName": "Bosnia and Herzegovina",
+      "defaultCode": "BIH",
+      "codes": {},
+      "primaryColour": "#002395",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Bosnia and Herzegovina.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Brazil",
+      "shortName": "Brazil",
+      "defaultCode": "BRA",
+      "codes": {},
+      "primaryColour": "#FFDF00",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Brazil.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Canada",
+      "shortName": "Canada",
+      "defaultCode": "CAN",
+      "codes": {},
+      "primaryColour": "#FF0000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Canada.png",
+      "confederation": "CONCACAF"
+    },
+    {
+      "name": "Chile",
+      "shortName": "Chile",
+      "defaultCode": "CHI",
+      "codes": {},
+      "primaryColour": "#D52B1E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Chile.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Colombia",
+      "shortName": "Colombia",
+      "defaultCode": "COL",
+      "codes": {},
+      "primaryColour": "#FCD116",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Colombia.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Croatia",
+      "shortName": "Croatia",
+      "defaultCode": "CRO",
+      "codes": {},
+      "primaryColour": "#FF0000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Croatia.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Czechia",
+      "shortName": "Czechia",
+      "defaultCode": "CZE",
+      "codes": {},
+      "primaryColour": "#11457E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Czechia.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Denmark",
+      "shortName": "Denmark",
+      "defaultCode": "DEN",
+      "codes": {},
+      "primaryColour": "#C60C30",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Denmark.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Ecuador",
+      "shortName": "Ecuador",
+      "defaultCode": "ECU",
+      "codes": {},
+      "primaryColour": "#FFDD00",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Ecuador.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "England",
+      "shortName": "England",
+      "defaultCode": "ENG",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "England.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "France",
+      "shortName": "France",
+      "defaultCode": "FRA",
+      "codes": {},
+      "primaryColour": "#002395",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "France 1.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Georgia",
+      "shortName": "Georgia",
+      "defaultCode": "GEO",
+      "codes": {},
+      "primaryColour": "#FF0000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Georgia.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Germany",
+      "shortName": "Germany",
+      "defaultCode": "GER",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Germany.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Hungary",
+      "shortName": "Hungary",
+      "defaultCode": "HUN",
+      "codes": {},
+      "primaryColour": "#CE2939",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Hungary.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Iceland",
+      "shortName": "Iceland",
+      "defaultCode": "ISL",
+      "codes": {},
+      "primaryColour": "#02529C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Iceland.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Iraq",
+      "shortName": "Iraq",
+      "defaultCode": "IRQ",
+      "codes": {},
+      "primaryColour": "#007A3D",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Iraq.png",
+      "confederation": "AFC"
+    },
+    {
+      "name": "Israel",
+      "shortName": "Israel",
+      "defaultCode": "ISR",
+      "codes": {},
+      "primaryColour": "#0038B8",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Israel.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Italy",
+      "shortName": "Italy",
+      "defaultCode": "ITA",
+      "codes": {},
+      "primaryColour": "#0066CC",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Italy.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Japan",
+      "shortName": "Japan",
+      "defaultCode": "JPN",
+      "codes": {},
+      "primaryColour": "#000080",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Japan.png",
+      "confederation": "AFC"
+    },
+    {
+      "name": "Mexico",
+      "shortName": "Mexico",
+      "defaultCode": "MEX",
+      "codes": {},
+      "primaryColour": "#006847",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Mexico.png",
+      "confederation": "CONCACAF"
+    },
+    {
+      "name": "Morocco",
+      "shortName": "Morocco",
+      "defaultCode": "MAR",
+      "codes": {},
+      "primaryColour": "#C1272D",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Morocco.png",
+      "confederation": "CAF"
+    },
+    {
+      "name": "Netherlands",
+      "shortName": "Netherlands",
+      "defaultCode": "NED",
+      "codes": {},
+      "primaryColour": "#FF7F00",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Netherlands.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Norway",
+      "shortName": "Norway",
+      "defaultCode": "NOR",
+      "codes": {},
+      "primaryColour": "#BA0C2F",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Norway.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Panama",
+      "shortName": "Panama",
+      "defaultCode": "PAN",
+      "codes": {},
+      "primaryColour": "#DA121A",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Panama.png",
+      "confederation": "CONCACAF"
+    },
+    {
+      "name": "Paraguay",
+      "shortName": "Paraguay",
+      "defaultCode": "PAR",
+      "codes": {},
+      "primaryColour": "#D52B1E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Paraguay.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Peru",
+      "shortName": "Peru",
+      "defaultCode": "PER",
+      "codes": {},
+      "primaryColour": "#D91023",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Peru.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Poland",
+      "shortName": "Poland",
+      "defaultCode": "POL",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Poland.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Portugal",
+      "shortName": "Portugal",
+      "defaultCode": "POR",
+      "codes": {},
+      "primaryColour": "#006600",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Portugal.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Romania",
+      "shortName": "Romania",
+      "defaultCode": "ROU",
+      "codes": {},
+      "primaryColour": "#FCD116",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Romania.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Scotland",
+      "shortName": "Scotland",
+      "defaultCode": "SCO",
+      "codes": {},
+      "primaryColour": "#0065BF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Scotland.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Senegal",
+      "shortName": "Senegal",
+      "defaultCode": "SEN",
+      "codes": {},
+      "primaryColour": "#00853F",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Senegal.png",
+      "confederation": "CAF"
+    },
+    {
+      "name": "Serbia",
+      "shortName": "Serbia",
+      "defaultCode": "SRB",
+      "codes": {},
+      "primaryColour": "#C6363C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Serbia.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Slovakia",
+      "shortName": "Slovakia",
+      "defaultCode": "SVK",
+      "codes": {},
+      "primaryColour": "#0B4EA2",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Slovakia.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Slovenia",
+      "shortName": "Slovenia",
+      "defaultCode": "SVN",
+      "codes": {},
+      "primaryColour": "#005DA4",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Slovenia.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "South Africa",
+      "shortName": "South Africa",
+      "defaultCode": "RSA",
+      "codes": {},
+      "primaryColour": "#007749",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "South Africa.png",
+      "confederation": "CAF"
+    },
+    {
+      "name": "Spain",
+      "shortName": "Spain",
+      "defaultCode": "ESP",
+      "codes": {},
+      "primaryColour": "#AA151B",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Spain.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Sweden",
+      "shortName": "Sweden",
+      "defaultCode": "SWE",
+      "codes": {},
+      "primaryColour": "#006AA7",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Sweden.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Switzerland",
+      "shortName": "Switzerland",
+      "defaultCode": "SUI",
+      "codes": {},
+      "primaryColour": "#FF0000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Switzerland.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Türkiye",
+      "shortName": "Türkiye",
+      "defaultCode": "TUR",
+      "codes": {},
+      "primaryColour": "#E30A17",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Türkiye.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "USA",
+      "shortName": "USA",
+      "defaultCode": "USA",
+      "codes": {},
+      "primaryColour": "#002868",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "USA.png",
+      "confederation": "CONCACAF"
+    },
+    {
+      "name": "Ukraine",
+      "shortName": "Ukraine",
+      "defaultCode": "UKR",
+      "codes": {},
+      "primaryColour": "#005BBB",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Ukraine.png",
+      "confederation": "UEFA"
+    },
+    {
+      "name": "Uruguay",
+      "shortName": "Uruguay",
+      "defaultCode": "URU",
+      "codes": {},
+      "primaryColour": "#7BC4E5",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Uruguay.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Venezuela",
+      "shortName": "Venezuela",
+      "defaultCode": "VEN",
+      "codes": {},
+      "primaryColour": "#7B1113",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "international"
+      ],
+      "crestSource": "Venezuela.png",
+      "confederation": "CONMEBOL"
+    },
+    {
+      "name": "Real Betis",
+      "shortName": "Real Betis",
+      "defaultCode": "BET",
+      "codes": {},
+      "primaryColour": "#00954C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga",
+        "champions-league"
+      ],
+      "crestSource": null
+    },
+    {
+      "name": "Villarreal CF",
+      "shortName": "Villarreal",
+      "defaultCode": "VIL",
+      "codes": {},
+      "primaryColour": "#FFE667",
+      "secondaryColour": "#005187",
+      "textColour": "#000000",
+      "competitionIds": [
+        "la-liga",
+        "champions-league"
+      ],
+      "crestSource": null
+    },
+    {
+      "name": "AFC Bournemouth",
+      "shortName": "Bournemouth",
+      "defaultCode": "BOU",
+      "codes": {},
+      "primaryColour": "#DA291C",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "AFC Bournemouth.png"
+    },
+    {
+      "name": "Brentford",
+      "shortName": "Brentford",
+      "defaultCode": "BRE",
+      "codes": {},
+      "primaryColour": "#D2122E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Brentford.png"
+    },
+    {
+      "name": "Brighton & Hove Albion",
+      "shortName": "Brighton",
+      "defaultCode": "BHA",
+      "codes": {},
+      "primaryColour": "#0057B8",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "conference-league"
+      ],
+      "crestSource": "Brighton & Hove Albion.png"
+    },
+    {
+      "name": "Coventry City",
+      "shortName": "Coventry",
+      "defaultCode": "COV",
+      "codes": {},
+      "primaryColour": "#6CACE4",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Coventry City.png"
+    },
+    {
+      "name": "Fulham",
+      "shortName": "Fulham",
+      "defaultCode": "FUL",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Fulham.png"
+    },
+    {
+      "name": "Hull City",
+      "shortName": "Hull City",
+      "defaultCode": "HUL",
+      "codes": {},
+      "primaryColour": "#F18A00",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Hull City.png"
+    },
+    {
+      "name": "Ipswich Town",
+      "shortName": "Ipswich",
+      "defaultCode": "IPS",
+      "codes": {},
+      "primaryColour": "#0044A9",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Ipswich Town.png"
+    },
+    {
+      "name": "Leeds United",
+      "shortName": "Leeds",
+      "defaultCode": "LEE",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#1D428A",
+      "textColour": "#000000",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Leeds United.png"
+    },
+    {
+      "name": "Nottingham Forest",
+      "shortName": "Nottm Forest",
+      "defaultCode": "NFO",
+      "codes": {},
+      "primaryColour": "#DD0000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league"
+      ],
+      "crestSource": "Nottingham Forest.png"
+    },
+    {
+      "name": "Sunderland",
+      "shortName": "Sunderland",
+      "defaultCode": "SUN",
+      "codes": {},
+      "primaryColour": "#E03A3E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "premier-league",
+        "europa-league"
+      ],
+      "crestSource": "Sunderland.png"
+    },
+    {
+      "name": "Le Mans FC",
+      "shortName": "Le Mans",
+      "defaultCode": "LEM",
+      "codes": {},
+      "primaryColour": "#0033A0",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "Le Mans FC.png"
+    },
+    {
+      "name": "ES Troyes AC",
+      "shortName": "Troyes",
+      "defaultCode": "TRO",
+      "codes": {},
+      "primaryColour": "#002B5C",
+      "secondaryColour": "#6CACE4",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "ligue1"
+      ],
+      "crestSource": "ES Troyes AC.png"
+    },
+    {
+      "name": "Deportivo Alavés",
+      "shortName": "Alavés",
+      "defaultCode": "ALA",
+      "codes": {},
+      "primaryColour": "#1D4F91",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Deportivo Alavés.png"
+    },
+    {
+      "name": "RC Celta de Vigo",
+      "shortName": "Celta Vigo",
+      "defaultCode": "CEL",
+      "codes": {},
+      "primaryColour": "#77B5E0",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "la-liga",
+        "europa-league"
+      ],
+      "crestSource": "RC Celta de Vigo.png"
+    },
+    {
+      "name": "RC Deportivo de La Coruña",
+      "shortName": "Deportivo",
+      "defaultCode": "DEP",
+      "codes": {},
+      "primaryColour": "#0A3F8C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "RC Deportivo de La Coruña.png"
+    },
+    {
+      "name": "Elche CF",
+      "shortName": "Elche",
+      "defaultCode": "ELC",
+      "codes": {},
+      "primaryColour": "#00A650",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Elche CF.png"
+    },
+    {
+      "name": "Getafe CF",
+      "shortName": "Getafe",
+      "defaultCode": "GET",
+      "codes": {},
+      "primaryColour": "#005999",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga",
+        "conference-league"
+      ],
+      "crestSource": "Getafe CF.png"
+    },
+    {
+      "name": "Levante UD",
+      "shortName": "Levante",
+      "defaultCode": "LEV",
+      "codes": {},
+      "primaryColour": "#001E50",
+      "secondaryColour": "#A6093D",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Levante UD.png"
+    },
+    {
+      "name": "Málaga CF",
+      "shortName": "Málaga",
+      "defaultCode": "MAL",
+      "codes": {},
+      "primaryColour": "#0B4F9C",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Málaga CF.png"
+    },
+    {
+      "name": "CA Osasuna",
+      "shortName": "Osasuna",
+      "defaultCode": "OSA",
+      "codes": {},
+      "primaryColour": "#D91A21",
+      "secondaryColour": "#001A4B",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "CA Osasuna.png"
+    },
+    {
+      "name": "Real Racing Club de Santander",
+      "shortName": "Racing Santander",
+      "defaultCode": "RAC",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Real Racing Club de Santander.png"
+    },
+    {
+      "name": "Rayo Vallecano",
+      "shortName": "Rayo Vallecano",
+      "defaultCode": "RAY",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#E2001A",
+      "textColour": "#000000",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Rayo Vallecano.png"
+    },
+    {
+      "name": "Sevilla FC",
+      "shortName": "Sevilla",
+      "defaultCode": "SEV",
+      "codes": {},
+      "primaryColour": "#D71920",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "la-liga"
+      ],
+      "crestSource": "Sevilla FC.png"
+    },
+    {
+      "name": "AS Roma",
+      "shortName": "Roma",
+      "defaultCode": "ROM",
+      "codes": {},
+      "primaryColour": "#8E1F2F",
+      "secondaryColour": "#F0BC42",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "champions-league"
+      ],
+      "crestSource": "AS Roma.png"
+    },
+    {
+      "name": "Bologna FC 1909",
+      "shortName": "Bologna",
+      "defaultCode": "BOL",
+      "codes": {},
+      "primaryColour": "#862633",
+      "secondaryColour": "#1C3F94",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Bologna FC 1909.png"
+    },
+    {
+      "name": "Cagliari Calcio",
+      "shortName": "Cagliari",
+      "defaultCode": "CAG",
+      "codes": {},
+      "primaryColour": "#C51A2E",
+      "secondaryColour": "#001489",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Cagliari Calcio.png"
+    },
+    {
+      "name": "Como 1907",
+      "shortName": "Como",
+      "defaultCode": "COM",
+      "codes": {},
+      "primaryColour": "#0057A8",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a",
+        "champions-league"
+      ],
+      "crestSource": "Como 1907.png"
+    },
+    {
+      "name": "ACF Fiorentina",
+      "shortName": "Fiorentina",
+      "defaultCode": "FIO",
+      "codes": {},
+      "primaryColour": "#572678",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "ACF Fiorentina.png"
+    },
+    {
+      "name": "Frosinone Calcio",
+      "shortName": "Frosinone",
+      "defaultCode": "FRO",
+      "codes": {},
+      "primaryColour": "#FFD100",
+      "secondaryColour": "#003DA5",
+      "textColour": "#000000",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Frosinone Calcio.png"
+    },
+    {
+      "name": "Genoa CFC",
+      "shortName": "Genoa",
+      "defaultCode": "GEN",
+      "codes": {},
+      "primaryColour": "#041E42",
+      "secondaryColour": "#B7312C",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Genoa CFC.png"
+    },
+    {
+      "name": "SS Lazio",
+      "shortName": "Lazio",
+      "defaultCode": "LAZ",
+      "codes": {},
+      "primaryColour": "#7FC3EF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "SS Lazio.png"
+    },
+    {
+      "name": "US Lecce",
+      "shortName": "Lecce",
+      "defaultCode": "LEC",
+      "codes": {},
+      "primaryColour": "#FFE100",
+      "secondaryColour": "#C8102E",
+      "textColour": "#000000",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "US Lecce.png"
+    },
+    {
+      "name": "AC Monza",
+      "shortName": "Monza",
+      "defaultCode": "MON",
+      "codes": {},
+      "primaryColour": "#C8102E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "AC Monza.png"
+    },
+    {
+      "name": "Parma Calcio 1913",
+      "shortName": "Parma",
+      "defaultCode": "PAR",
+      "codes": {},
+      "primaryColour": "#003DA5",
+      "secondaryColour": "#FFE500",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Parma Calcio 1913.png"
+    },
+    {
+      "name": "US Sassuolo Calcio",
+      "shortName": "Sassuolo",
+      "defaultCode": "SAS",
+      "codes": {},
+      "primaryColour": "#0B8A3C",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "US Sassuolo Calcio.png"
+    },
+    {
+      "name": "Torino FC",
+      "shortName": "Torino",
+      "defaultCode": "TOR",
+      "codes": {},
+      "primaryColour": "#7B1E3A",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Torino FC.png"
+    },
+    {
+      "name": "Udinese Calcio",
+      "shortName": "Udinese",
+      "defaultCode": "UDI",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Udinese Calcio.png"
+    },
+    {
+      "name": "Venezia FC",
+      "shortName": "Venezia",
+      "defaultCode": "VEN",
+      "codes": {},
+      "primaryColour": "#E2711D",
+      "secondaryColour": "#1B1B1B",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "serie-a"
+      ],
+      "crestSource": "Venezia FC.png"
+    },
+    {
+      "name": "1. FC Union Berlin",
+      "shortName": "Union Berlin",
+      "defaultCode": "FCU",
+      "codes": {},
+      "primaryColour": "#EB1923",
+      "secondaryColour": "#FFD700",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "1. FC Union Berlin.png"
+    },
+    {
+      "name": "Borussia Mönchengladbach",
+      "shortName": "Gladbach",
+      "defaultCode": "BMG",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#00A650",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "Borussia Mönchengladbach.png"
+    },
+    {
+      "name": "Eintracht Frankfurt",
+      "shortName": "Frankfurt",
+      "defaultCode": "SGE",
+      "codes": {},
+      "primaryColour": "#E1000F",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "Eintracht Frankfurt.png"
+    },
+    {
+      "name": "FC Augsburg",
+      "shortName": "Augsburg",
+      "defaultCode": "FCA",
+      "codes": {},
+      "primaryColour": "#BA3733",
+      "secondaryColour": "#00784A",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "FC Augsburg.png"
+    },
+    {
+      "name": "1. FC Köln",
+      "shortName": "Köln",
+      "defaultCode": "KOE",
+      "codes": {},
+      "primaryColour": "#ED1C24",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "1. FC Köln.png"
+    },
+    {
+      "name": "Hamburger SV",
+      "shortName": "Hamburg",
+      "defaultCode": "HSV",
+      "codes": {},
+      "primaryColour": "#00295A",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "Hamburger SV.png"
+    },
+    {
+      "name": "1. FSV Mainz 05",
+      "shortName": "Mainz 05",
+      "defaultCode": "M05",
+      "codes": {},
+      "primaryColour": "#C3141E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "1. FSV Mainz 05.png"
+    },
+    {
+      "name": "SC Freiburg",
+      "shortName": "Freiburg",
+      "defaultCode": "SCF",
+      "codes": {},
+      "primaryColour": "#E2001A",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga",
+        "conference-league"
+      ],
+      "crestSource": "SC Freiburg.png"
+    },
+    {
+      "name": "SC Paderborn 07",
+      "shortName": "Paderborn",
+      "defaultCode": "SCP",
+      "codes": {},
+      "primaryColour": "#001489",
+      "secondaryColour": "#00843D",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "SC Paderborn 07.png"
+    },
+    {
+      "name": "SV 07 Elversberg",
+      "shortName": "Elversberg",
+      "defaultCode": "SVE",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "SV 07 Elversberg.png"
+    },
+    {
+      "name": "FC Schalke 04",
+      "shortName": "Schalke",
+      "defaultCode": "S04",
+      "codes": {},
+      "primaryColour": "#004D9D",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "FC Schalke 04.png"
+    },
+    {
+      "name": "TSG 1899 Hoffenheim",
+      "shortName": "Hoffenheim",
+      "defaultCode": "TSG",
+      "codes": {},
+      "primaryColour": "#1C63B7",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga",
+        "europa-league"
+      ],
+      "crestSource": "TSG 1899 Hoffenheim.png"
+    },
+    {
+      "name": "VfB Stuttgart",
+      "shortName": "Stuttgart",
+      "defaultCode": "VFB",
+      "codes": {},
+      "primaryColour": "#E30613",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga",
+        "champions-league"
+      ],
+      "crestSource": "VfB Stuttgart.png"
+    },
+    {
+      "name": "SV Werder Bremen",
+      "shortName": "Werder Bremen",
+      "defaultCode": "SVW",
+      "codes": {},
+      "primaryColour": "#1D9053",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "bundesliga"
+      ],
+      "crestSource": "SV Werder Bremen.png"
+    }
+  ]
 }

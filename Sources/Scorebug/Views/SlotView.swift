@@ -69,14 +69,10 @@ struct SlotView: View {
 
     private func teamColumn(_ side: Side) -> some View {
         let team = match.team(side)
-        let clubs = model.library.clubs(in: match.competitionId)
         return VStack(spacing: 12) {
             Text(side == .home ? "HOME" : "AWAY").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2)
             CrestView(team: team, size: 72)
-            Picker("", selection: Binding<UUID?>(get: { team.clubId }, set: { id in model.setClub(clubs.first { $0.id == id }, side: side, slot: slot) })) {
-                Text("Choose a club").tag(UUID?.none)
-                ForEach(clubs) { c in Text(c.name).tag(UUID?.some(c.id)) }
-            }.labelsHidden().frame(maxWidth: 220)
+            ClubPickerButton(side: side, slot: slot)
             // A placeholder reads "Home" or "Away" in full; a chosen club shows its broadcast code.
             Text(team.clubId == nil ? team.name : team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
             Text("\(match.score(side))").scaledFont(size: 48, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 60)
@@ -407,6 +403,142 @@ struct ScorerButton: View {
     private func pick(_ name: String) {
         model.apply(.setScorer(goal.id, name), slot: slot)
         openGoalId = nil
+    }
+}
+
+/// A Home or Away column's club control: a button showing the current team (crest thumbnail, name,
+/// chevron) that opens a search popover over the whole library, same pattern as `ScorerButton` above.
+/// The plain alphabetical menu of about 165 clubs and nations it replaces was impractical to scroll;
+/// this groups results instead and narrows them as the owner types. `model.setClub(_:side:slot:)` stays
+/// the only side effect, exactly as the old picker's `onChange` was.
+struct ClubPickerButton: View {
+    @EnvironmentObject var model: AppModel
+    let side: Side
+    let slot: Int
+    @State private var query = ""
+    @State private var isOpen = false
+    @FocusState private var searchFocused: Bool
+
+    private var match: Match { model.match(slot) }
+    private var team: TeamEntry { match.team(side) }
+
+    /// A club is a national team when its `competitionIds` contains "international" (same rule as
+    /// `LibraryFilters`'s Clubs/Nations split, kept in sync with it).
+    private func isNational(_ club: Club) -> Bool { club.competitionIds.contains("international") }
+    private func inThisCompetition(_ club: Club) -> Bool { club.competitionIds.isEmpty || club.competitionIds.contains(match.competitionId) }
+
+    /// Search results split into the three groups the popover shows, each sorted alphabetically;
+    /// national teams are pulled out first so a club's own competition membership only has to
+    /// distinguish "in this competition" from "other clubs".
+    private var groups: (inCompetition: [Club], other: [Club], nations: [Club]) {
+        let all = model.library.clubs
+        let filtered = query.isEmpty ? all : all.filter { nameMatches($0, in: match.competitionId, query: query) }
+        let nations = filtered.filter(isNational).sorted { $0.name < $1.name }
+        let clubsOnly = filtered.filter { !isNational($0) }
+        let inComp = clubsOnly.filter(inThisCompetition).sorted { $0.name < $1.name }
+        let other = clubsOnly.filter { !inThisCompetition($0) }.sorted { $0.name < $1.name }
+        return (inComp, other, nations)
+    }
+
+    /// What Return picks: the first row in reading order (in-competition clubs, then other clubs,
+    /// then national teams), matching how the groups are drawn top to bottom.
+    private var firstResult: Club? {
+        let g = groups
+        return g.inCompetition.first ?? g.other.first ?? g.nations.first
+    }
+
+    var body: some View {
+        Button {
+            query = ""
+            isOpen = true
+        } label: {
+            HStack(spacing: 8) {
+                CrestView(team: team, size: 22)
+                Text(team.name).scaledFont(.callout).lineLimit(1)
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.down").scaledFont(.caption2).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: 220)
+        }
+        .buttonStyle(.bordered)
+        .popover(isPresented: $isOpen) {
+            VStack(alignment: .leading, spacing: 0) {
+                TextField("Search club or nation", text: $query)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($searchFocused)
+                    .padding(8)
+                    .onSubmit(submitQuery)
+                Divider()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        noneRow
+                        Divider().padding(.vertical, 2)
+                        groupSection("In this competition", groups.inCompetition)
+                        groupSection("Other clubs", groups.other)
+                        groupSection("National teams", groups.nations)
+                        if groups.inCompetition.isEmpty && groups.other.isEmpty && groups.nations.isEmpty {
+                            Text("No match.").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
+                        }
+                    }
+                }.frame(maxHeight: 320)
+            }
+            .frame(width: 280)
+            .onAppear { searchFocused = true }
+        }
+    }
+
+    /// Always present, unfiltered by the search text, so the team can be cleared back to the
+    /// placeholder ("Home"/"Away") no matter what is typed.
+    private var noneRow: some View {
+        Button(action: pickNone) {
+            HStack(spacing: 8) {
+                Image(systemName: "xmark.circle").foregroundStyle(.secondary)
+                Text("None").foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4).padding(.horizontal, 8)
+    }
+
+    @ViewBuilder
+    private func groupSection(_ title: String, _ clubs: [Club]) -> some View {
+        if !clubs.isEmpty {
+            Text(title).scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary)
+                .padding(.horizontal, 8).padding(.top, 6).padding(.bottom, 2)
+            ForEach(clubs) { club in clubRow(club) }
+        }
+    }
+
+    private func clubRow(_ club: Club) -> some View {
+        let entry = club.entry(for: match.competitionId)
+        return Button { pick(club) } label: {
+            HStack(spacing: 8) {
+                CrestView(team: entry, size: 20)
+                Text(entry.name)
+                Spacer()
+                Text(entry.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4).padding(.horizontal, 8)
+    }
+
+    private func submitQuery() {
+        if let first = firstResult { pick(first) }
+    }
+
+    private func pick(_ club: Club) {
+        model.setClub(club, side: side, slot: slot)
+        isOpen = false
+    }
+
+    private func pickNone() {
+        model.setClub(nil, side: side, slot: slot)
+        isOpen = false
     }
 }
 

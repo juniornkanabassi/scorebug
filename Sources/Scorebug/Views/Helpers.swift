@@ -150,6 +150,18 @@ func squadNameMatches(_ name: String, query: String) -> Bool {
     return false
 }
 
+/// Case- and diacritic-insensitive match for the club picker's search field: name, short name (both via
+/// `squadNameMatches`'s substring/surname folding, so "etienne" finds Saint-Étienne and "psg" still falls
+/// through to the code check below) and the club's broadcast code for the competition in play (so "psg"
+/// matches Paris Saint-Germain by code even where the name alone would not).
+func nameMatches(_ club: Club, in competitionId: String, query: String) -> Bool {
+    guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return true }
+    if squadNameMatches(club.name, query: query) { return true }
+    if squadNameMatches(club.shortName, query: query) { return true }
+    let q = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+    return club.code(for: competitionId).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current).contains(q)
+}
+
 extension View {
     /// A small capsule badge: the live phase status ("First half", "Half time"...) shown under the clock,
     /// and anywhere else a compact status needs to sit apart from plain text.
