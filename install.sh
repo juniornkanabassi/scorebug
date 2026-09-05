@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds Scorebug and installs it as ~/Applications/Scorebug.app, replacing the previous copy, then opens it.
+# Builds Scorebug and installs it as /Applications/Scorebug.app, replacing the previous copy, then opens it.
 # Like Content Template: no zip to unpack, just the app in Applications.
 set -euo pipefail
 cd "${0:A:h}"
@@ -18,9 +18,9 @@ cp Resources/seed-library.json "$APP/Contents/Resources/seed-library.json"
 /usr/bin/codesign --force --sign - "$APP"
 osascript -e 'tell application id "local.scorebug.mac" to quit' >/dev/null 2>&1 || true
 sleep 1
-mkdir -p "$HOME/Applications"
-rm -rf "$HOME/Applications/Scorebug.app"
-/usr/bin/ditto "$APP" "$HOME/Applications/Scorebug.app"
+mkdir -p "/Applications"
+rm -rf "/Applications/Scorebug.app"
+/usr/bin/ditto "$APP" "/Applications/Scorebug.app"
 rm -rf "$STAGE"
-open "$HOME/Applications/Scorebug.app"
-print "Installed and opened ~/Applications/Scorebug.app ($(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist))"
+open "/Applications/Scorebug.app"
+print "Installed and opened /Applications/Scorebug.app ($(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist))"
