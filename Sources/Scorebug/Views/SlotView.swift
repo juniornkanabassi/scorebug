@@ -93,6 +93,7 @@ struct SlotView: View {
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
+            clockNudgeRow
             HStack(spacing: 8) {
                 Button(match.clock.running ? "Pause" : "Play") { model.apply(.play, slot: slot) }.disabled(match.currentPeriod == nil)
                 Button("End half") { model.apply(.endPeriod, slot: slot) }.disabled(match.currentPeriod == nil)
@@ -101,6 +102,27 @@ struct SlotView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
+    }
+
+    /// Manual clock correction, for when play was pressed late and the bug needs to line up with the
+    /// broadcast: small nudge buttons for quick offsets, and "Set time…" for typing an exact value.
+    private var clockNudgeRow: some View {
+        HStack(spacing: 6) {
+            clockNudgeButton("−1 min", -60)
+            clockNudgeButton("−10 s", -10)
+            clockNudgeButton("−1 s", -1)
+            clockNudgeButton("+1 s", 1)
+            clockNudgeButton("+10 s", 10)
+            clockNudgeButton("+1 min", 60)
+            SetClockButton(match: match, slot: slot)
+        }
+    }
+
+    private func clockNudgeButton(_ title: String, _ delta: Int) -> some View {
+        Button(title) { model.apply(.adjustClock(deltaSeconds: delta), slot: slot) }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(match.currentPeriod == nil)
     }
 
     // MARK: Clock
@@ -221,6 +243,80 @@ struct ClockReadout: View {
         case .extraBreak: return "Extra time break"; case .extraSecond: return "Extra time, second half"; case .extraFullTime: return "After extra time"
         case .shootout: return "Penalty shootout"; case .finished: return "Finished"
         }
+    }
+}
+
+/// "Set time…": a popover with a free-text field for the exact match time the owner sees on the broadcast
+/// (mm:ss, "47m" for minutes, or a plain number of seconds), a live preview of what that parses to, and an
+/// Apply button. The field is read as the on-screen cumulative time the owner wants, matching what a
+/// broadcast graphic shows and what the popover previews back; `apply()` converts that into the period-local
+/// value `Command.setClock` expects (see its doc comment) by subtracting the current period's base, so the
+/// owner never has to do that arithmetic themselves in the second half or extra time.
+struct SetClockButton: View {
+    @EnvironmentObject var model: AppModel
+    let match: Match
+    let slot: Int
+    @State private var text = ""
+    @State private var isOpen = false
+    @FocusState private var fieldFocused: Bool
+
+    private var periodBaseSeconds: Int { match.currentPeriod?.baseSeconds ?? 0 }
+    private var parsedSeconds: Int? { Self.parse(text) }
+
+    var body: some View {
+        Button("Set time…") { text = ""; isOpen = true }
+            .disabled(match.currentPeriod == nil)
+            .popover(isPresented: $isOpen) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Set match clock").scaledFont(.headline)
+                    TextField("mm:ss, minutes, or seconds", text: $text)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($fieldFocused)
+                        .frame(width: 220)
+                        .onSubmit(apply)
+                    if let seconds = parsedSeconds {
+                        Text("Sets the clock to \(ClockEngine.format(seconds)).").scaledFont(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("Enter mm:ss (47:30), minutes (47m), or plain seconds.").scaledFont(.caption).foregroundStyle(.secondary)
+                    }
+                    Text("The clock keeps running from this value if it's currently running, or stays paused at it if it's paused.")
+                        .scaledFont(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Spacer()
+                        Button("Apply", action: apply)
+                            .keyboardShortcut(.defaultAction)
+                            .disabled(parsedSeconds == nil)
+                    }
+                }
+                .padding(12)
+                .onAppear { fieldFocused = true }
+            }
+    }
+
+    private func apply() {
+        guard let seconds = parsedSeconds else { return }
+        model.apply(.setClock(seconds: max(0, seconds - periodBaseSeconds)), slot: slot)
+        isOpen = false
+    }
+
+    /// Parses "mm:ss" (colon splits minutes and seconds), "<n>m" / "<n>min" (minutes), or a bare integer
+    /// (seconds) into a total number of seconds. Returns nil for anything else, including negative values.
+    static func parse(_ raw: String) -> Int? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.contains(":") {
+            let parts = trimmed.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2, let mm = Int(parts[0]), let ss = Int(parts[1]), mm >= 0, ss >= 0, ss < 60 else { return nil }
+            return mm * 60 + ss
+        }
+        let lower = trimmed.lowercased()
+        if lower.hasSuffix("min") || lower.hasSuffix("m") {
+            let digits = lower.hasSuffix("min") ? String(lower.dropLast(3)) : String(lower.dropLast(1))
+            guard let minutes = Int(digits.trimmingCharacters(in: .whitespaces)), minutes >= 0 else { return nil }
+            return minutes * 60
+        }
+        guard let seconds = Int(lower), seconds >= 0 else { return nil }
+        return seconds
     }
 }
 

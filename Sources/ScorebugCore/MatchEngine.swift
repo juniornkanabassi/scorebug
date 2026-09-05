@@ -20,10 +20,36 @@ public enum Command: Sendable, Equatable {
     case setCompetition(String)
     case setKickoff(Date?)
     case setTheme(String?)
+    /// Manual clock correction, for when play was pressed late and the bug needs to line up with the broadcast.
+    ///
+    /// `seconds` is the elapsed time **within the current period** — the same period-local quantity
+    /// `Clock.accumulated` (plus any running delta) already tracks, counted from that period's own zero.
+    /// `Clock.periodBaseSeconds` is left untouched, so the cumulative reading the overlay derives via
+    /// `Clock.elapsed(at:)` is `periodBaseSeconds + seconds`: setting 47:00 (2820s) during the second half
+    /// (base 45:00) reads 92:00 on screen for a `runOn` theme. Whether the clock is running or paused is
+    /// preserved: running clocks keep counting up from the new value; paused clocks freeze at it. A no-op
+    /// outside a live period (no current period means no clock to set).
+    case setClock(seconds: Int)
+    /// Nudges the clock by `deltaSeconds` (negative to wind it back), using the same period-local accounting
+    /// as `setClock` — so the effect on the on-screen cumulative reading is identical regardless of period.
+    /// Clamps at 0 for the period (never carries a period's elapsed below its own start). A no-op outside a
+    /// live period.
+    case adjustClock(deltaSeconds: Int)
     case reset
 }
 
 /// Flat JSON shape accepted by POST /api/match/{slot}/command and sent by the Stream Deck.
+///
+/// Commands: goal, setScorer, startPeriod, endPeriod, play, pause, playPause, setAddedMinutes,
+/// adjustAddedMinutes, setVisible, toggleVisible, startShootout, recordKick, undoKick, setTeam, swapTeams,
+/// setCompetition, setTheme, reset, and the manual clock corrections below.
+///
+///   {"command":"setClock","seconds":754}        -> Command.setClock(seconds: 754)
+///   {"command":"adjustClock","delta":-5}         -> Command.adjustClock(deltaSeconds: -5)
+///   {"command":"adjustClock","deltaSeconds":-5}  -> same, "deltaSeconds" is accepted as an alias of "delta"
+///
+/// See `Command.setClock` and `Command.adjustClock` for what `seconds` and the delta mean against the
+/// current period's base.
 public struct CommandRequest: Codable, Sendable {
     public var command: String
     public var side: String?
@@ -37,10 +63,14 @@ public struct CommandRequest: Codable, Sendable {
     public var competitionId: String?
     public var team: TeamEntry?
     public var themeId: String?
+    public var seconds: Int?
+    /// Alias of `delta` for "adjustClock", since a bare "delta" reads ambiguously next to "seconds".
+    public var deltaSeconds: Int?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil) {
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
         self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.competitionId = competitionId; self.team = team; self.themeId = themeId
+        self.seconds = seconds; self.deltaSeconds = deltaSeconds
     }
 
     public func toCommand() throws -> Command {
@@ -77,6 +107,10 @@ public struct CommandRequest: Codable, Sendable {
             guard let c = competitionId else { throw EngineError.badRequest("competitionId required") }
             return .setCompetition(c)
         case "setTheme": return .setTheme(themeId)
+        case "setClock":
+            guard let s = seconds else { throw EngineError.badRequest("seconds required") }
+            return .setClock(seconds: s)
+        case "adjustClock": return .adjustClock(deltaSeconds: delta ?? deltaSeconds ?? 0)
         case "reset": return .reset
         default: throw EngineError.badRequest("unknown command \(command)")
         }
@@ -163,6 +197,14 @@ public enum MatchEngine {
             m.kickoff = date
         case .setTheme(let id):
             m.themeId = (id?.isEmpty ?? true) ? nil : id
+        case .setClock(let seconds):
+            guard m.currentPeriod != nil else { return m }
+            setLocalElapsed(&m.clock, to: TimeInterval(max(0, seconds)), now: now)
+        case .adjustClock(let delta):
+            guard m.currentPeriod != nil else { return m }
+            let currentLocal = m.clock.elapsed(at: now) - TimeInterval(m.clock.periodBaseSeconds)
+            let newLocal = max(0, currentLocal + TimeInterval(delta))
+            setLocalElapsed(&m.clock, to: newLocal, now: now)
         case .reset:
             var fresh = Match(slot: m.slot, competitionId: m.competitionId, home: m.home, away: m.away)
             fresh.kickoff = m.kickoff
@@ -194,5 +236,13 @@ public enum MatchEngine {
         if clock.running, let start = clock.periodStart { clock.accumulated += max(0, now.timeIntervalSince(start)) }
         clock.running = false
         clock.periodStart = nil
+    }
+
+    /// Sets the clock's period-local elapsed time — what `accumulated` plus any running delta represents,
+    /// i.e. `elapsed(at:) - periodBaseSeconds` — to `local` at `now`, preserving running vs paused. Used by
+    /// `setClock` and `adjustClock`; `periodBaseSeconds` itself is never touched here.
+    private static func setLocalElapsed(_ clock: inout Clock, to local: TimeInterval, now: Date) {
+        clock.accumulated = local
+        clock.periodStart = clock.running ? now : nil
     }
 }

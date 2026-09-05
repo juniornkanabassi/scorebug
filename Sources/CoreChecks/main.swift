@@ -35,6 +35,39 @@ check(ClockEngine.display(match: m, style: .freezeAndCount, now: at(9999)).state
 m = MatchEngine.apply(.startPeriod(.secondHalf), to: m, now: at(5000))
 check(m.addedMinutes == nil && Int(m.clock.elapsed(at: at(5000))) == 2700, "second half starts at 45:00 with added time cleared")
 
+// Manual clock control (setClock / adjustClock)
+// setClock/adjustClock work in period-local seconds: periodBaseSeconds is never touched, so the on-screen
+// cumulative reading (what elapsed(at:) and ClockEngine.display show) is periodBaseSeconds + the local value.
+var clockM = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
+clockM = MatchEngine.apply(.setClock(seconds: 754), to: clockM, now: at(0))
+check(Int(clockM.clock.elapsed(at: at(0))) == 754 && clockM.clock.running, "setClock while running lands on the exact value and keeps running")
+check(Int(clockM.clock.elapsed(at: at(10))) == 764, "setClock while running: elapsed 10s later is value + 10")
+
+clockM = MatchEngine.apply(.pause, to: clockM, now: at(10))
+clockM = MatchEngine.apply(.setClock(seconds: 500), to: clockM, now: at(10))
+check(!clockM.clock.running && Int(clockM.clock.elapsed(at: at(10))) == 500, "setClock while paused lands on the value and stays paused")
+check(Int(clockM.clock.elapsed(at: at(9999))) == 500, "setClock while paused: value does not drift with wall time")
+
+clockM = MatchEngine.apply(.adjustClock(deltaSeconds: -600), to: clockM, now: at(10))
+check(Int(clockM.clock.elapsed(at: at(10))) == 0, "adjustClock negative past zero clamps at 0 for the period")
+
+clockM = MatchEngine.apply(.play, to: clockM, now: at(10))
+clockM = MatchEngine.apply(.adjustClock(deltaSeconds: 30), to: clockM, now: at(20))
+check(Int(clockM.clock.elapsed(at: at(20))) == 40 && clockM.clock.running, "adjustClock while running adds to the elapsed value and keeps counting")
+check(Int(clockM.clock.elapsed(at: at(25))) == 45, "adjustClock while running: still counts up after the nudge")
+
+var secondHalfM = MatchEngine.apply(.startPeriod(.secondHalf), to: Match(slot: 1), now: at(0))
+secondHalfM = MatchEngine.apply(.setClock(seconds: 47 * 60), to: secondHalfM, now: at(0))
+check(Int(secondHalfM.clock.elapsed(at: at(0))) == 45 * 60 + 47 * 60, "setClock in the second half adds the period base: 47:00 local reads 92:00 on screen")
+check(ClockEngine.display(match: secondHalfM, style: .runOn, now: at(0)).main == "92:00", "runOn display after a set in the second half shows the cumulative 92:00")
+let freezeDisplay = ClockEngine.display(match: secondHalfM, style: .freezeAndCount, now: at(0))
+check(freezeDisplay.main == "90:00", "freezeAndCount display after a set in the second half still clamps the main clock at the period end")
+
+check((try? CommandRequest(command: "setClock", seconds: 754).toCommand()) == .setClock(seconds: 754), "setClock request decodes")
+check((try? CommandRequest(command: "adjustClock", delta: -5).toCommand()) == .adjustClock(deltaSeconds: -5), "adjustClock request decodes \"delta\"")
+check((try? CommandRequest(command: "adjustClock", deltaSeconds: -5).toCommand()) == .adjustClock(deltaSeconds: -5), "adjustClock request decodes \"deltaSeconds\" as an alias")
+check((try? CommandRequest(command: "setClock").toCommand()) == nil, "setClock without seconds is rejected")
+
 // Goals and minute labels
 m = MatchEngine.apply(.goal(.home, 1), to: m, now: at(5000 + 61))
 check(m.homeScore == 1 && m.goals.count == 1 && m.goals[0].minuteLabel == "47'", "goal records the minute in progress")
