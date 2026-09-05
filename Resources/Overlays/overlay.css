@@ -1,0 +1,40 @@
+/* Shared overlay layout. Transparent body, fixed canvas by orientation, centring rules for vertical. Themes colour and shape it. */
+html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+body { font-family: "Inter", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body[data-orientation="h"] #stage { position: relative; width: 1920px; height: 1080px; }
+body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1920px; }
+
+.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transition: opacity 320ms ease, transform 320ms ease; }
+.bug.hidden { opacity: 0; transform: translateY(-16px); pointer-events: none; }
+
+/* Horizontal: anchored top-left. Vertical: centred, symmetrical growth. */
+body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; }
+body[data-orientation="v"] .bug { left: 50%; transform: translateX(-50%); top: var(--bug-top, 400px); max-width: var(--bug-max-width, 800px); }
+body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) translateY(-16px); }
+
+.row { display: flex; align-items: stretch; }
+.row.main { position: relative; }
+.row.shootout, .row.scorers { display: none; }
+.bug.has-shootout .row.shootout { display: flex; }
+.bug.show-scorers .row.scorers { display: flex; }
+
+.team { display: flex; align-items: center; gap: 10px; }
+.crest { display: inline-block; width: 44px; height: 44px; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.crest.monogram { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800; font-size: 18px; }
+.added { display: none; }
+.bug.has-added .added { display: flex; align-items: center; }
+.clock .state { display: none; }
+.clock.stopped .main { display: none; }
+.clock.stopped .state { display: inline; }
+
+.kicks { display: flex; gap: 8px; }
+.kick { width: 18px; height: 18px; border-radius: 50%; background: var(--kick-pending, #8a8f98); }
+.kick.scored { background: var(--kick-scored, #22c55e); }
+.kick.missed { background: var(--kick-missed, #ef4444); }
+
+.scorers .list { display: flex; flex-direction: column; }
+.scorers .entry { white-space: nowrap; }
+
+/* Goal flash: one animation per goal, applied to the scoring side's score box. */
+@keyframes goal-flash { 0% { transform: scale(1); filter: brightness(1); } 20% { transform: scale(1.25); filter: brightness(1.8); } 60% { transform: scale(1.05); } 100% { transform: scale(1); filter: brightness(1); } }
+.score.goal { animation: goal-flash 900ms ease-out; }

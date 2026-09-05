@@ -1,0 +1,3 @@
+/* europa-league theme. Not designed yet; the shared overlay.css shape is shown. Findings go in the theme research checklist first. */
+body[data-theme="europa-league"] .row.main { background: #111; color: #fff; height: 72px; border-radius: 6px; font-weight: 800; }
+body[data-theme="europa-league"] .team, body[data-theme="europa-league"] .score, body[data-theme="europa-league"] .clock { display:flex; align-items:center; padding: 0 16px; font-size: 32px; }

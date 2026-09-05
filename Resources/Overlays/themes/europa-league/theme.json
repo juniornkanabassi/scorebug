@@ -1,0 +1,18 @@
+{
+  "id": "europa-league",
+  "name": "Europa League",
+  "clockStyle": "freezeAndCount",
+  "verified": false,
+  "geometry": {
+    "h": {
+      "left": 58,
+      "top": 53
+    },
+    "v": {
+      "top": 400,
+      "maxWidth": 800
+    }
+  },
+  "scorersEverySeconds": 90,
+  "scorersForSeconds": 8
+}

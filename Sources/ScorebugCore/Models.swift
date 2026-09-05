@@ -1,0 +1,291 @@
+// Schema 1 data model. See ARCHITECTURE.md "Data model". Every later field is optional; none is removed.
+import Foundation
+
+public let currentSchema = 1
+
+public enum Side: String, Codable, Sendable, CaseIterable {
+    case home, away
+    public var other: Side { self == .home ? .away : .home }
+}
+
+public enum Phase: String, Codable, Sendable, CaseIterable {
+    case preMatch, firstHalf, halfTime, secondHalf, fullTime
+    case extraFirst, extraBreak, extraSecond, extraFullTime
+    case shootout, finished
+
+    public var isLivePeriod: Bool { period != nil }
+    public var period: Period? {
+        switch self {
+        case .firstHalf: return .firstHalf
+        case .secondHalf: return .secondHalf
+        case .extraFirst: return .extraFirst
+        case .extraSecond: return .extraSecond
+        default: return nil
+        }
+    }
+    /// Short broadcast label for a non-running state, nil while a period is live.
+    public var stateLabel: String? {
+        switch self {
+        case .preMatch: return "KO"
+        case .halfTime: return "HT"
+        case .fullTime: return "FT"
+        case .extraBreak: return "HT"
+        case .extraFullTime: return "AET"
+        case .shootout: return "PENS"
+        case .finished: return "FT"
+        default: return nil
+        }
+    }
+}
+
+public enum Period: String, Codable, Sendable, CaseIterable {
+    case firstHalf, secondHalf, extraFirst, extraSecond
+
+    public var baseSeconds: Int {
+        switch self {
+        case .firstHalf: return 0
+        case .secondHalf: return 45 * 60
+        case .extraFirst: return 90 * 60
+        case .extraSecond: return 105 * 60
+        }
+    }
+    public var endSeconds: Int {
+        switch self {
+        case .firstHalf: return 45 * 60
+        case .secondHalf: return 90 * 60
+        case .extraFirst: return 105 * 60
+        case .extraSecond: return 120 * 60
+        }
+    }
+    public var phase: Phase {
+        switch self {
+        case .firstHalf: return .firstHalf
+        case .secondHalf: return .secondHalf
+        case .extraFirst: return .extraFirst
+        case .extraSecond: return .extraSecond
+        }
+    }
+    public var breakPhase: Phase {
+        switch self {
+        case .firstHalf: return .halfTime
+        case .secondHalf: return .fullTime
+        case .extraFirst: return .extraBreak
+        case .extraSecond: return .extraFullTime
+        }
+    }
+    public var title: String {
+        switch self {
+        case .firstHalf: return "1st half"
+        case .secondHalf: return "2nd half"
+        case .extraFirst: return "1st extra time"
+        case .extraSecond: return "2nd extra time"
+        }
+    }
+}
+
+/// The master clock. Elapsed is always derived; no timer ever writes it.
+public struct Clock: Codable, Sendable, Equatable {
+    public var periodBaseSeconds: Int
+    public var periodStart: Date?
+    public var accumulated: TimeInterval
+    public var running: Bool
+
+    public init(periodBaseSeconds: Int = 0, periodStart: Date? = nil, accumulated: TimeInterval = 0, running: Bool = false) {
+        self.periodBaseSeconds = periodBaseSeconds
+        self.periodStart = periodStart
+        self.accumulated = accumulated
+        self.running = running
+    }
+
+    public func elapsed(at now: Date) -> TimeInterval {
+        var total = TimeInterval(periodBaseSeconds) + accumulated
+        if running, let start = periodStart { total += max(0, now.timeIntervalSince(start)) }
+        return total
+    }
+}
+
+public struct Goal: Codable, Sendable, Identifiable, Equatable {
+    public var id: UUID
+    public var side: Side
+    public var elapsedSeconds: Int
+    public var minuteLabel: String
+    public var scorer: String?
+    public var ownGoal: Bool
+    public var penalty: Bool
+
+    public init(id: UUID = UUID(), side: Side, elapsedSeconds: Int, minuteLabel: String, scorer: String? = nil, ownGoal: Bool = false, penalty: Bool = false) {
+        self.id = id; self.side = side; self.elapsedSeconds = elapsedSeconds; self.minuteLabel = minuteLabel
+        self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
+    }
+}
+
+public enum KickResult: String, Codable, Sendable { case pending, scored, missed }
+
+public struct Kick: Codable, Sendable, Identifiable, Equatable {
+    public var id: UUID
+    public var side: Side
+    public var result: KickResult
+    public init(id: UUID = UUID(), side: Side, result: KickResult) { self.id = id; self.side = side; self.result = result }
+}
+
+public struct Shootout: Codable, Sendable, Equatable {
+    public var kicks: [Kick]
+    public var firstKicker: Side
+    public init(kicks: [Kick] = [], firstKicker: Side) { self.kicks = kicks; self.firstKicker = firstKicker }
+
+    public func tally(_ side: Side) -> Int { kicks.filter { $0.side == side && $0.result == .scored }.count }
+    public func taken(_ side: Side) -> Int { kicks.filter { $0.side == side }.count }
+    public var nextSide: Side { kicks.count % 2 == 0 ? firstKicker : firstKicker.other }
+}
+
+/// A club as it appears in one match. Copied from the library so a later library edit does not change a live bug.
+public struct TeamEntry: Codable, Sendable, Equatable {
+    public var clubId: UUID?
+    public var name: String
+    public var shortName: String
+    public var code: String
+    public var primaryColour: String
+    public var secondaryColour: String
+    public var textColour: String
+    public var crestFile: String?
+
+    public init(clubId: UUID? = nil, name: String, shortName: String? = nil, code: String, primaryColour: String = "#222222", secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil) {
+        self.clubId = clubId; self.name = name; self.shortName = shortName ?? name; self.code = code
+        self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour; self.crestFile = crestFile
+    }
+
+    public static let placeholderHome = TeamEntry(name: "Home", shortName: "Home", code: "HOM", primaryColour: "#1D4ED8")
+    public static let placeholderAway = TeamEntry(name: "Away", shortName: "Away", code: "AWY", primaryColour: "#DC2626")
+}
+
+public struct LastGoal: Codable, Sendable, Equatable {
+    public var side: Side
+    public var at: Date
+    public var goalId: UUID
+}
+
+public struct Match: Codable, Sendable, Equatable {
+    public var slot: Int
+    public var competitionId: String
+    public var home: TeamEntry
+    public var away: TeamEntry
+    public var kickoff: Date?
+    public var phase: Phase
+    public var clock: Clock
+    public var addedMinutes: Int?
+    public var homeScore: Int
+    public var awayScore: Int
+    public var goals: [Goal]
+    public var shootout: Shootout?
+    public var visible: Bool
+    public var lastGoal: LastGoal?
+    public var revision: Int
+
+    public init(slot: Int, competitionId: String = "ligue1", home: TeamEntry = .placeholderHome, away: TeamEntry = .placeholderAway) {
+        self.slot = slot; self.competitionId = competitionId; self.home = home; self.away = away
+        self.kickoff = nil; self.phase = .preMatch; self.clock = Clock(); self.addedMinutes = nil
+        self.homeScore = 0; self.awayScore = 0; self.goals = []; self.shootout = nil
+        self.visible = true; self.lastGoal = nil; self.revision = 0
+    }
+
+    public func score(_ side: Side) -> Int { side == .home ? homeScore : awayScore }
+    public func team(_ side: Side) -> TeamEntry { side == .home ? home : away }
+    public var currentPeriod: Period? { phase.period }
+}
+
+public struct Club: Codable, Sendable, Identifiable, Equatable {
+    public var id: UUID
+    public var name: String
+    public var shortName: String
+    public var defaultCode: String
+    /// Competition id to the code that competition's broadcast uses, for example ligue1 -> OM, champions-league -> MAR.
+    public var codes: [String: String]
+    public var primaryColour: String
+    public var secondaryColour: String
+    public var textColour: String
+    public var crestFile: String?
+    public var sourceIds: [String: String]
+    public var competitionIds: [String]
+
+    public init(id: UUID = UUID(), name: String, shortName: String, defaultCode: String, codes: [String: String] = [:], primaryColour: String, secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, sourceIds: [String: String] = [:], competitionIds: [String] = []) {
+        self.id = id; self.name = name; self.shortName = shortName; self.defaultCode = defaultCode; self.codes = codes
+        self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour
+        self.crestFile = crestFile; self.sourceIds = sourceIds; self.competitionIds = competitionIds
+    }
+
+    public func code(for competitionId: String) -> String { codes[competitionId] ?? defaultCode }
+
+    public func entry(for competitionId: String) -> TeamEntry {
+        TeamEntry(clubId: id, name: name, shortName: shortName, code: code(for: competitionId), primaryColour: primaryColour, secondaryColour: secondaryColour, textColour: textColour, crestFile: crestFile)
+    }
+}
+
+public struct Competition: Codable, Sendable, Identifiable, Equatable {
+    public var id: String
+    public var name: String
+    public var shortName: String
+    public var themeId: String
+    public var sourceIds: [String: String]
+    public init(id: String, name: String, shortName: String, themeId: String, sourceIds: [String: String] = [:]) {
+        self.id = id; self.name = name; self.shortName = shortName; self.themeId = themeId; self.sourceIds = sourceIds
+    }
+}
+
+public struct Library: Codable, Sendable, Equatable {
+    public var schema: Int
+    public var competitions: [Competition]
+    public var clubs: [Club]
+    public init(schema: Int = currentSchema, competitions: [Competition] = [], clubs: [Club] = []) {
+        self.schema = schema; self.competitions = competitions; self.clubs = clubs
+    }
+    public func clubs(in competitionId: String) -> [Club] {
+        clubs.filter { $0.competitionIds.isEmpty || $0.competitionIds.contains(competitionId) }.sorted { $0.name < $1.name }
+    }
+}
+
+public struct MatchState: Codable, Sendable, Equatable {
+    public var schema: Int
+    public var matches: [Match]
+    public init(schema: Int = currentSchema, matches: [Match] = [Match(slot: 1), Match(slot: 2)]) {
+        self.schema = schema; self.matches = matches
+    }
+    public func match(slot: Int) -> Match? { matches.first { $0.slot == slot } }
+}
+
+public struct Settings: Codable, Sendable, Equatable {
+    public var schema: Int
+    public var port: Int
+    public var dataSourceOrder: [String]
+    public var themeOverridesEnabled: Bool
+    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true) {
+        self.schema = schema; self.port = port; self.dataSourceOrder = dataSourceOrder; self.themeOverridesEnabled = themeOverridesEnabled
+    }
+}
+
+/// What the overlay pages and the Stream Deck receive. One message, full state.
+public struct StateSnapshot: Codable, Sendable {
+    public var schema: Int
+    public var serverTime: Date
+    public var matches: [Match]
+    public var competitions: [Competition]
+    public init(serverTime: Date, matches: [Match], competitions: [Competition]) {
+        self.schema = currentSchema; self.serverTime = serverTime; self.matches = matches; self.competitions = competitions
+    }
+}
+
+public enum JSONCoding {
+    public static func encoder() -> JSONEncoder {
+        let e = JSONEncoder()
+        e.dateEncodingStrategy = .millisecondsSince1970
+        e.outputFormatting = [.sortedKeys]
+        return e
+    }
+    public static func prettyEncoder() -> JSONEncoder {
+        let e = encoder(); e.outputFormatting = [.sortedKeys, .prettyPrinted]; return e
+    }
+    public static func decoder() -> JSONDecoder {
+        let d = JSONDecoder()
+        d.dateDecodingStrategy = .millisecondsSince1970
+        return d
+    }
+}

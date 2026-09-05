@@ -1,0 +1,3 @@
+/* conference-league theme. Not designed yet; the shared overlay.css shape is shown. Findings go in the theme research checklist first. */
+body[data-theme="conference-league"] .row.main { background: #111; color: #fff; height: 72px; border-radius: 6px; font-weight: 800; }
+body[data-theme="conference-league"] .team, body[data-theme="conference-league"] .score, body[data-theme="conference-league"] .clock { display:flex; align-items:center; padding: 0 16px; font-size: 32px; }

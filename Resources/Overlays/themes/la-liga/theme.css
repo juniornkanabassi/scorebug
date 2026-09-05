@@ -1,0 +1,3 @@
+/* la-liga theme. Not designed yet; the shared overlay.css shape is shown. Findings go in the theme research checklist first. */
+body[data-theme="la-liga"] .row.main { background: #111; color: #fff; height: 72px; border-radius: 6px; font-weight: 800; }
+body[data-theme="la-liga"] .team, body[data-theme="la-liga"] .score, body[data-theme="la-liga"] .clock { display:flex; align-items:center; padding: 0 16px; font-size: 32px; }

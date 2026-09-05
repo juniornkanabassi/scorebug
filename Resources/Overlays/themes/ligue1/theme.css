@@ -1,0 +1,78 @@
+/* Ligue 1 theme. Echoes the Leroy Tremblot identity: electric blue #085FFF on charcoal #121212, stepped-diamond geometry.
+   Interpretation, not a copy. Findings to verify are in 00 Project State/Research/Theme research checklist.md. */
+body[data-theme="ligue1"] .bug {
+  --l1-blue: #085FFF; --l1-blue-light: #6E9DFF; --l1-charcoal: #121212; --l1-pink: #FF2E88;
+  --kick-pending: #3a3f48; --kick-scored: #2BD576; --kick-missed: #FF3B5C;
+  --h: 72px;
+  font-family: "Inter", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 800; letter-spacing: 0.01em; color: #fff;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.45));
+}
+body[data-orientation="v"][data-theme="ligue1"] .bug { --h: 84px; }
+
+body[data-theme="ligue1"] .row.main {
+  height: var(--h); background: var(--l1-charcoal); border-radius: 6px; overflow: hidden;
+}
+body[data-theme="ligue1"] .team {
+  padding: 0 22px; height: 100%; font-size: calc(var(--h) * 0.46);
+}
+body[data-theme="ligue1"] .team.home { background: var(--home-primary); color: var(--home-text); }
+body[data-theme="ligue1"] .team.away { background: var(--away-primary); color: var(--away-text); }
+body[data-theme="ligue1"] .crest { width: calc(var(--h) * 0.6); height: calc(var(--h) * 0.6); }
+body[data-theme="ligue1"] .crest.monogram { font-size: calc(var(--h) * 0.26); border: 2px solid rgba(255,255,255,0.7); }
+body[data-theme="ligue1"] .score {
+  display: flex; align-items: center; justify-content: center; min-width: calc(var(--h) * 0.9);
+  font-size: calc(var(--h) * 0.6); font-variant-numeric: tabular-nums; background: var(--l1-charcoal);
+}
+/* Stepped diamond between the scores: the tunnel motif walked as an axis-aligned staircase. */
+body[data-theme="ligue1"] .mark {
+  width: calc(var(--h) * 0.38); height: 100%; position: relative; background: var(--l1-charcoal);
+}
+body[data-theme="ligue1"] .mark::before {
+  content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 0.3); height: calc(var(--h) * 0.3);
+  transform: translate(-50%, -50%);
+  background: var(--l1-blue);
+  clip-path: polygon(50% 0, 66% 17%, 83% 17%, 83% 34%, 100% 50%, 83% 66%, 83% 83%, 66% 83%, 50% 100%, 34% 83%, 17% 83%, 17% 66%, 0 50%, 17% 34%, 17% 17%, 34% 17%);
+}
+body[data-theme="ligue1"] .mark::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 0.12); height: calc(var(--h) * 0.12);
+  transform: translate(-50%, -50%) rotate(45deg); background: var(--l1-charcoal);
+}
+body[data-theme="ligue1"] .clock {
+  display: flex; align-items: center; justify-content: center; padding: 0 20px; min-width: calc(var(--h) * 1.7);
+  background: var(--l1-blue); font-size: calc(var(--h) * 0.5); font-variant-numeric: tabular-nums;
+}
+body[data-theme="ligue1"] .clock.stopped { background: var(--l1-charcoal); color: var(--l1-blue-light); }
+body[data-theme="ligue1"] .added {
+  gap: 12px; padding: 0 18px; background: #0B3FB0; font-size: calc(var(--h) * 0.42);
+  animation: l1-added-in 360ms cubic-bezier(.2,.8,.2,1);
+}
+body[data-theme="ligue1"] .added .counter { font-weight: 600; font-size: calc(var(--h) * 0.34); color: var(--l1-blue-light); font-variant-numeric: tabular-nums; }
+body[data-theme="ligue1"] .added .counter:empty { display: none; }
+@keyframes l1-added-in { from { max-width: 0; padding: 0; opacity: 0; } to { max-width: 300px; opacity: 1; } }
+
+/* Goal: the scoring side's plate sweeps blue for a moment. */
+body[data-theme="ligue1"] .bug.goal-home .team.home, body[data-theme="ligue1"] .bug.goal-away .team.away { animation: l1-goal-plate 2.4s ease-out; }
+@keyframes l1-goal-plate { 0% { box-shadow: inset 0 0 0 0 var(--l1-blue); } 15% { box-shadow: inset 0 0 0 200px var(--l1-blue); } 70% { box-shadow: inset 0 0 0 200px var(--l1-blue); } 100% { box-shadow: inset 0 0 0 0 var(--l1-blue); } }
+
+/* Shootout row under the bug. */
+body[data-theme="ligue1"] .row.shootout {
+  margin-top: 6px; align-items: center; gap: 18px; padding: 8px 18px; background: var(--l1-charcoal); border-radius: 6px;
+  font-size: calc(var(--h) * 0.4);
+}
+body[data-theme="ligue1"] .kick { width: calc(var(--h) * 0.24); height: calc(var(--h) * 0.24); border-radius: 3px; transform: rotate(45deg) scale(0.8); }
+body[data-theme="ligue1"] .tally { display: flex; gap: 10px; font-variant-numeric: tabular-nums; }
+body[data-theme="ligue1"] .tally .sep { color: var(--l1-blue-light); }
+
+/* Scorers strap, shown periodically. */
+body[data-theme="ligue1"] .row.scorers {
+  margin-top: 6px; gap: 24px; padding: 8px 18px; background: rgba(18,18,18,0.92); border-radius: 6px; border-left: 4px solid var(--l1-blue);
+  font-weight: 600; font-size: calc(var(--h) * 0.3); animation: l1-strap 420ms ease-out;
+}
+body[data-theme="ligue1"] .row.scorers .list { flex: 1; min-width: 0; }
+body[data-theme="ligue1"] .row.scorers .list.away { text-align: right; }
+@keyframes l1-strap { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+
+/* Vertical: centred, both rows share the bug width. */
+body[data-orientation="v"][data-theme="ligue1"] .row { width: 100%; box-sizing: border-box; justify-content: center; }
+body[data-orientation="v"][data-theme="ligue1"] .team { padding: 0 16px; }

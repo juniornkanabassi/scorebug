@@ -1,0 +1,14 @@
+{
+  "Name": "Scorebug",
+  "Version": "0.0.0.0",
+  "Author": "Junior Nkana Bassi",
+  "Description": "Control the Scorebug app from the Stream Deck.",
+  "UUID": "com.juniornkanabassi.scorebug",
+  "Icon": "imgs/plugin",
+  "CodePath": "bin/plugin.js",
+  "Nodejs": { "Version": "20", "Debug": "enabled" },
+  "SDKVersion": 2,
+  "Software": { "MinimumVersion": "6.4" },
+  "OS": [ { "Platform": "mac", "MinimumVersion": "12" } ],
+  "Actions": []
+}
