@@ -138,7 +138,10 @@ public final class Store: @unchecked Sendable {
     }
 
     /// Scans folders (recursively, one level of subfolders) for images and assigns them to clubs without a crest,
-    /// matching the club's crestSource file name first, then its normalised name or short name. Returns the number imported.
+    /// matching the club's crestSource file name first, then its normalised name or short name. Also imports a
+    /// competition mark named `competition-<id>.<ext>` (any of the supported extensions) for every competition
+    /// that has no `logoFile` yet, reusing `importCompetitionLogo`. Returns the number of clubs plus competitions
+    /// assigned (i.e. the total number of new logo files brought in).
     @discardableResult
     public func importCrests(from folder: URL, into library: inout Library) -> Int {
         let fm = FileManager.default
@@ -155,6 +158,13 @@ public final class Store: @unchecked Sendable {
             let candidate = club.crestSource.flatMap { byName[$0] } ?? files[Store.matchKey(club.name)] ?? files[Store.matchKey(club.shortName)]
             guard let source = candidate, let name = try? importCrest(from: source, for: club.id) else { continue }
             library.clubs[i].crestFile = name
+            count += 1
+        }
+        for i in library.competitions.indices where library.competitions[i].logoFile == nil {
+            let competitionId = library.competitions[i].id
+            guard let source = files[Store.matchKey("competition-\(competitionId)")],
+                  let name = try? importCompetitionLogo(from: source, for: competitionId) else { continue }
+            library.competitions[i].logoFile = name
             count += 1
         }
         return count

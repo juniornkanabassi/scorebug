@@ -167,6 +167,21 @@ do {
     try FileManager.default.removeItem(at: crestTmp)
 } catch { failures += 1; print("FAIL crest import: \(error)") }
 
+// Competition marks: importCrests also picks up competition-<id>.png for competitions without a logoFile
+let competitionLogoTmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-competition-logos-\(UUID().uuidString)")
+do {
+    let folder = competitionLogoTmp.appendingPathComponent("logos"); try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: folder.appendingPathComponent("competition-ligue1.png"))
+    let store = try Store(directory: competitionLogoTmp.appendingPathComponent("data"))
+    var lib = try store.loadLibrary()
+    check(lib.competitions.first { $0.id == "ligue1" }?.logoFile == nil, "competition starts with no logoFile before import")
+    let n = store.importCrests(from: folder, into: &lib)
+    check(n == 1, "importCrests reports one competition mark imported (\(n))")
+    check(lib.competitions.first { $0.id == "ligue1" }?.logoFile == "competition-ligue1.png", "competition mark is recorded with the competition-<id> file name")
+    check(lib.competitions.filter({ $0.id != "ligue1" }).allSatisfy { $0.logoFile == nil }, "only the matched competition gains a logoFile")
+    try FileManager.default.removeItem(at: competitionLogoTmp)
+} catch { failures += 1; print("FAIL competition logo import: \(error)") }
+
 // Seed merge into an existing library keeps user edits and adds what is new
 if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
     var old = Library(competitions: [seed.competitions[0]], clubs: [seed.clubs[0]])
