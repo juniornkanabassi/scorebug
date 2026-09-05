@@ -1,4 +1,6 @@
 // Connects to /ws, keeps the latest state, renders the bug for its slot every frame from the master clock fields.
+// Club name to a stable slug for per-club CSS (accents stripped, lowercase, dashes): "AS Saint-Étienne" -> "as-saint-etienne".
+const slug = (s) => (s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 // The clock maths mirrors ScorebugCore/ClockEngine.swift. Keep them in step.
 (function () {
   const body = document.body;
@@ -121,6 +123,8 @@
       bug.style.setProperty("--" + side + "-primary", t.primaryColour);
       bug.style.setProperty("--" + side + "-secondary", t.secondaryColour);
       bug.style.setProperty("--" + side + "-text", t.textColour);
+      // Stable per-club identifier for club-specific goal motifs: themes match [data-home-club="arsenal"].goal-home.
+      bug.dataset[side + "Club"] = slug(t.name);
     }
     el.homeCode.textContent = m.home.code; el.awayCode.textContent = m.away.code;
     el.homeName.textContent = m.home.shortName || m.home.name; el.awayName.textContent = m.away.shortName || m.away.name;
