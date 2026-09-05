@@ -1,0 +1,10 @@
+/* Manchester City ("Citizens"), code MCI -- Round 5 dissection of the official
+   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
+   Crescent moon with scattered stars -- the clip's own O-in-GOAL replacement; persists through the hold.
+   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
+   ('Manchester City' -> "manchester-city") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
+   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-city"] .main::before,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-city"] .main::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cpath%20d%3D%22M62%2020%20A32%2032%200%201%200%2062%2080%20A26%2026%200%201%201%2062%2020%20Z%22%20fill%3D%22%230b1e3d%22%2F%3E%20%3Ccircle%20cx%3D%2282%22%20cy%3D%2224%22%20r%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%2240%22%20r%3D%222%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2286%22%20cy%3D%2258%22%20r%3D%222.4%22%20fill%3D%22%23fff%22%2F%3E%20%3C%2Fsvg%3E");
+}

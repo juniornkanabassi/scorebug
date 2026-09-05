@@ -1,0 +1,10 @@
+/* Aston Villa ("Villans"), code AVL -- Round 5 dissection of the official
+   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
+   Gold vine/scroll flourish grows in around the wordmark and persists through the whole hold.
+   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
+   ('Aston Villa' -> "aston-villa") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
+   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="aston-villa"] .main::before,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="aston-villa"] .main::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cpath%20d%3D%22M22%2085%20Q8%2055%2028%2042%20Q48%2030%2038%208%22%20fill%3D%22none%22%20stroke%3D%22%23D4AF37%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%20%3Cpath%20d%3D%22M78%2015%20Q92%2045%2072%2058%20Q52%2070%2062%2092%22%20fill%3D%22none%22%20stroke%3D%22%23D4AF37%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%20%3Ccircle%20cx%3D%2238%22%20cy%3D%228%22%20r%3D%225%22%20fill%3D%22%23D4AF37%22%2F%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2292%22%20r%3D%225%22%20fill%3D%22%23D4AF37%22%2F%3E%20%3C%2Fsvg%3E");
+}

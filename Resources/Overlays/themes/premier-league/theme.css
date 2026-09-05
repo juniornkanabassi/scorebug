@@ -1,7 +1,75 @@
+/* Round 5: per-club goal motifs, dissected frame by frame from the Premier League's own official portrait clip
+   "Premier League Goal ANIMATIONS" (~/Downloads/Scorebug/Premier League Goal ANIMATIONS 🎨.mp4) -- see
+   Research/PL goal motifs.md for the full 20-club breakdown (object, colours, timing) this drove. One file per
+   club under clubs/, @import'd here (must precede every other rule per the CSS spec, hence sitting above even
+   this theme's own top comment block's rules). Every file follows the same contract, defined once below right
+   after the imports: the motif rides the existing .main::before layer (unused elsewhere in this theme --
+   .main::after is already spoken for by the GOAL wordmark/sweep) as a small icon anchored just past the crest
+   cut, NOT as a literal replacement of one letter inside "GOAL" -- the shared overlay.html has no per-glyph
+   spans to hook (that DOM is not owned by this theme), so letter-swaps like Bournemouth's cherry-for-O or
+   Everton's tower-for-A are approximated as a same-side watermark instead of true glyph substitution.
+   These files were written expecting overlay.js to expose which club is scoring, since at the start of this
+   round it did not; while this round was in progress, that change landed anyway (commit b7e60ce, "Expose each
+   side's club as a data attribute for per-club goal motifs" -- not made by this round, but reviewed and built
+   against once seen). It sets `bug.dataset.homeClub`/`awayClub` to a SLUG of the club's "name" field (its own
+   `slug()` helper: NFKD-normalised, accents stripped, lowercased, non-alphanumeric runs collapsed to one dash --
+   "AFC Bournemouth" -> "afc-bournemouth"), not the 3-letter `code` this round had originally guessed and
+   described as the needed change. Every selector below is keyed on `[data-home-club]`/`[data-away-club]`
+   accordingly. Verified live (not just over CDP) by loading the running test instance's own Arsenal v Chelsea
+   match and reading `document.getElementById('bug').dataset` back: `{homeClub: "arsenal", awayClub: "chelsea"}`,
+   set automatically with no manual injection needed -- see findings.md Round 5, "Club motifs / activation gap"
+   for the full before/after. */
+@import url("clubs/ars.css"); @import url("clubs/avl.css"); @import url("clubs/bha.css"); @import url("clubs/bou.css");
+@import url("clubs/bre.css"); @import url("clubs/bur.css"); @import url("clubs/che.css"); @import url("clubs/cry.css");
+@import url("clubs/eve.css"); @import url("clubs/ful.css"); @import url("clubs/lee.css"); @import url("clubs/liv.css");
+@import url("clubs/mci.css"); @import url("clubs/mun.css"); @import url("clubs/new.css"); @import url("clubs/nfo.css");
+@import url("clubs/sun.css"); @import url("clubs/tot.css"); @import url("clubs/whu.css"); @import url("clubs/wol.css");
+/* Shared motif contract every clubs/*.css file relies on: one small icon (--h*0.95 square), anchored just to the
+   goal-scoring side of the crest cut (46%/54% of the bar's own width, not a fixed h-multiple, so it tracks the
+   crest regardless of how wide the codes/scorer name make the bar), riding above the GOAL sweep (z-index 4 --
+   .main::after, the sweep+text, is 3) since the sweep's own background is opaque and would otherwise hide
+   anything painted *under* it on ::before. Two hold shapes: pl-motif-hold (fades in with the sweep, stays for
+   its full hold, fades out with it -- most clubs, whose clip showed the icon persist inside "GOAL") and
+   pl-motif-flash (a brief early reveal that dissolves well before the sweep's own hold ends -- Arsenal,
+   Brighton, Burnley and Sunderland, whose clip showed a bigger badge-style icon or pattern that appears then
+   fades rather than sitting inside the wordmark the whole time); each club file picks one via animation-name. */
+body[data-theme="premier-league"] .main::before {
+  content: ""; position: absolute; top: 50%; width: calc(var(--h) * 0.72); height: calc(var(--h) * 0.72);
+  transform: translateY(-50%); background-repeat: no-repeat; background-position: center; background-size: contain;
+  z-index: 4; pointer-events: none; opacity: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+}
+body[data-theme="premier-league"] .bug.goal-home .main::before { left: 46%; }
+body[data-theme="premier-league"] .bug.goal-away .main::before { left: 54%; transform: translateY(-50%) scaleX(-1); }
+/* Sizing/position history (round 5): the official clip's own per-club icon truly REPLACES the "O" in
+   "GOAL" -- it sits where a letter would, not in open space -- so chasing a fully clear gap between the
+   crest and the icon (tried 46/54, 44/56, then dead-centre 50/50, all at 0.95H) was solving the wrong
+   problem: on a real 3-letter-code bar the crest (96% of the bar's own height, roughly as wide as tall for
+   a round badge) and a 0.95H icon simply do not both fit with daylight between them. Landed on a smaller
+   0.72H icon back at a modest 46%/54% offset from centre instead: some visual closeness to the crest is
+   expected and matches the source's own tight "icon-in-the-wordmark" integration; verified across all 20
+   clubs' home renders (shots/r5/all-clubs-home-contact.png) and a MUN away spot-check
+   (shots/r5/clubs/mun-away-try*.png) that this reads as a legible icon beside the crest rather than a
+   collision. */
+body[data-theme="premier-league"] .bug.goal .main::before { animation: pl-motif-hold 4s cubic-bezier(.25,.8,.2,1) forwards; }
+@keyframes pl-motif-hold { 0% { opacity: 0; } 9% { opacity: 1; } 86% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes pl-motif-flash { 0% { opacity: 0; } 9% { opacity: 1; } 26% { opacity: 1; } 40% { opacity: 0; } 100% { opacity: 0; } }
+
 /* Premier League Productions world feed, 2024-25 onward. Verified against Optus Sport frames in the After Effects tutorial,
    Junior's reference (CRY 0 / 0 ARS), the Figma recreation and the Footy Headlines 2026-27 goal composite.
    Club plate with the code and a chevron edge, white digits on a dark centre, the lion roundel between them, purple clock plate
-   hanging under the centre. Goal: the club colour sweeps the bar with the crest at the cut and GOAL on the right. */
+   hanging under the centre. Goal: the club colour sweeps the bar with the crest at the cut and GOAL on the right.
+   Round 5 (5 Sep, frame-by-frame pass): typeface -- Research/Theme fonts.md landed mid-round (checked again before
+   finishing, since this round's own brief says to follow it "when it exists"). Its Premier League recommendation
+   is explicitly to KEEP Montserrat 800/900 as-is: three-to-four rounds of pixel measurement already tuned this
+   theme's geometry around Montserrat's own metrics, and re-opening the family now would cost another full
+   geometry.v/portrait retuning pass for a face the fonts pass itself calls "the closest OFL match to Premier
+   Sans's own character already bundled" -- so no font change made here. (That file separately flags Plus Jakarta
+   Sans/Manrope as an untested idea for the score digits specifically, not a confirmed recommendation, and neither
+   is bundled -- left alone.) Round-5 geometry/colour/motion findings against the After Effects recreation video
+   are in agent-pl/findings.md (Round 5) and Research/PL goal motifs.md; the one change they drove in this file is
+   the .score/.sep background below (see that rule's own note) plus the club-motif system now imported at the top
+   of this file -- every other round-4 figure held up against the video too closely to justify a change at this
+   file's own measurement confidence. */
 body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-green: #00FF85; --pl-pink: #E90052; --pl-dark: #0E0E1A;
   --kick-pending: #5b3a5e; --kick-scored: #00FF85; --kick-missed: #E90052;
   font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: 0.02em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
@@ -27,15 +95,20 @@ body[data-theme="premier-league"] .team.home { background: var(--home-primary); 
 body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 calc(var(--h) * 0.08) calc(var(--h) * 0.08) 0; padding-left: calc(var(--h) * 0.25);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, calc(var(--h) * 0.32) 50%); margin-left: calc(var(--h) * -0.08); }
 /* Score digits measured 1.03H tall (allowed to overrun the bar top/bottom -- see overflow:visible below),
-   font-size raised to calc(var(--h) * 1.4) to hit that. No separate dark box in the reference (see the
-   round-4 note above): each score cell continues its own team's primary colour; text stays white either side. */
-body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 0.92); height: var(--h); color: #fff; font-size: calc(var(--h) * 1.4); font-weight: 900; overflow: visible; }
-body[data-theme="premier-league"] .score.home { padding-left: calc(var(--h) * 0.02); background: var(--home-primary); }
-body[data-theme="premier-league"] .score.away { padding-right: calc(var(--h) * 0.02); background: var(--away-primary); }
+   font-size raised to calc(var(--h) * 1.4) to hit that.
+   Round 5: the After Effects recreation (Junior's reference of authority for look/motion, 5 Sep 23:05)
+   contradicts round 4's own broadcast-still reading here -- see the round-5 note further down after the
+   GOAL rules for the full pixel evidence -- so the score cells and the centre strip are transparent, not
+   filled with the team's primary colour: the code block's chevron cut reveals background behind it, and
+   the digits float directly on that same background, on both sides, matching the video rather than the
+   still. */
+body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 0.92); height: var(--h); color: #fff; font-size: calc(var(--h) * 1.4); font-weight: 900; overflow: visible; background: transparent; }
+body[data-theme="premier-league"] .score.home { padding-left: calc(var(--h) * 0.02); }
+body[data-theme="premier-league"] .score.away { padding-right: calc(var(--h) * 0.02); }
 /* the lion roundel: white disc overlapping the bar, purple mark inside (official mark used when imported).
-   .sep's own background is a hard-split gradient (not --pl-dark) so home/away colour continues right up to
-   the bar's centre seam behind the disc, matching the reference's continuous colour (no dark centre chip). */
-body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.17); background: linear-gradient(to right, var(--home-primary) 50%, var(--away-primary) 50%); position: relative; z-index: 2; overflow: visible; }
+   Round 5: .sep's background dropped to transparent (was a hard-split home/away gradient) -- see the
+   round-5 note below; the disc itself (.sep span) still paints its own white circle regardless. */
+body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.17); background: transparent; position: relative; z-index: 2; overflow: visible; }
 /* Roundel diameter measured 1.17H against the reference. */
 body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.17); height: calc(var(--h) * 1.17); transform: translate(-50%, -50%);
   border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none);
@@ -51,6 +124,25 @@ body[data-theme="premier-league"] .clock.stopped { color: var(--pl-green); }
 body[data-theme="premier-league"] .added { height: var(--h); margin-left: 8px; padding: 0 14px; background: var(--pl-purple); border-radius: 8px; gap: 8px; font-size: calc(var(--h) * 0.54); }
 body[data-theme="premier-league"] .added .counter { color: var(--pl-green); font-size: calc(var(--h) * 0.38); }
 body[data-theme="premier-league"] .added .counter:empty { display: none; }
+/* Round 5, portrait follow-up (b): in portrait .added used to sit in .main's own grid row (grid-area
+   "added", last column) -- a real column that only exists once a match has added time, so the row's own
+   total width (and therefore the whole centred .bug's width, since translateX(-50%) centres on .bug's own
+   box) grew whenever added time appeared, visibly shifting the bar itself left of centre. Grid track
+   sizing only counts IN-FLOW items; taking .added out of flow with position:absolute (same trick .clock
+   already uses one line up) makes its column collapse to 0 width whether or not has-added is set, so the
+   bar's own footprint -- and therefore its painted centre -- never changes. Moved here into the clock-plate
+   row instead: same purple, same 0.6H height as .clock, sitting immediately to its right. The offset uses
+   the clock plate's own measured width (2.15H min-width content-box + 0.16H padding each side = 2.47H
+   total, matching the clock's own round-4 measured 2.47H) so the two plates read as one row without a
+   wrapper element (out of scope: overlay.html/overlay.js are not owned by this theme). Verified with
+   measure3.py: painted bar-only footprint (team.home through team.away, .added excluded) centres at
+   x=540 both with ?demo=show and with a live addedMinutes value set via /api/match -- see findings.md
+   Round 5 "Portrait +N chip" table. */
+body[data-orientation="v"][data-theme="premier-league"] .added {
+  position: absolute; top: 100%; left: 50%; z-index: 1;
+  height: calc(var(--h) * 0.6); margin-left: 0;
+  transform: translateX(calc(-50% + (var(--h) * 2.47) / 2 + var(--h) * 0.12));
+}
 /* GOAL: club colour sweeps from the plate across the whole bar; crest sits at the cut; GOAL to the right.
    Round 4: GOAL wordmark, its padding and corner radius scale with the same ~1.35x the score digits grew
    (1.4H / 1.04H, round 3's ratio), so it stays in proportion to the now-larger codes and digits either side. */

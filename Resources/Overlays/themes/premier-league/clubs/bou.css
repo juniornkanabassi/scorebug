@@ -1,0 +1,10 @@
+/* AFC Bournemouth ("Cherries"), code BOU -- Round 5 dissection of the official
+   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
+   Two red cherries on green stems -- the clip's own O-in-GOAL replacement, kept as a same-side watermark here; persists through the hold.
+   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
+   ('AFC Bournemouth' -> "afc-bournemouth") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
+   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="afc-bournemouth"] .main::before,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="afc-bournemouth"] .main::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cline%20x1%3D%2250%22%20y1%3D%228%22%20x2%3D%2234%22%20y2%3D%2242%22%20stroke%3D%22%233A7D34%22%20stroke-width%3D%225%22%2F%3E%20%3Cline%20x1%3D%2250%22%20y1%3D%228%22%20x2%3D%2266%22%20y2%3D%2242%22%20stroke%3D%22%233A7D34%22%20stroke-width%3D%225%22%2F%3E%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2260%22%20r%3D%2222%22%20fill%3D%22%23DA291C%22%2F%3E%3Ccircle%20cx%3D%2268%22%20cy%3D%2260%22%20r%3D%2222%22%20fill%3D%22%23DA291C%22%2F%3E%20%3Cellipse%20cx%3D%2225%22%20cy%3D%2250%22%20rx%3D%226%22%20ry%3D%224%22%20fill%3D%22%23fff%22%20opacity%3D%220.45%22%2F%3E%20%3Cellipse%20cx%3D%2261%22%20cy%3D%2250%22%20rx%3D%226%22%20ry%3D%224%22%20fill%3D%22%23fff%22%20opacity%3D%220.45%22%2F%3E%20%3C%2Fsvg%3E");
+}

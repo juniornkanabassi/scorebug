@@ -1,0 +1,10 @@
+/* Everton ("Toffees"), code EVE -- Round 5 dissection of the official
+   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
+   Prince Rupert's Tower silhouette (matches the club crest) -- the clip's own A-in-GOAL replacement; persists through the hold.
+   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
+   ('Everton' -> "everton") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
+   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="everton"] .main::before,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="everton"] .main::before {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Crect%20x%3D%2230%22%20y%3D%2240%22%20width%3D%2240%22%20height%3D%2255%22%20fill%3D%22%23fff%22%2F%3E%20%3Cpolygon%20points%3D%2250%2C10%2072%2C40%2028%2C40%22%20fill%3D%22%23fff%22%2F%3E%20%3Crect%20x%3D%2244%22%20y%3D%2260%22%20width%3D%2212%22%20height%3D%2235%22%20fill%3D%22%23003399%22%2F%3E%20%3C%2Fsvg%3E");
+}
