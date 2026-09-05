@@ -66,7 +66,8 @@ struct SlotView: View {
                 Text("Choose a club").tag(UUID?.none)
                 ForEach(clubs) { c in Text(c.name).tag(UUID?.some(c.id)) }
             }.labelsHidden().frame(maxWidth: 220)
-            Text(team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
+            // A placeholder reads "Home" or "Away" in full; a chosen club shows its broadcast code.
+            Text(team.clubId == nil ? team.name : team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
             HStack(spacing: 14) {
                 Button { model.apply(.goal(side, -1), slot: slot) } label: { Image(systemName: "minus").frame(width: 14) }
                     .controlSize(.large).disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
@@ -93,7 +94,6 @@ struct SlotView: View {
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
-            clockNudgeRow
             HStack(spacing: 8) {
                 Button(match.clock.running ? "Pause" : "Play") { model.apply(.play, slot: slot) }.disabled(match.currentPeriod == nil)
                 Button("End half") { model.apply(.endPeriod, slot: slot) }.disabled(match.currentPeriod == nil)
@@ -130,6 +130,7 @@ struct SlotView: View {
     private var clockSection: some View {
         Section("Clock") {
             LabeledContent("Start") { HStack { ForEach(Period.allCases, id: \.self) { p in periodButton(p) } } }
+            LabeledContent("Adjust") { clockNudgeRow }
             LabeledContent("Added time") {
                 HStack {
                     Stepper(value: Binding(get: { match.addedMinutes ?? 0 }, set: { model.apply(.setAddedMinutes($0), slot: slot) }), in: 0...15) {

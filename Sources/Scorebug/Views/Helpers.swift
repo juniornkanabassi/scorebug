@@ -116,7 +116,7 @@ struct CrestView: View {
             if let f = team.crestFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(f)) {
                 Image(nsImage: img).resizable().scaledToFit()
             } else {
-                Circle().fill(Color(hex: team.primaryColour)).overlay(Text(String(team.code.prefix(2))).font(.system(size: size * 0.36, weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
+                Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: size * 0.36, weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
             }
         }.frame(width: size, height: size)
     }
