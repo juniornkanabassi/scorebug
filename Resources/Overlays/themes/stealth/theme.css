@@ -18,3 +18,11 @@ body[data-theme="stealth"] .shootout { margin-top: 4px; gap: 16px; padding: 6px 
 body[data-theme="stealth"] .scorers { margin-top: 4px; gap: 20px; padding: 6px 14px; background: rgba(0,0,0,0.85); border-radius: 4px; font-size: calc(var(--h) * 0.32); font-weight: 600; }
 body[data-theme="stealth"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="stealth"] .shootout, body[data-orientation="v"][data-theme="stealth"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
+
+/* Portrait only: at the larger portrait scale the fixed-px paddings below run the bar past the 800px safe-zone cap for
+   real team-code lengths. Tighten spacing here so landscape (which uses the rules above, untouched) keeps its exact look. */
+body[data-orientation="v"][data-theme="stealth"] .team { padding: 0 8px 0 6px; gap: 6px; }
+body[data-orientation="v"][data-theme="stealth"] .clock { padding: 0 8px; min-width: calc(var(--h) * 1.55); }
+body[data-orientation="v"][data-theme="stealth"] .added { padding: 0 8px 0 0; gap: 6px; }
+/* Portrait only: 8px visual gap and a 12px vertical padding floor at 1.75x scale; landscape (the rule two blocks up) is untouched. */
+body[data-orientation="v"][data-theme="stealth"] .shootout, body[data-orientation="v"][data-theme="stealth"] .scorers { margin-top: 4.6px; padding-top: 7px; padding-bottom: 7px; }

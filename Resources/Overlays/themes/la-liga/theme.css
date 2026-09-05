@@ -36,9 +36,13 @@ body[data-theme="la-liga"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 
 body[data-theme="la-liga"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(15,15,15,0.95); font-size: calc(var(--h) * 0.4); font-weight: 600; }
 body[data-theme="la-liga"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="la-liga"] .shootout, body[data-orientation="v"][data-theme="la-liga"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
+/* Portrait only: 8px visual gap and a 12px vertical padding floor at 2.0x scale; landscape (the rule above) is untouched. */
+body[data-orientation="v"][data-theme="la-liga"] .shootout, body[data-orientation="v"][data-theme="la-liga"] .scorers { margin-top: 4px; padding-top: 6.2px; padding-bottom: 6.2px; }
+/* Portrait only: the +N plate is the block's own third grid row, flush against row 2; give it the same 8px visual gap. */
+body[data-orientation="v"][data-theme="la-liga"] .added { margin-top: 4px; }
 
-/* Portrait: the goal plate drops under the block instead of running off the right edge. */
-body[data-orientation="v"][data-theme="la-liga"] .main::after { left: 0; top: 100%; width: 100%; height: calc(var(--h) * 1.15); padding-left: calc(var(--h) * 1.4); font-size: calc(var(--h) * 0.9); background-position: calc(var(--h) * 0.3) center; background-size: auto 80%; clip-path: inset(0 0 100% 0); }
+/* Portrait: the goal plate drops under the block instead of running off the right edge, with the same 8px visual gap. */
+body[data-orientation="v"][data-theme="la-liga"] .main::after { left: 0; top: calc(100% + 4px); width: 100%; height: calc(var(--h) * 1.15); padding-left: calc(var(--h) * 1.4); font-size: calc(var(--h) * 0.9); background-position: calc(var(--h) * 0.3) center; background-size: auto 80%; clip-path: inset(0 0 100% 0); }
 body[data-orientation="v"][data-theme="la-liga"] .bug.goal .main::after { animation: ll-plate-v 3.2s cubic-bezier(.3,.8,.2,1) forwards; }
 @keyframes ll-plate-v { 0% { clip-path: inset(0 0 100% 0); } 18% { clip-path: inset(0 0 0 0); } 80% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(100% 0 0 0); } }
 

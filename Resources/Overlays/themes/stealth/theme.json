@@ -7,13 +7,13 @@
     "h": {
       "left": 58,
       "top": 53,
-      "scale": 1
+      "scale": 1.5
     },
     "v": {
-      "top": 400,
+      "top": 260,
       "maxWidth": 800,
-      "scale": 1.7,
-      "top2": 523
+      "scale": 1.75,
+      "top2": 385
     }
   },
   "scorersEverySeconds": 90,

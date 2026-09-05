@@ -8,21 +8,24 @@ body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-g
 body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 0.72); }
 body[data-theme="premier-league"] .comp, body[data-theme="premier-league"] .team .name, body[data-theme="premier-league"] .team .crest { display: none; }
 body[data-theme="premier-league"] .team { padding: 0 26px; font-size: calc(var(--h) * 0.6); }
+/* Code lettering: heavier than the body weight and tracked wider, matching the Optus/Figma references' shouty club codes. */
+body[data-theme="premier-league"] .team .code { font-weight: 900; letter-spacing: 0.04em; }
 body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: 8px 0 0 8px; padding-right: 34px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 50%, 100% 100%, 0 100%); margin-right: -8px; }
 body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 8px 8px 0; padding-left: 34px;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 16px 50%); margin-left: -8px; }
-body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.05); background: var(--pl-dark); color: #fff; font-size: calc(var(--h) * 0.9); font-weight: 900; }
+body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.05); background: var(--pl-dark); color: #fff; font-size: calc(var(--h) * 1.04); font-weight: 900; }
 body[data-theme="premier-league"] .score.home { padding-left: 14px; }
 body[data-theme="premier-league"] .score.away { padding-right: 14px; }
 /* the lion roundel: white disc overlapping the bar, purple mark inside (official mark used when imported) */
 body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.0); background: var(--pl-dark); position: relative; z-index: 2; overflow: visible; }
-body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.22); height: calc(var(--h) * 1.22); transform: translate(-50%, -50%);
-  border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none); }
+body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.3); height: calc(var(--h) * 1.3); transform: translate(-50%, -50%);
+  border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
 body[data-theme="premier-league"] .bug:not(.has-comp-logo) .sep span::after { content: ""; position: absolute; inset: 18%; background: var(--pl-purple);
   clip-path: polygon(50% 0, 62% 22%, 84% 10%, 78% 36%, 100% 46%, 84% 60%, 88% 100%, 62% 86%, 50% 100%, 38% 86%, 12% 100%, 16% 60%, 0 46%, 22% 36%, 16% 10%, 38% 22%); }
 body[data-theme="premier-league"] .clock { grid-area: sep; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; z-index: 1;
-  height: calc(var(--h) * 0.68); padding: 0 22px; min-width: calc(var(--h) * 2.7); background: var(--pl-purple); border-radius: 0 0 9px 9px; font-size: calc(var(--h) * 0.5); font-weight: 700; font-variant-numeric: tabular-nums; }
+  height: calc(var(--h) * 0.62); padding: 0 22px; min-width: calc(var(--h) * 2.9); background: var(--pl-purple); border-radius: 0 0 9px 9px; font-size: calc(var(--h) * 0.5); font-weight: 700; font-variant-numeric: tabular-nums; }
 body[data-theme="premier-league"] .clock.stopped { color: var(--pl-green); }
 body[data-theme="premier-league"] .added { height: var(--h); margin-left: 8px; padding: 0 14px; background: var(--pl-purple); border-radius: 8px; gap: 8px; font-size: calc(var(--h) * 0.5); }
 body[data-theme="premier-league"] .added .counter { color: var(--pl-green); font-size: calc(var(--h) * 0.38); }
@@ -40,6 +43,10 @@ body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; paddin
 body[data-theme="premier-league"] .scorers { margin-top: 6px; gap: 20px; padding: 6px 14px; background: rgba(55,0,60,0.94); border-radius: 8px; font-size: calc(var(--h) * 0.38); font-weight: 600; }
 body[data-theme="premier-league"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
+/* Portrait only: at the 1.95x portrait scale, 6px of vertical padding and 6px of top margin read as under 12px and under 8px
+   once the whole bug is scaled up. Bump both here so the rows below the main block sit off the plate and keep clear of the
+   text's own edges; landscape (the rule above) is untouched. */
+body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { margin-top: 4.1px; padding-top: 6.5px; padding-bottom: 6.5px; }
 
 /* BUILD, ~0.7s: the purple clock plate drops from under the bar first, then the two plates wipe outward from the roundel. */
 body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home { transform-origin: right center; will-change: transform; }

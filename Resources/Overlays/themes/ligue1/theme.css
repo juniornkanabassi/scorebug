@@ -30,6 +30,8 @@ body[data-theme="ligue1"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 1
 body[data-theme="ligue1"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(42,42,42,0.95); border-left: 5px solid var(--l1-blue); font-size: calc(var(--h) * 0.4); font-weight: 600; }
 body[data-theme="ligue1"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="ligue1"] .shootout, body[data-orientation="v"][data-theme="ligue1"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
+/* Portrait only: 8px visual gap and a 12px vertical padding floor at 2.0x scale; landscape (the rule above) is untouched. */
+body[data-orientation="v"][data-theme="ligue1"] .shootout, body[data-orientation="v"][data-theme="ligue1"] .scorers { margin-top: 4px; padding-top: 6.2px; padding-bottom: 6.2px; }
 
 /* Official mark, when imported, shown white on the blue square. */
 body[data-theme="ligue1"] .bug.has-comp-logo .comp .mark { width: calc(var(--h) * 1.05); height: calc(var(--h) * 1.05); filter: brightness(0) invert(1); }
