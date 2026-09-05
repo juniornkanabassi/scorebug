@@ -1654,6 +1654,691 @@
     "champions-league"
    ],
    "crestSource": null
+  },
+  {
+   "name": "AFC Bournemouth",
+   "shortName": "Bournemouth",
+   "defaultCode": "BOU",
+   "codes": {},
+   "primaryColour": "#DA291C",
+   "secondaryColour": "#000000",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "AFC Bournemouth.png"
+  },
+  {
+   "name": "Brentford",
+   "shortName": "Brentford",
+   "defaultCode": "BRE",
+   "codes": {},
+   "primaryColour": "#D2122E",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Brentford.png"
+  },
+  {
+   "name": "Brighton & Hove Albion",
+   "shortName": "Brighton",
+   "defaultCode": "BHA",
+   "codes": {},
+   "primaryColour": "#0057B8",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "premier-league",
+    "conference-league"
+   ],
+   "crestSource": "Brighton & Hove Albion.png"
+  },
+  {
+   "name": "Coventry City",
+   "shortName": "Coventry",
+   "defaultCode": "COV",
+   "codes": {},
+   "primaryColour": "#6CACE4",
+   "secondaryColour": "#000000",
+   "textColour": "#000000",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Coventry City.png"
+  },
+  {
+   "name": "Fulham",
+   "shortName": "Fulham",
+   "defaultCode": "FUL",
+   "codes": {},
+   "primaryColour": "#FFFFFF",
+   "secondaryColour": "#000000",
+   "textColour": "#000000",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Fulham.png"
+  },
+  {
+   "name": "Hull City",
+   "shortName": "Hull City",
+   "defaultCode": "HUL",
+   "codes": {},
+   "primaryColour": "#F18A00",
+   "secondaryColour": "#000000",
+   "textColour": "#000000",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Hull City.png"
+  },
+  {
+   "name": "Ipswich Town",
+   "shortName": "Ipswich",
+   "defaultCode": "IPS",
+   "codes": {},
+   "primaryColour": "#0044A9",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Ipswich Town.png"
+  },
+  {
+   "name": "Leeds United",
+   "shortName": "Leeds",
+   "defaultCode": "LEE",
+   "codes": {},
+   "primaryColour": "#FFFFFF",
+   "secondaryColour": "#1D428A",
+   "textColour": "#000000",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Leeds United.png"
+  },
+  {
+   "name": "Nottingham Forest",
+   "shortName": "Nottm Forest",
+   "defaultCode": "NFO",
+   "codes": {},
+   "primaryColour": "#DD0000",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "premier-league"
+   ],
+   "crestSource": "Nottingham Forest.png"
+  },
+  {
+   "name": "Sunderland",
+   "shortName": "Sunderland",
+   "defaultCode": "SUN",
+   "codes": {},
+   "primaryColour": "#E03A3E",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "premier-league",
+    "europa-league"
+   ],
+   "crestSource": "Sunderland.png"
+  },
+  {
+   "name": "Le Mans FC",
+   "shortName": "Le Mans",
+   "defaultCode": "LEM",
+   "codes": {},
+   "primaryColour": "#0033A0",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "ligue1"
+   ],
+   "crestSource": "Le Mans FC.png"
+  },
+  {
+   "name": "ES Troyes AC",
+   "shortName": "Troyes",
+   "defaultCode": "TRO",
+   "codes": {},
+   "primaryColour": "#002B5C",
+   "secondaryColour": "#6CACE4",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "ligue1"
+   ],
+   "crestSource": "ES Troyes AC.png"
+  },
+  {
+   "name": "Deportivo Alavés",
+   "shortName": "Alavés",
+   "defaultCode": "ALA",
+   "codes": {},
+   "primaryColour": "#1D4F91",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Deportivo Alavés.png"
+  },
+  {
+   "name": "RC Celta de Vigo",
+   "shortName": "Celta Vigo",
+   "defaultCode": "CEL",
+   "codes": {},
+   "primaryColour": "#77B5E0",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#000000",
+   "competitionIds": [
+    "la-liga",
+    "europa-league"
+   ],
+   "crestSource": "RC Celta de Vigo.png"
+  },
+  {
+   "name": "RC Deportivo de La Coruña",
+   "shortName": "Deportivo",
+   "defaultCode": "DEP",
+   "codes": {},
+   "primaryColour": "#0A3F8C",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "RC Deportivo de La Coruña.png"
+  },
+  {
+   "name": "Elche CF",
+   "shortName": "Elche",
+   "defaultCode": "ELC",
+   "codes": {},
+   "primaryColour": "#00A650",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Elche CF.png"
+  },
+  {
+   "name": "Getafe CF",
+   "shortName": "Getafe",
+   "defaultCode": "GET",
+   "codes": {},
+   "primaryColour": "#005999",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga",
+    "conference-league"
+   ],
+   "crestSource": "Getafe CF.png"
+  },
+  {
+   "name": "Levante UD",
+   "shortName": "Levante",
+   "defaultCode": "LEV",
+   "codes": {},
+   "primaryColour": "#001E50",
+   "secondaryColour": "#A6093D",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Levante UD.png"
+  },
+  {
+   "name": "Málaga CF",
+   "shortName": "Málaga",
+   "defaultCode": "MAL",
+   "codes": {},
+   "primaryColour": "#0B4F9C",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Málaga CF.png"
+  },
+  {
+   "name": "CA Osasuna",
+   "shortName": "Osasuna",
+   "defaultCode": "OSA",
+   "codes": {},
+   "primaryColour": "#D91A21",
+   "secondaryColour": "#001A4B",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "CA Osasuna.png"
+  },
+  {
+   "name": "Real Racing Club de Santander",
+   "shortName": "Racing Santander",
+   "defaultCode": "RAC",
+   "codes": {},
+   "primaryColour": "#000000",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Real Racing Club de Santander.png"
+  },
+  {
+   "name": "Rayo Vallecano",
+   "shortName": "Rayo Vallecano",
+   "defaultCode": "RAY",
+   "codes": {},
+   "primaryColour": "#FFFFFF",
+   "secondaryColour": "#E2001A",
+   "textColour": "#000000",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Rayo Vallecano.png"
+  },
+  {
+   "name": "Sevilla FC",
+   "shortName": "Sevilla",
+   "defaultCode": "SEV",
+   "codes": {},
+   "primaryColour": "#D71920",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga"
+   ],
+   "crestSource": "Sevilla FC.png"
+  },
+  {
+   "name": "AS Roma",
+   "shortName": "Roma",
+   "defaultCode": "ROM",
+   "codes": {},
+   "primaryColour": "#8E1F2F",
+   "secondaryColour": "#F0BC42",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a",
+    "champions-league"
+   ],
+   "crestSource": "AS Roma.png"
+  },
+  {
+   "name": "Bologna FC 1909",
+   "shortName": "Bologna",
+   "defaultCode": "BOL",
+   "codes": {},
+   "primaryColour": "#862633",
+   "secondaryColour": "#1C3F94",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Bologna FC 1909.png"
+  },
+  {
+   "name": "Cagliari Calcio",
+   "shortName": "Cagliari",
+   "defaultCode": "CAG",
+   "codes": {},
+   "primaryColour": "#C51A2E",
+   "secondaryColour": "#001489",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Cagliari Calcio.png"
+  },
+  {
+   "name": "Como 1907",
+   "shortName": "Como",
+   "defaultCode": "COM",
+   "codes": {},
+   "primaryColour": "#0057A8",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a",
+    "champions-league"
+   ],
+   "crestSource": "Como 1907.png"
+  },
+  {
+   "name": "ACF Fiorentina",
+   "shortName": "Fiorentina",
+   "defaultCode": "FIO",
+   "codes": {},
+   "primaryColour": "#572678",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "ACF Fiorentina.png"
+  },
+  {
+   "name": "Frosinone Calcio",
+   "shortName": "Frosinone",
+   "defaultCode": "FRO",
+   "codes": {},
+   "primaryColour": "#FFD100",
+   "secondaryColour": "#003DA5",
+   "textColour": "#000000",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Frosinone Calcio.png"
+  },
+  {
+   "name": "Genoa CFC",
+   "shortName": "Genoa",
+   "defaultCode": "GEN",
+   "codes": {},
+   "primaryColour": "#041E42",
+   "secondaryColour": "#B7312C",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Genoa CFC.png"
+  },
+  {
+   "name": "SS Lazio",
+   "shortName": "Lazio",
+   "defaultCode": "LAZ",
+   "codes": {},
+   "primaryColour": "#7FC3EF",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#000000",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "SS Lazio.png"
+  },
+  {
+   "name": "US Lecce",
+   "shortName": "Lecce",
+   "defaultCode": "LEC",
+   "codes": {},
+   "primaryColour": "#FFE100",
+   "secondaryColour": "#C8102E",
+   "textColour": "#000000",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "US Lecce.png"
+  },
+  {
+   "name": "AC Monza",
+   "shortName": "Monza",
+   "defaultCode": "MON",
+   "codes": {},
+   "primaryColour": "#C8102E",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "AC Monza.png"
+  },
+  {
+   "name": "Parma Calcio 1913",
+   "shortName": "Parma",
+   "defaultCode": "PAR",
+   "codes": {},
+   "primaryColour": "#003DA5",
+   "secondaryColour": "#FFE500",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Parma Calcio 1913.png"
+  },
+  {
+   "name": "US Sassuolo Calcio",
+   "shortName": "Sassuolo",
+   "defaultCode": "SAS",
+   "codes": {},
+   "primaryColour": "#0B8A3C",
+   "secondaryColour": "#000000",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "US Sassuolo Calcio.png"
+  },
+  {
+   "name": "Torino FC",
+   "shortName": "Torino",
+   "defaultCode": "TOR",
+   "codes": {},
+   "primaryColour": "#7B1E3A",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Torino FC.png"
+  },
+  {
+   "name": "Udinese Calcio",
+   "shortName": "Udinese",
+   "defaultCode": "UDI",
+   "codes": {},
+   "primaryColour": "#000000",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Udinese Calcio.png"
+  },
+  {
+   "name": "Venezia FC",
+   "shortName": "Venezia",
+   "defaultCode": "VEN",
+   "codes": {},
+   "primaryColour": "#E2711D",
+   "secondaryColour": "#1B1B1B",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "serie-a"
+   ],
+   "crestSource": "Venezia FC.png"
+  },
+  {
+   "name": "1. FC Union Berlin",
+   "shortName": "Union Berlin",
+   "defaultCode": "FCU",
+   "codes": {},
+   "primaryColour": "#EB1923",
+   "secondaryColour": "#FFD700",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "1. FC Union Berlin.png"
+  },
+  {
+   "name": "Borussia Mönchengladbach",
+   "shortName": "Gladbach",
+   "defaultCode": "BMG",
+   "codes": {},
+   "primaryColour": "#000000",
+   "secondaryColour": "#00A650",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "Borussia Mönchengladbach.png"
+  },
+  {
+   "name": "Eintracht Frankfurt",
+   "shortName": "Frankfurt",
+   "defaultCode": "SGE",
+   "codes": {},
+   "primaryColour": "#E1000F",
+   "secondaryColour": "#000000",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "Eintracht Frankfurt.png"
+  },
+  {
+   "name": "FC Augsburg",
+   "shortName": "Augsburg",
+   "defaultCode": "FCA",
+   "codes": {},
+   "primaryColour": "#BA3733",
+   "secondaryColour": "#00784A",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "FC Augsburg.png"
+  },
+  {
+   "name": "1. FC Köln",
+   "shortName": "Köln",
+   "defaultCode": "KOE",
+   "codes": {},
+   "primaryColour": "#ED1C24",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "1. FC Köln.png"
+  },
+  {
+   "name": "Hamburger SV",
+   "shortName": "Hamburg",
+   "defaultCode": "HSV",
+   "codes": {},
+   "primaryColour": "#00295A",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "Hamburger SV.png"
+  },
+  {
+   "name": "1. FSV Mainz 05",
+   "shortName": "Mainz 05",
+   "defaultCode": "M05",
+   "codes": {},
+   "primaryColour": "#C3141E",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "1. FSV Mainz 05.png"
+  },
+  {
+   "name": "SC Freiburg",
+   "shortName": "Freiburg",
+   "defaultCode": "SCF",
+   "codes": {},
+   "primaryColour": "#E2001A",
+   "secondaryColour": "#000000",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga",
+    "conference-league"
+   ],
+   "crestSource": "SC Freiburg.png"
+  },
+  {
+   "name": "SC Paderborn 07",
+   "shortName": "Paderborn",
+   "defaultCode": "SCP",
+   "codes": {},
+   "primaryColour": "#001489",
+   "secondaryColour": "#00843D",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "SC Paderborn 07.png"
+  },
+  {
+   "name": "SV 07 Elversberg",
+   "shortName": "Elversberg",
+   "defaultCode": "SVE",
+   "codes": {},
+   "primaryColour": "#000000",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "SV 07 Elversberg.png"
+  },
+  {
+   "name": "FC Schalke 04",
+   "shortName": "Schalke",
+   "defaultCode": "S04",
+   "codes": {},
+   "primaryColour": "#004D9D",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "FC Schalke 04.png"
+  },
+  {
+   "name": "TSG 1899 Hoffenheim",
+   "shortName": "Hoffenheim",
+   "defaultCode": "TSG",
+   "codes": {},
+   "primaryColour": "#1C63B7",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga",
+    "europa-league"
+   ],
+   "crestSource": "TSG 1899 Hoffenheim.png"
+  },
+  {
+   "name": "VfB Stuttgart",
+   "shortName": "Stuttgart",
+   "defaultCode": "VFB",
+   "codes": {},
+   "primaryColour": "#E30613",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga",
+    "champions-league"
+   ],
+   "crestSource": "VfB Stuttgart.png"
+  },
+  {
+   "name": "SV Werder Bremen",
+   "shortName": "Werder Bremen",
+   "defaultCode": "SVW",
+   "codes": {},
+   "primaryColour": "#1D9053",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "bundesliga"
+   ],
+   "crestSource": "SV Werder Bremen.png"
   }
  ]
 }

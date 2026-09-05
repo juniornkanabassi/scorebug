@@ -139,8 +139,14 @@ if let bundled = OverlayResolver.locateBundledOverlays(explicit: nil) {
 
 // Seed file, theme override, crest matching
 if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
-    check(seed.clubs.count > 100 && seed.competitions.count == 10, "seed-library.json loads with clubs, nations and competitions")
+    check(seed.clubs.count >= 165 && seed.competitions.count == 10, "seed-library.json loads with clubs, nations and competitions")
     check(seed.clubs.first { $0.shortName == "Marseille" }?.code(for: "champions-league") == "MAR", "seed keeps per-competition codes")
+    let fiveLeagues = ["premier-league", "ligue1", "la-liga", "serie-a", "bundesliga"]
+    let leagueCounts = [20, 18, 20, 20, 18]
+    for (comp, expected) in zip(fiveLeagues, leagueCounts) {
+        let n = seed.clubs.filter { $0.competitionIds.contains(comp) }.count
+        check(n == expected, "\(comp) has \(expected) clubs for 2026-27 (found \(n))")
+    }
 } else { failures += 1; print("FAIL seed-library.json not found") }
 check(Store.matchKey("AS Saint-Étienne") == "assaintetienne" && Store.matchKey("FK Bodø/Glimt") == "fkbodoglimt", "match key folds accents and punctuation")
 var themed = MatchEngine.apply(.setTheme("stealth"), to: Match(slot: 1), now: at(0))
@@ -170,6 +176,34 @@ if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
     check(old.clubs[0].primaryColour == "#123456" && old.clubs[0].crestFile == "mine.png" && old.clubs[0].squad == ["X. Custom"], "merge keeps the user's colour, crest and squad")
     check(seed.clubs.first { $0.name == "Arsenal" }?.squad?.contains("B. Saka") == true, "squads.json is merged into the seed")
     var again = old; check(!Store.mergeSeed(seed, into: &again), "a second merge changes nothing")
+
+    // squads.json carries a version, and mergeSeed uses it to tell a stale squad from a current one
+    let seedVersion = SeedLibrary.lastLoadedSquadsVersion
+    check(seedVersion != nil, "squads.json carries a _version")
+
+    var stale = Library(competitions: seed.competitions, clubs: seed.clubs)
+    stale.clubs[0].squad = ["Old. Player"]
+    let staleChanged = Store.mergeSeed(seed, into: &stale, seedSquadsVersion: seedVersion, storedSquadsVersion: "2000-01-01")
+    check(staleChanged && stale.clubs[0].squad == seed.clubs[0].squad, "a stale squad is replaced when the seed version is newer than the stored one")
+
+    var current = Library(competitions: seed.competitions, clubs: seed.clubs)
+    current.clubs[0].squad = ["Old. Player"]
+    _ = Store.mergeSeed(seed, into: &current, seedSquadsVersion: seedVersion, storedSquadsVersion: seedVersion)
+    check(current.clubs[0].squad == ["Old. Player"], "a squad is left alone when the stored version matches the seed version")
+
+    var unversioned = Library(competitions: seed.competitions, clubs: seed.clubs)
+    unversioned.clubs[0].squad = ["Old. Player"]
+    _ = Store.mergeSeed(seed, into: &unversioned)
+    check(unversioned.clubs[0].squad == ["Old. Player"], "a squad is left alone when no version is supplied, matching the pre-version merge behaviour")
+
+    // Every club in the five leagues carries a full squad and a code for each competition it plays in
+    let fiveLeagues: Set<String> = ["premier-league", "ligue1", "la-liga", "serie-a", "bundesliga"]
+    let leagueClubs = seed.clubs.filter { !$0.competitionIds.filter(fiveLeagues.contains).isEmpty }
+    check(leagueClubs.count == 96, "96 clubs across the five leagues (found \(leagueClubs.count))")
+    let missingSquad = leagueClubs.filter { ($0.squad?.isEmpty ?? true) }.map { $0.name }
+    check(missingSquad.isEmpty, "every five-league club has a non-empty squad (missing: \(missingSquad))")
+    let missingCode = leagueClubs.filter { club in club.competitionIds.contains { club.code(for: $0).isEmpty } }.map { $0.name }
+    check(missingCode.isEmpty, "every five-league club has a code for each of its competitions (missing: \(missingCode))")
 }
 
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")

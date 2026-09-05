@@ -54,14 +54,31 @@ public final class Store: @unchecked Sendable {
 
     public func loadLibrary() throws -> Library {
         if var lib = try load("library.json", as: Library.self, schemaOf: { $0.schema }) {
-            if let seed = SeedLibrary.load(from: Store.locateSeedFile()), Store.mergeSeed(seed, into: &lib) { try saveLibrary(lib) }
+            if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
+                let seedVersion = SeedLibrary.lastLoadedSquadsVersion
+                let changed = Store.mergeSeed(seed, into: &lib, seedSquadsVersion: seedVersion, storedSquadsVersion: storedSquadsVersion())
+                if changed { try saveLibrary(lib) }
+                if let seedVersion { saveSquadsVersion(seedVersion) }
+            }
             return lib
         }
         let seeded = SeedLibrary.load(from: Store.locateSeedFile()) ?? SeedLibrary.make()
         try saveLibrary(seeded)
+        if let v = SeedLibrary.lastLoadedSquadsVersion { saveSquadsVersion(v) }
         return seeded
     }
     public func saveLibrary(_ library: Library) throws { try save(library, to: "library.json") }
+
+    /// Sidecar tracking of the squads.json "_version" last applied to this store's library.json, kept outside
+    /// Models.swift (Library carries no version field) so mergeSeed can tell a stale squad from a current one.
+    private func storedSquadsVersion() -> String? {
+        guard let data = try? Data(contentsOf: url("squads-version.txt")) else { return nil }
+        let s = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        return s.isEmpty ? nil : s
+    }
+    private func saveSquadsVersion(_ version: String) {
+        try? Data(version.utf8).write(to: url("squads-version.txt"), options: .atomic)
+    }
 
     public func loadState() throws -> MatchState {
         try load("state.json", as: MatchState.self, schemaOf: { $0.schema }) ?? MatchState()
@@ -76,14 +93,17 @@ public final class Store: @unchecked Sendable {
     /// Brings an existing library up to date with the bundled seed without touching what the user edits:
     /// adds missing competitions and clubs, fills empty squads, confederations and crest sources, and refreshes
     /// competition memberships and per-competition codes from the seed. Colours, crests, names and logos are kept.
-    /// Returns true when anything changed.
-    public static func mergeSeed(_ seed: Library, into lib: inout Library) -> Bool {
+    /// A club's squad is replaced (not just filled when nil) whenever `seedSquadsVersion` is newer than
+    /// `storedSquadsVersion`, since squads.json is refreshed independently of the rest of the seed. Returns true
+    /// when anything changed.
+    public static func mergeSeed(_ seed: Library, into lib: inout Library, seedSquadsVersion: String? = nil, storedSquadsVersion: String? = nil) -> Bool {
         var changed = false
+        let squadsAreNewer = isVersionNewer(seedSquadsVersion, than: storedSquadsVersion)
         for comp in seed.competitions where !lib.competitions.contains(where: { $0.id == comp.id }) { lib.competitions.append(comp); changed = true }
         for sc in seed.clubs {
             if let i = lib.clubs.firstIndex(where: { $0.name == sc.name }) {
                 var c = lib.clubs[i]
-                if c.squad == nil, let sq = sc.squad { c.squad = sq }
+                if let sq = sc.squad, c.squad == nil || squadsAreNewer { c.squad = sq }
                 if c.confederation == nil, let cf = sc.confederation { c.confederation = cf }
                 if c.crestSource == nil, let cs = sc.crestSource { c.crestSource = cs }
                 if c.competitionIds != sc.competitionIds { c.competitionIds = sc.competitionIds }
@@ -93,6 +113,13 @@ public final class Store: @unchecked Sendable {
             } else { lib.clubs.append(sc); changed = true }
         }
         return changed
+    }
+
+    /// Lexicographic comparison of "YYYY-MM-DD" style version strings: nil is oldest, a newer `a` wins ties toward false.
+    private static func isVersionNewer(_ a: String?, than b: String?) -> Bool {
+        guard let a else { return false }
+        guard let b else { return true }
+        return a > b
     }
 
     /// Finds the bundled seed-library.json: the app bundle, or the source tree during development.
@@ -164,17 +191,51 @@ public enum SeedLibrary {
     }
     private struct SeedFile: Decodable { var schema: Int; var competitions: [Competition]; var clubs: [SeedClub] }
 
+    /// squads.json's optional top-level version marker, for example "2026-09-05": a plain string key beside the
+    /// per-club arrays. Decoded with a dynamic-key container so older squads.json files without it still decode.
+    private struct SquadsSidecar: Decodable {
+        var version: String?
+        var squads: [String: [String]]
+        private struct DynamicKey: CodingKey {
+            var stringValue: String
+            init?(stringValue: String) { self.stringValue = stringValue }
+            var intValue: Int? { nil }
+            init?(intValue: Int) { nil }
+        }
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: DynamicKey.self)
+            var version: String? = nil
+            var squads: [String: [String]] = [:]
+            for key in container.allKeys {
+                if key.stringValue == "_version" {
+                    version = try? container.decode(String.self, forKey: key)
+                } else if let arr = try? container.decode([String].self, forKey: key) {
+                    squads[key.stringValue] = arr
+                }
+            }
+            self.version = version
+            self.squads = squads
+        }
+    }
+
+    /// The "_version" squads.json carried on the most recent `load(from:)` call, or nil if the file had none or
+    /// wasn't found. Store.swift reads this right after calling `load` to track whether a refresh is due.
+    public private(set) static var lastLoadedSquadsVersion: String?
+
     public static func load(from url: URL?) -> Library? {
+        lastLoadedSquadsVersion = nil
         guard let url, let data = try? Data(contentsOf: url), let seed = try? JSONDecoder().decode(SeedFile.self, from: data) else { return nil }
         var clubs = seed.clubs.map { c in
             Club(name: c.name, shortName: c.shortName, defaultCode: c.defaultCode, codes: c.codes ?? [:], primaryColour: c.primaryColour,
                  secondaryColour: c.secondaryColour ?? "#FFFFFF", textColour: c.textColour ?? "#FFFFFF", crestSource: c.crestSource,
                  sourceIds: c.sourceIds ?? [:], competitionIds: c.competitionIds ?? [], confederation: c.confederation, squad: c.squad)
         }
-        // Optional squads file beside the seed: { "Paris Saint-Germain": ["K. Mbappé", ...] } keyed by club name.
+        // Optional squads file beside the seed: { "Paris Saint-Germain": ["K. Mbappé", ...] } keyed by club name,
+        // plus an optional "_version" string used by mergeSeed to decide whether to refresh an existing squad.
         let squadsURL = url.deletingLastPathComponent().appendingPathComponent("squads.json")
-        if let data = try? Data(contentsOf: squadsURL), let squads = try? JSONDecoder().decode([String: [String]].self, from: data) {
-            for i in clubs.indices where clubs[i].squad == nil { clubs[i].squad = squads[clubs[i].name] }
+        if let data = try? Data(contentsOf: squadsURL), let sidecar = try? JSONDecoder().decode(SquadsSidecar.self, from: data) {
+            lastLoadedSquadsVersion = sidecar.version
+            for i in clubs.indices where clubs[i].squad == nil { clubs[i].squad = sidecar.squads[clubs[i].name] }
         }
         return Library(competitions: seed.competitions, clubs: clubs)
     }
