@@ -190,7 +190,7 @@ struct LibraryView: View {
 
     private var countsRow: some View {
         Text("\(model.library.clubs.count) clubs and nations, \(model.library.clubs.filter { $0.crestFile != nil }.count) with crests, \(filteredClubs.count) shown")
-            .font(.caption).foregroundStyle(.secondary)
+            .scaledFont(.caption).foregroundStyle(.secondary)
             .padding(.horizontal, 10).padding(.vertical, 6)
     }
 
@@ -235,8 +235,8 @@ struct LibraryView: View {
         let isSelected = selected == club.id
         return VStack(spacing: 6) {
             crestThumb(club, size: 56)
-            Text(club.name).font(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
-            Text(club.defaultCode).font(.caption2).foregroundStyle(.secondary).monospaced()
+            Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+            Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.secondary).monospaced()
         }
         .padding(8)
         .frame(width: 96, height: 96)
@@ -283,7 +283,7 @@ struct CompetitionEditor: View {
                     CompetitionMark(competition: competition, size: 56)
                     VStack(alignment: .leading, spacing: 4) {
                         Button("Import Image…") { importing = true }
-                        Text("A PNG or SVG with transparency. Shown in the app and on the bug in place of the drawn mark, for example the lion roundel or the starball.").font(.caption).foregroundStyle(.secondary)
+                        Text("A PNG or SVG with transparency. Shown in the app and on the bug in place of the drawn mark, for example the lion roundel or the starball.").scaledFont(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -357,8 +357,8 @@ struct ClubEditor: View {
             }
             Section("Squad") {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("One player per line, formatted \"K. Mbappé\". Used for the scorer picker.").font(.caption).foregroundStyle(.secondary)
-                    TextEditor(text: $squadText).font(.body).frame(minHeight: 140).overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(nsColor: .separatorColor)))
+                    Text("One player per line, formatted \"K. Mbappé\". Used for the scorer picker.").scaledFont(.caption).foregroundStyle(.secondary)
+                    TextEditor(text: $squadText).scaledFont(.body).frame(minHeight: 140).overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(nsColor: .separatorColor)))
                 }
             }
         }

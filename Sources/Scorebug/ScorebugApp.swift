@@ -25,7 +25,8 @@ struct ScorebugApp: App {
     var body: some Scene {
         WindowGroup("Scorebug", id: "main") {
             ContentView().environmentObject(model).frame(minWidth: 960, minHeight: 640)
-                .dynamicTypeSize(model.typeSize)
+                .environment(\.zoomScale, model.zoomScale)
+                .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
                 .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
         .defaultSize(width: 1180, height: 820)
@@ -100,7 +101,7 @@ struct ContentView: View {
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(slot == 1 ? "Primary" : "Secondary")
-                                Text("\(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                Text("\(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                             }
                         } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square") }
                         .tag(SidebarSection.slot(slot))
@@ -116,9 +117,9 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Circle().fill(model.serverRunning ? Color.green : Color.red).frame(width: 7, height: 7)
-                        Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                        Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).scaledFont(.caption).foregroundStyle(.secondary).lineLimit(2)
                     }
-                    Text("Scorebug \(AppInfo.version)").font(.caption2).foregroundStyle(.secondary)
+                    Text("Scorebug \(AppInfo.version)").scaledFont(.caption2).foregroundStyle(.secondary)
                 }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
             }
         } detail: {

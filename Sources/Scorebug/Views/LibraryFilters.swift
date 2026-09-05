@@ -33,9 +33,9 @@ struct FilterChip: View {
     let onRemove: () -> Void
     var body: some View {
         HStack(spacing: 4) {
-            Text(label).font(.caption)
+            Text(label).scaledFont(.caption)
             Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill").font(.caption)
+                Image(systemName: "xmark.circle.fill").scaledFont(.caption)
             }.buttonStyle(.plain)
         }
         .padding(.horizontal, 8).padding(.vertical, 3)

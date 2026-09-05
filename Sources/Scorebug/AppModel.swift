@@ -196,20 +196,22 @@ final class AppModel: ObservableObject {
         if let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) { library.competitions[idx] = comp; saveLibrary() }
     }
 
-    /// Interface text size, Cmd-plus and Cmd-minus, remembered between launches. This maps to `DynamicTypeSize`
-    /// rather than a `scaleEffect`: an AppKit-backed view (VSplitView, a grouped Form, WKWebView) scaled with
-    /// scaleEffect draws in one place and takes clicks in another, which is why nothing responded when zoomed.
+    /// Interface text size, Cmd-plus and Cmd-minus, remembered between launches. This scales font point sizes
+    /// directly (`zoomScale`) rather than a `scaleEffect` on the whole content: an AppKit-backed view (VSplitView,
+    /// a grouped Form, WKWebView) scaled with scaleEffect draws in one place and takes clicks in another, which is
+    /// why nothing responded when zoomed. It also no longer maps to `DynamicTypeSize`, because on macOS the system
+    /// text styles have fixed point sizes and ignore Dynamic Type, so that mapping changed nothing on screen either.
     @Published var zoomLevel: Int = {
         let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 0
         return min(3, max(-2, stored))
     }() {
         didSet { UserDefaults.standard.set(zoomLevel, forKey: "zoomLevel") }
     }
-    /// Level 0 is `.large`, the system default. The clamp of -2...3 reaches from `.small` up to `.xxxLarge`.
-    private static let typeSizes: [DynamicTypeSize] = [.xSmall, .small, .medium, .large, .xLarge, .xxLarge, .xxxLarge]
-    var typeSize: DynamicTypeSize {
-        let index = zoomLevel + 3
-        return AppModel.typeSizes[min(max(index, 0), AppModel.typeSizes.count - 1)]
+    /// Level 0 is 1.0, the system default point size. The clamp of -2...3 reaches from 0.85x up to 1.5x.
+    private static let zoomScales: [CGFloat] = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5]
+    var zoomScale: CGFloat {
+        let index = zoomLevel + 2
+        return AppModel.zoomScales[min(max(index, 0), AppModel.zoomScales.count - 1)]
     }
     func zoom(_ delta: Int) { zoomLevel = min(3, max(-2, zoomLevel + delta)) }
 

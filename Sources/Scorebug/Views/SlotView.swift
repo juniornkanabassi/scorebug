@@ -60,17 +60,17 @@ struct SlotView: View {
         let team = match.team(side)
         let clubs = model.library.clubs(in: match.competitionId)
         return VStack(spacing: 12) {
-            Text(side == .home ? "HOME" : "AWAY").font(.caption.weight(.semibold)).foregroundStyle(.secondary).tracking(1.2)
+            Text(side == .home ? "HOME" : "AWAY").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2)
             CrestView(team: team, size: 72)
             Picker("", selection: Binding<UUID?>(get: { team.clubId }, set: { id in model.setClub(clubs.first { $0.id == id }, side: side, slot: slot) })) {
                 Text("Choose a club").tag(UUID?.none)
                 ForEach(clubs) { c in Text(c.name).tag(UUID?.some(c.id)) }
             }.labelsHidden().frame(maxWidth: 220)
-            Text(team.code).font(.caption.monospaced()).foregroundStyle(.secondary)
+            Text(team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
             HStack(spacing: 14) {
                 Button { model.apply(.goal(side, -1), slot: slot) } label: { Image(systemName: "minus").frame(width: 14) }
                     .controlSize(.large).disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
-                Text("\(match.score(side))").font(.system(size: 48, weight: .bold, design: .rounded)).monospacedDigit().frame(minWidth: 60)
+                Text("\(match.score(side))").scaledFont(size: 48, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 60)
                 Button {
                     model.apply(.goal(side, 1), slot: slot)
                     // Open the new goal's scorer popover without making the plus button wait on it.
@@ -91,7 +91,7 @@ struct SlotView: View {
                     ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
                 }.labelsHidden().frame(maxWidth: 210)
             }
-            Text(competition?.name ?? "Competition").font(.caption.weight(.semibold)).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
+            Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
             HStack(spacing: 8) {
                 Button(match.clock.running ? "Pause" : "Play") { model.apply(.play, slot: slot) }.disabled(match.currentPeriod == nil)
@@ -117,7 +117,7 @@ struct SlotView: View {
                 }
             }
             if let t = themeConfig {
-                Text(t.clockStyle == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").font(.caption).foregroundStyle(.secondary)
+                Text(t.clockStyle == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -135,7 +135,7 @@ struct SlotView: View {
     private var goalsSection: some View {
         Section("Goals") {
             if match.goals.isEmpty {
-                Text("No goals yet. Use the plus buttons above; each goal gets a line here for the scorer's name.").font(.caption).foregroundStyle(.secondary)
+                Text("No goals yet. Use the plus buttons above; each goal gets a line here for the scorer's name.").scaledFont(.caption).foregroundStyle(.secondary)
             }
             ForEach(match.goals) { goal in
                 LabeledContent("\(match.team(goal.side).shortName)  \(goal.minuteLabel)") {
@@ -143,7 +143,7 @@ struct SlotView: View {
                 }
             }
             if !match.goals.isEmpty {
-                Text("Scorers appear in a strap under the bug for a few seconds every minute or so.").font(.caption).foregroundStyle(.secondary)
+                Text("Scorers appear in a strap under the bug for a few seconds every minute or so.").scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -161,7 +161,7 @@ struct SlotView: View {
                                     Circle().fill(k.result == .scored ? Color.green : k.result == .missed ? Color.red : Color.gray).frame(width: 11, height: 11)
                                 }
                             }.frame(minWidth: 90, alignment: .leading)
-                            if s.nextSide == side && match.phase == .shootout { Text("to kick").font(.caption).foregroundStyle(.secondary) }
+                            if s.nextSide == side && match.phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.secondary) }
                             Button("Scored") { model.apply(.recordKick(side, .scored), slot: slot) }.disabled(match.phase != .shootout)
                             Button("Missed") { model.apply(.recordKick(side, .missed), slot: slot) }.disabled(match.phase != .shootout)
                         }
@@ -170,7 +170,7 @@ struct SlotView: View {
                 Button("Undo Last Kick") { model.apply(.undoKick, slot: slot) }.disabled(s.kicks.isEmpty)
             } else {
                 LabeledContent("Shootout") { Button("Start Shootout") { model.apply(.startShootout(.home), slot: slot) } }
-                Text("The bug shows PENS with a kick row; the match score stays and the shootout tally sits beside it.").font(.caption).foregroundStyle(.secondary)
+                Text("The bug shows PENS with a kick row; the match score stays and the shootout tally sits beside it.").scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -187,7 +187,7 @@ struct SlotView: View {
             if let t = themeConfig {
                 LabeledContent("Placement", value: "Horizontal \(t.geometry["h"]?.left ?? 0), \(t.geometry["h"]?.top ?? 0) px. Vertical centred, top \(t.geometry["v"]?.top ?? 0) px, max width \(t.geometry["v"]?.maxWidth ?? 0) px.")
             }
-            Text("Official competition marks (the lion, the starball) can be imported in Library › Competitions and replace the drawn glyph.").font(.caption).foregroundStyle(.secondary)
+            Text("Official competition marks (the lion, the starball) can be imported in Library › Competitions and replace the drawn glyph.").scaledFont(.caption).foregroundStyle(.secondary)
         }
     }
 }
@@ -204,12 +204,12 @@ struct ClockReadout: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text(display.state ?? display.main).font(.system(size: 40, weight: .semibold, design: .rounded)).monospacedDigit()
+            Text(display.state ?? display.main).scaledFont(size: 40, weight: .semibold, design: .rounded).monospacedDigit()
             HStack(spacing: 8) {
-                if let a = display.added { Text(a).font(.title3.weight(.semibold)).foregroundStyle(.orange) }
-                if let c = display.addedCounter { Text(c).font(.callout).monospacedDigit().foregroundStyle(.secondary) }
+                if let a = display.added { Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(.orange) }
+                if let c = display.addedCounter { Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary) }
             }.frame(height: 20)
-            Text(phaseTitle).font(.callout).foregroundStyle(.secondary)
+            Text(phaseTitle).scaledFont(.callout).foregroundStyle(.secondary)
         }
         .onReceive(timer) { tick = $0 }
     }
@@ -254,9 +254,9 @@ struct ScorerButton: View {
                     .onSubmit(submitQuery)
                 Divider()
                 if squad.isEmpty {
-                    Text("No squad on file, type a name").font(.caption).foregroundStyle(.secondary).padding(8)
+                    Text("No squad on file, type a name").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
                 } else if filtered.isEmpty {
-                    Text("No match. Press Return to use \"\(query)\".").font(.caption).foregroundStyle(.secondary).padding(8)
+                    Text("No match. Press Return to use \"\(query)\".").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {

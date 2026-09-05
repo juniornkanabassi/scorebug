@@ -1,6 +1,77 @@
-// Small shared views: competition mark, crest thumbnail, colour helpers, squad search matching.
+// Small shared views: competition mark, crest thumbnail, colour helpers, squad search matching, zoom-scaled fonts.
 import SwiftUI
 import ScorebugCore
+
+// MARK: Zoom-scaled fonts
+//
+// Interface zoom (View > Bigger/Smaller/Actual Size) scales font point sizes, not layout: on macOS the system
+// text styles (.body, .caption, .title2 ...) have fixed point sizes and ignore Dynamic Type, and scaling the
+// whole window with scaleEffect breaks hit-testing on AppKit-backed views (VSplitView, HSplitView, a grouped
+// Form, List, WKWebView) — see the comment above `AppModel.zoomLevel`. So every text-bearing view reads the
+// current `zoomScale` from the environment and builds its font from the system's own preferred point size for
+// that text style, multiplied by the scale.
+
+private struct ZoomScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
+extension EnvironmentValues {
+    var zoomScale: CGFloat {
+        get { self[ZoomScaleKey.self] }
+        set { self[ZoomScaleKey.self] = newValue }
+    }
+}
+
+/// Maps a SwiftUI text style to the AppKit text style whose preferred point size drives that style's scaling.
+private func nsFontTextStyle(_ style: Font.TextStyle) -> NSFont.TextStyle {
+    switch style {
+    case .largeTitle: return .largeTitle
+    case .title: return .title1
+    case .title2: return .title2
+    case .title3: return .title3
+    case .headline: return .headline
+    case .subheadline: return .subheadline
+    case .body: return .body
+    case .callout: return .callout
+    case .footnote: return .footnote
+    case .caption: return .caption1
+    case .caption2: return .caption2
+    default: return .body
+    }
+}
+
+private struct ScaledTextStyleFont: ViewModifier {
+    @Environment(\.zoomScale) private var scale
+    let style: Font.TextStyle
+    var weight: Font.Weight?
+    var design: Font.Design?
+    func body(content: Content) -> some View {
+        let pointSize = NSFont.preferredFont(forTextStyle: nsFontTextStyle(style)).pointSize
+        content.font(.system(size: pointSize * scale, weight: weight ?? .regular, design: design ?? .default))
+    }
+}
+
+private struct ScaledFixedSizeFont: ViewModifier {
+    @Environment(\.zoomScale) private var scale
+    let size: CGFloat
+    var weight: Font.Weight?
+    var design: Font.Design?
+    func body(content: Content) -> some View {
+        content.font(.system(size: size * scale, weight: weight ?? .regular, design: design ?? .default))
+    }
+}
+
+extension View {
+    /// A system text style (`.body`, `.caption`, `.title2` …) scaled by the interface zoom level.
+    func scaledFont(_ style: Font.TextStyle, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
+        modifier(ScaledTextStyleFont(style: style, weight: weight, design: design))
+    }
+    /// A fixed point size scaled by the interface zoom level. Not for sizes derived from a fixed-size graphic
+    /// (a crest or mark placeholder's initials), which must stay proportional to that graphic instead.
+    func scaledFont(size: CGFloat, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
+        modifier(ScaledFixedSizeFont(size: size, weight: weight, design: design))
+    }
+}
 
 enum CompetitionColours {
     static func colour(for id: String) -> Color {
