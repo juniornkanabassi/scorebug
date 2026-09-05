@@ -36,6 +36,8 @@ struct LibraryView: View {
                 else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
             }.frame(minWidth: 420)
         }
+        // Greedy frame on purpose: an HSplitView inside a VStack otherwise sizes to its content and the list collapses.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: Clubs tab
@@ -107,6 +109,8 @@ struct LibraryView: View {
                 }
             }.frame(minWidth: 420)
         }
+        // Greedy frame on purpose: an HSplitView inside a VStack otherwise sizes to its content and the list collapses.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var searchField: some View {
