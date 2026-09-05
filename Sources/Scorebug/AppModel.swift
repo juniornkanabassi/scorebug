@@ -7,6 +7,8 @@ struct LaunchOptions {
     var dataDirectory: URL
     var overlaysDirectory: String?
     var port: Int?
+    /// `--import-crests <folder>`: import a crest folder once at launch (the launch-time default import only runs on a first run).
+    var importCrests: String?
 
     static func parse(_ args: [String]) -> LaunchOptions {
         var opts = LaunchOptions(dataDirectory: Store.defaultDirectory(), overlaysDirectory: nil, port: nil)
@@ -16,6 +18,7 @@ struct LaunchOptions {
             case "--data-directory" where i + 1 < args.count: opts.dataDirectory = URL(fileURLWithPath: args[i + 1], isDirectory: true); i += 1
             case "--overlays-directory" where i + 1 < args.count: opts.overlaysDirectory = args[i + 1]; i += 1
             case "--port" where i + 1 < args.count: opts.port = Int(args[i + 1]); i += 1
+            case "--import-crests" where i + 1 < args.count: opts.importCrests = args[i + 1]; i += 1
             default: break
             }
             i += 1
@@ -53,6 +56,7 @@ final class AppModel: ObservableObject {
             ?? URL(fileURLWithPath: "/nonexistent")
         self.resolver = OverlayResolver(bundled: bundled, overrides: settings.themeOverridesEnabled ? store.overlayOverridesDirectory : nil)
         importDefaultCrestFolderIfPresent()
+        if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
     }
 
     /// First run on Junior's Mac: his logo library exists at a known place, so crests are imported without asking.
