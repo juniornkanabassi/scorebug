@@ -1,0 +1,18 @@
+/* FC Barcelona -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_1.gif, code BAR). "BARÇA" wipes across, with a simple football glyph standing in for
+   the Ç (the same letter-replacement trick the reference GIF plays again on "GOAL!"). THIS ONE IS TEXT, per
+   the brief's own exception: fc-barcelona.svg draws the word directly rather than a club-crest substitute
+   (never bundling the real crest either way, see the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/fc-barcelona.svg / -away.svg -- unlike most clubs in
+   this set, -away.svg is NOT the mirrored-transform wrapper: "BARÇA" stays upright in both files (flipping
+   text glyphs makes them read backwards), and since the word is the whole motif here the away file simply
+   reuses the identical drawing rather than reshuffling the ball glyph to the other side, per the brief's
+   "keep it simple and reuse the same word both ways" option. Slug "fc-barcelona" matches seed-library.json's
+   club name, lowercased and hyphenated -- see Research/UCL goal motifs.md.
+   QA pass (6 September 2026): the original drawing filled the full shared canvas width (same box the base
+   uefa-goal-word text occupies) and was captured fully illegible under "GOAL" at hold (1100ms) -- only a
+   fragment of "BAR A" survived behind the word. Redrawn smaller and left-aligned (BAR/ball/A now span
+   roughly the left half of the canvas, x 16-222 of 400) so it clears the GOAL word's own footprint, in the
+   same left-weighted position pattern the icon motifs (arsenal, aston-villa, etc.) already use. */
+body[data-family="uefa"] .bug[data-home-club="fc-barcelona"] { --motif-home: url("fc-barcelona.svg"); }
+body[data-family="uefa"] .bug[data-away-club="fc-barcelona"] { --motif-away: url("fc-barcelona-away.svg"); }

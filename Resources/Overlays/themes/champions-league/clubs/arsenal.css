@@ -1,0 +1,9 @@
+/* Arsenal -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS"; this is also
+   the project's cover clip). A cannon on wheels fires up and to the right, muzzle-flash lines trailing off
+   the barrel, drawn as simple white line art rather than the club's actual crest (never bundled, see the
+   trademark rule). Original drawing at Resources/Overlays/themes/champions-league/clubs/arsenal.svg /
+   arsenal-away.svg (the away file is the same drawing mirrored left-right in the SVG itself, so it fires
+   toward the centre from the right instead of toward the centre from the left). Slug "arsenal" matches
+   seed-library.json's club name, lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="arsenal"] { --motif-home: url("arsenal.svg"); }
+body[data-family="uefa"] .bug[data-away-club="arsenal"] { --motif-away: url("arsenal-away.svg"); }

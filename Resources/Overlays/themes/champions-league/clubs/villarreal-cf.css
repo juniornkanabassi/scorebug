@@ -1,0 +1,8 @@
+/* Villarreal CF -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). Villarreal's own long-standing nickname is "el submarino amarillo"
+   (the Yellow Submarine) -- drawn here as a submarine hull in profile with a conning tower, three portholes
+   and a propeller/tailfin, standing in for that shared identity the same way Arsenal's cannon stands in for
+   the Gunners. Never the club's actual crest. Slug "villarreal-cf" matches seed-library.json's club name,
+   lowercased/hyphenated (Villarreal CF -> villarreal-cf) -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="villarreal-cf"] { --motif-home: url("villarreal-cf.svg"); }
+body[data-family="uefa"] .bug[data-away-club="villarreal-cf"] { --motif-away: url("villarreal-cf-away.svg"); }

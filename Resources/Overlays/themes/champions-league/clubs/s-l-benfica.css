@@ -1,0 +1,14 @@
+/* S.L. Benfica -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_2.gif -- note: the brief's own file-suffix table lists this as _4.gif; direct frame
+   inspection shows _2.gif is actually Benfica and _4.gif is actually Club Brugge, the same rotation across
+   the 2nd-timestamp batch noted in real-madrid.css/psv-eindhoven.css/liverpool.css -- code BEN). An eagle,
+   wings spread wide in the classic heraldic "displayed" pose -- Benfica's own crest and live matchday
+   mascot are both an eagle, so this is the club's own identity rendered as a simple white silhouette, never
+   the club's actual crest artwork itself (never bundled, see the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/s-l-benfica.svg / -away.svg -- the drawing is already
+   left-right symmetric (wings spread evenly to both sides), so mirroring it produces the same silhouette;
+   -away.svg still wraps the drawing in the usual translate+scale mirror for consistency with every other
+   club file in this folder. Slug "s-l-benfica" matches seed-library.json's club name (S.L. Benfica),
+   lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="s-l-benfica"] { --motif-home: url("s-l-benfica.svg"); }
+body[data-family="uefa"] .bug[data-away-club="s-l-benfica"] { --motif-away: url("s-l-benfica-away.svg"); }

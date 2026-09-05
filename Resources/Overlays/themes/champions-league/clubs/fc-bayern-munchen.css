@@ -1,0 +1,11 @@
+/* FC Bayern München -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_0.gif, code BAY). Two beer steins, tilted in and clinking together with a spark and
+   scattered foam droplets -- Munich's own beer-hall/Oktoberfest culture, an identity nod rather than any
+   club mark. Drawn as simple white line art, never the club's actual crest (never bundled, see the
+   trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/fc-bayern-munchen.svg / -away.svg (the away file is the
+   same drawing mirrored left-right in the SVG itself, so the clink happens toward the centre from the right
+   instead of from the left). Slug "fc-bayern-munchen" matches seed-library.json's club name (FC Bayern
+   München), lowercased, diacritic stripped (ü -> u) and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="fc-bayern-munchen"] { --motif-home: url("fc-bayern-munchen.svg"); }
+body[data-family="uefa"] .bug[data-away-club="fc-bayern-munchen"] { --motif-away: url("fc-bayern-munchen-away.svg"); }

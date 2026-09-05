@@ -1,3 +1,52 @@
+/* ===== Club goal motifs (brief 7, 5 September 2026) =====
+   @import must precede every other rule in a stylesheet, which is why this section sits at the top rather
+   than the bottom -- everything below "end club goal motifs" is the file as committed, untouched. One file
+   per club under clubs/, keyed by the club's seed-library.json name lowercased and hyphenated; clubs/_shared.css
+   owns the one shared canvas (.comp::after, since .main::before/::after are already the base bar's own GOAL
+   word + stripe layers, and .score.home/.score.away are what the base theme fades out for the goal reveal --
+   see clubs/_shared.css's own comment for why that ruled them both out). This same theme.css is copied
+   byte-for-byte to europa-league and
+   conference-league (their own recolours already work this way, see the comment below), so these rules fire
+   under any of the three UEFA themes once a club scores, regardless of which of the three competitions this
+   season's data has that club tagged under. See Research/UCL goal motifs.md for the per-club source (GIF vs
+   derived) and the agent report for the one JS attribute (data-home-club/data-away-club on #bug) these
+   selectors are waiting on -- overlay.js was not touched to add it, only described, per this brief's ownership. */
+@import url("clubs/_shared.css");
+@import url("clubs/arsenal.css");
+@import url("clubs/as-roma.css");
+@import url("clubs/aston-villa.css");
+@import url("clubs/atletico-de-madrid.css");
+@import url("clubs/bayer-04-leverkusen.css");
+@import url("clubs/borussia-dortmund.css");
+@import url("clubs/club-brugge.css");
+@import url("clubs/como-1907.css");
+@import url("clubs/fc-barcelona.css");
+@import url("clubs/fc-bayern-munchen.css");
+@import url("clubs/fc-porto.css");
+@import url("clubs/feyenoord.css");
+@import url("clubs/fk-bodo-glimt.css");
+@import url("clubs/inter-milan.css");
+@import url("clubs/liverpool.css");
+@import url("clubs/losc-lille.css");
+@import url("clubs/manchester-city.css");
+@import url("clubs/manchester-united.css");
+@import url("clubs/paris-saint-germain.css");
+@import url("clubs/psv-eindhoven.css");
+@import url("clubs/rb-leipzig.css");
+@import url("clubs/rc-lens.css");
+@import url("clubs/real-betis.css");
+@import url("clubs/real-madrid.css");
+@import url("clubs/s-l-benfica.css");
+@import url("clubs/sporting-cp.css");
+@import url("clubs/ssc-napoli.css");
+@import url("clubs/vfb-stuttgart.css");
+@import url("clubs/villarreal-cf.css");
+/* All 29 club files imported (25 seeded champions-league clubs plus Bayer 04 Leverkusen and S.L. Benfica,
+   seeded but tagged europa-league this season, plus Club Brugge and Feyenoord, not yet in the seed library
+   at all -- see "GIF clubs not in this season's champions-league seed tag" in Research/UCL goal motifs.md
+   for why all four are still wired in here). */
+/* ===== end club goal motifs ===== */
+
 /* UEFA Champions League 2024-27 world feed. Third pass, verified against the 4K PSG v Inter frames (ref/up/ucl4k-steady.png,
    ucl4k-goal.png). Royal-blue gradient square with the starball, white clock plate with medium-weight navy tabular digits
    (no right hairline), a small gap, then one continuous navy-gradient bar (bright top line, lighter upper band into a darker

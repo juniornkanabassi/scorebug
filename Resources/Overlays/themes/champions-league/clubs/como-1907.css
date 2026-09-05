@@ -1,0 +1,8 @@
+/* Como 1907 -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). The club plays on the shore of Lake Como -- drawn here as a small
+   sailboat silhouette riding two ripple lines, standing in for that shared identity the same way Arsenal's
+   cannon stands in for the Gunners. Never the club's actual crest. Slug "como-1907" matches
+   seed-library.json's club name, lowercased/hyphenated (Como 1907 -> como-1907) -- see Research/UCL goal
+   motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="como-1907"] { --motif-home: url("como-1907.svg"); }
+body[data-family="uefa"] .bug[data-away-club="como-1907"] { --motif-away: url("como-1907-away.svg"); }

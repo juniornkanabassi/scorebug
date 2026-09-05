@@ -1,0 +1,8 @@
+/* Sporting CP -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). Sporting's own nickname is "Leoes" (Lions) and their crest itself
+   carries a lion -- drawn here as a roaring lion's head, mane spiking outward, mouth open, standing in for
+   that shared identity the same way Arsenal's cannon stands in for the Gunners. Never the club's actual
+   crest. Slug "sporting-cp" matches seed-library.json's club name, lowercased/hyphenated (Sporting CP ->
+   sporting-cp) -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="sporting-cp"] { --motif-home: url("sporting-cp.svg"); }
+body[data-family="uefa"] .bug[data-away-club="sporting-cp"] { --motif-away: url("sporting-cp-away.svg"); }

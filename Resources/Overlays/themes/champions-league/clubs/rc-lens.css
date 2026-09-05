@@ -1,0 +1,8 @@
+/* RC Lens -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). Lens sits in the Pas-de-Calais coalfield and its nickname "Sang et Or"
+   (Blood and Gold) traces back to the miners who first supported the club -- a miner's safety lamp, drawn
+   swinging on its hook, stands in for that mining heritage the same way Arsenal's cannon stands in for the
+   Gunners. Simple white line art, never the club's actual crest. Slug "rc-lens" matches seed-library.json's
+   club name, lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="rc-lens"] { --motif-home: url("rc-lens.svg"); }
+body[data-family="uefa"] .bug[data-away-club="rc-lens"] { --motif-away: url("rc-lens-away.svg"); }

@@ -1,0 +1,13 @@
+/* Bayer 04 Leverkusen -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-29_0.gif, code LEV). A factory roofline with two sawtooth-roofed workshop buildings, a
+   tall chimney venting a curl of smoke, and a lightning-bolt accent, building left to right -- Bayer AG is
+   a chemicals/pharma company and Leverkusen's own crest already carries the Bayer cross, so an industrial
+   skyline (not the cross itself, which is the actual registered mark) reads as the club's identity without
+   touching the trademark. Drawn as simple white line art, never the club's actual crest (never bundled, see
+   the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/bayer-04-leverkusen.svg / -away.svg (the away file is
+   the same drawing mirrored left-right in the SVG itself, so it builds in toward the centre from the right
+   instead of from the left). Slug "bayer-04-leverkusen" matches seed-library.json's club name, lowercased
+   and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="bayer-04-leverkusen"] { --motif-home: url("bayer-04-leverkusen.svg"); }
+body[data-family="uefa"] .bug[data-away-club="bayer-04-leverkusen"] { --motif-away: url("bayer-04-leverkusen-away.svg"); }

@@ -1,0 +1,13 @@
+/* Inter Milan -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_6.gif -- note: the brief's own file-suffix table lists this as _8.gif; direct frame
+   inspection shows _6.gif is actually INT and _8.gif is actually Paris Saint-Germain, a consistent -2
+   offset across the whole 2nd-timestamp batch -- see this agent's report). A coiling serpent with an open-
+   jawed head slithers across the bar -- the "Biscione", the Visconti/Milan heraldic snake that has anchored
+   Inter's own crest identity for over a century, drawn as simple white line art rather than the club's
+   actual crest (never bundled, see the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/inter-milan.svg / -away.svg (the away file is the same
+   drawing mirrored left-right in the SVG itself, so the head leads from the right instead of the left).
+   Slug "inter-milan" matches seed-library.json's club name, lowercased and hyphenated -- see
+   Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="inter-milan"] { --motif-home: url("inter-milan.svg"); }
+body[data-family="uefa"] .bug[data-away-club="inter-milan"] { --motif-away: url("inter-milan-away.svg"); }

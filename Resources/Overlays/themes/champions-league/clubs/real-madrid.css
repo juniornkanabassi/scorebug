@@ -1,0 +1,20 @@
+/* Real Madrid -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_10.gif -- note: the brief's own file-suffix table lists this as _2.gif; direct frame
+   inspection shows _2.gif is actually S.L. Benfica and _10.gif is actually Real Madrid, a rotation across
+   the whole 2nd-timestamp batch (also seen and noted independently in liverpool.css) -- code RMA). The
+   Bernabéu chant "¡HALA MADRID!" wipes across, with a small crown flourish above it (Real, "royal", and the
+   crown already on the club's own badge). THIS ONE IS TEXT, per the brief's own exception:
+   real-madrid.svg draws the words directly rather than a club-crest substitute (never bundling the real
+   crest either way, see the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/real-madrid.svg / -away.svg -- unlike most clubs in this
+   set, -away.svg is NOT the mirrored-transform wrapper: the chant stays upright in both files (flipping
+   text glyphs makes them read backwards), and since the crown sits centred above the text there is nothing
+   left to flip, so the away file reuses the identical drawing, per the brief's "keep it simple" option.
+   Slug "real-madrid" matches seed-library.json's club name, lowercased and hyphenated -- see
+   Research/UCL goal motifs.md.
+   QA pass (6 September 2026): the chant originally ran nearly edge to edge of the shared canvas (x 46-306
+   of 400) and was captured almost entirely hidden under "GOAL" at hold -- redrawn at a smaller font size
+   (24 instead of 34) and left-aligned (crown + text now span roughly x 14-198), clearing the GOAL word's
+   footprint the same way the icon motifs do. */
+body[data-family="uefa"] .bug[data-home-club="real-madrid"] { --motif-home: url("real-madrid.svg"); }
+body[data-family="uefa"] .bug[data-away-club="real-madrid"] { --motif-away: url("real-madrid-away.svg"); }

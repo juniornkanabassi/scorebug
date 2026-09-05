@@ -1,0 +1,13 @@
+/* Atletico de Madrid -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the
+   club's own identity, not any reference clip). Atletico's own crest riffs on the city of Madrid's civic
+   emblem, a bear reaching up into a madrono (strawberry tree) -- drawn here as simple white line art, a
+   bear reaching a paw toward a small tree, standing in for that shared civic symbol the same way Arsenal's
+   cannon stands in for the Gunners. Never the club's actual crest. Slug "atletico-de-madrid" matches
+   seed-library.json's club name, lowercased/hyphenated with diacritics stripped (Atletico de Madrid ->
+   atletico-de-madrid) -- see Research/UCL goal motifs.md.
+   QA pass (6 September 2026): the original drawing (a plain circle "tree" on a stick, a small head circle
+   with two arcs for ears) read as an unrecognisable blob/dumbbell shape rather than a bear and a tree at
+   any freeze point captured. Redrawn as a clearer bear silhouette (rounded body, round ears, head) with an
+   arm reaching up into a berry-dotted canopy on a trunk. */
+body[data-family="uefa"] .bug[data-home-club="atletico-de-madrid"] { --motif-home: url("atletico-de-madrid.svg"); }
+body[data-family="uefa"] .bug[data-away-club="atletico-de-madrid"] { --motif-away: url("atletico-de-madrid-away.svg"); }

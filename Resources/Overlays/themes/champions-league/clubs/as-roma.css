@@ -1,0 +1,13 @@
+/* AS Roma -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). The Capitoline she-wolf suckling Romulus and Remus is Rome's own
+   founding emblem, the shape Roma's real crest itself is built around -- drawn here as a simple line-art
+   wolf standing over two round twin shapes, standing in for that shared civic symbol the same way Arsenal's
+   cannon stands in for the Gunners, never the club's actual crest artwork. This is the ancient public-domain
+   Capitoline Wolf image itself, not a trademark. Slug "as-roma" matches seed-library.json's club name,
+   lowercased/hyphenated (AS Roma -> as-roma) -- see Research/UCL goal motifs.md.
+   QA pass (6 September 2026): the original drawing (a single closed blob outline with two small circles
+   underneath) read as a turtle or loaf of bread at every freeze point captured, not a wolf. Redrawn as a
+   clearer wolf profile (arched back, pointed ears, snout, tail, four legs) standing over two round twin
+   shapes. */
+body[data-family="uefa"] .bug[data-home-club="as-roma"] { --motif-home: url("as-roma.svg"); }
+body[data-family="uefa"] .bug[data-away-club="as-roma"] { --motif-away: url("as-roma-away.svg"); }

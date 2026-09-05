@@ -1,0 +1,8 @@
+/* Manchester United -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the
+   club's own identity, not any reference clip). United's own nickname is "The Red Devils" -- a devil's
+   trident with a small curling tail flourish, drawn as simple white line art, stands in for that nickname
+   the same way Arsenal's cannon stands in for the Gunners. Never the club's actual crest. Slug
+   "manchester-united" matches seed-library.json's club name, lowercased and hyphenated -- see
+   Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="manchester-united"] { --motif-home: url("manchester-united.svg"); }
+body[data-family="uefa"] .bug[data-away-club="manchester-united"] { --motif-away: url("manchester-united-away.svg"); }

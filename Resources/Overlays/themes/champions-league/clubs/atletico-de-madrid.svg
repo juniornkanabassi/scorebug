@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <g fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <!-- tree trunk -->
+    <path d="M300 92 L300 46"/>
+    <!-- canopy -->
+    <circle cx="300" cy="20" r="30"/>
+    <!-- bear body, standing upright -->
+    <path d="M150 92 C138 92 130 78 132 62 C134 46 148 36 162 36 C176 36 190 46 192 62 C194 78 186 92 174 92 Z"/>
+    <!-- bear head -->
+    <circle cx="162" cy="24" r="18"/>
+    <!-- bear ears -->
+    <circle cx="150" cy="10" r="6"/>
+    <circle cx="174" cy="10" r="6"/>
+    <!-- bear's arm, reaching up into the canopy -->
+    <path d="M188 50 Q232 30 268 26"/>
+  </g>
+  <!-- madrono berries in the canopy -->
+  <g fill="#ffffff" stroke="none">
+    <circle cx="286" cy="8" r="4"/>
+    <circle cx="312" cy="6" r="4"/>
+    <circle cx="298" cy="30" r="4"/>
+    <circle cx="280" cy="24" r="4"/>
+    <circle cx="316" cy="24" r="4"/>
+  </g>
+</svg>

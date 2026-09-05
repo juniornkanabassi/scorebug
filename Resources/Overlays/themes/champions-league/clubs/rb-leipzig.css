@@ -1,0 +1,7 @@
+/* RB Leipzig -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). RB Leipzig's own crest carries a red bull -- a charging bull in
+   side profile, head down, drawn as simple white line art, stands in for that same identity the same way
+   Arsenal's cannon stands in for the Gunners. Never the club's actual crest. Slug "rb-leipzig" matches
+   seed-library.json's club name, lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="rb-leipzig"] { --motif-home: url("rb-leipzig.svg"); }
+body[data-family="uefa"] .bug[data-away-club="rb-leipzig"] { --motif-away: url("rb-leipzig-away.svg"); }

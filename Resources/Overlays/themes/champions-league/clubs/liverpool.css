@@ -1,0 +1,18 @@
+/* Liverpool -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_7.gif -- note: the brief's own file-suffix table lists this as _9.gif; direct frame
+   inspection shows _7.gif is actually LIV and _9.gif is actually LOSC Lille, a consistent -2 offset across
+   the whole 2nd-timestamp batch -- see this agent's report). "YNWA" (You'll Never Walk Alone, the Kop's
+   own anthem) with a flame/torch flanking each side, echoing the eternal flames either side of the Shankly
+   Gates at Anfield. THIS ONE IS TEXT, per the brief's own exception: liverpool.svg draws the word directly
+   rather than a club-crest substitute (never bundling the real crest either way, see the trademark rule).
+   Original drawing at Resources/Overlays/themes/champions-league/clubs/liverpool.svg / -away.svg -- unlike
+   every other club in this set, -away.svg is NOT the mirrored-transform wrapper: "YNWA" stays upright in
+   both files (flipping text glyphs makes them read backwards), only the two flame icons are mirrored
+   in place. Slug "liverpool" matches seed-library.json's club name, lowercased and hyphenated -- see
+   Research/UCL goal motifs.md.
+   QA pass (6 September 2026): the original two flames sat at the canvas's own far edges (x 46 and x 354 of
+   400, centred text spanning 120-280) -- nearly the full shared canvas width, and captured almost entirely
+   hidden under "GOAL" at hold. Redrawn smaller and pulled inward/left (flames now anchored at x 16 and
+   x 216, text re-centred between them at x 118), so the whole motif clears the GOAL word's footprint. */
+body[data-family="uefa"] .bug[data-home-club="liverpool"] { --motif-home: url("liverpool.svg"); }
+body[data-family="uefa"] .bug[data-away-club="liverpool"] { --motif-away: url("liverpool-away.svg"); }

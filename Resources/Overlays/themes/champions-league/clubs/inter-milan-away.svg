@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <g transform="translate(400,0) scale(-1,1)">
+    <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M50 50 C100 8 150 8 200 50 C250 92 300 92 350 50" stroke-width="14"/>
+      <path d="M350 50 L378 40" stroke-width="7"/>
+      <ellipse cx="46" cy="50" rx="22" ry="17" stroke-width="7"/>
+      <circle cx="40" cy="44" r="3" fill="#ffffff" stroke="none"/>
+      <path d="M24 54 L6 46 M24 54 L6 62" stroke-width="4"/>
+    </g>
+  </g>
+</svg>

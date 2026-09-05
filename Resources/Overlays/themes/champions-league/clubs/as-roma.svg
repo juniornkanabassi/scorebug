@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <g fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- arched back, tail to head -->
+    <path d="M90 55 Q95 20 150 14 Q210 8 250 20 Q275 28 295 40"/>
+    <!-- snout -->
+    <path d="M295 40 L322 30 L312 48 Q303 56 292 50 Z"/>
+    <!-- ears -->
+    <path d="M255 18 L262 -2 M270 18 L280 -2"/>
+    <!-- tail -->
+    <path d="M90 55 Q65 48 55 22"/>
+    <!-- front legs -->
+    <path d="M240 32 L232 90"/>
+    <path d="M262 30 L258 90"/>
+    <!-- back legs -->
+    <path d="M120 34 L112 90"/>
+    <path d="M140 28 L136 90"/>
+  </g>
+  <!-- the twins, nursing beneath her -->
+  <g fill="#ffffff" stroke="none">
+    <circle cx="170" cy="62" r="11"/>
+    <circle cx="200" cy="62" r="11"/>
+  </g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <!-- Away: pole and pennant are pure icon and mirror as usual; "PSV" is text, so it stays upright
+       (mirroring text glyphs would make them read backwards) at the mirrored position instead. -->
+  <g transform="translate(400,0) scale(-1,1)">
+    <g fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M70 -14 L70 88"/>
+      <path d="M70 4 C 130 -6, 170 14, 220 4 C 260 -4, 290 10, 330 6
+               L 250 40 C 210 46, 180 30, 140 38 C 110 44, 90 40, 70 46 Z"/>
+    </g>
+  </g>
+  <text x="249" y="34" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900"
+        font-style="italic" font-size="26" fill="#ffffff">PSV</text>
+</svg>

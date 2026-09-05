@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <text x="16" y="64" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-style="italic"
+        font-size="40" fill="#ffffff" letter-spacing="0.5">BAR</text>
+  <!-- ball glyph standing in for the Ç: a simple football, round outline with pentagon seams -->
+  <circle cx="170" cy="50" r="19" fill="none" stroke="#ffffff" stroke-width="5"/>
+  <g stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M170 39 L161 45 L164 56 L176 56 L179 45 Z"/>
+    <path d="M170 39 L170 30 M161 45 L152 41 M164 56 L159 66 M176 56 L181 66 M179 45 L188 41"/>
+  </g>
+  <text x="192" y="64" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-style="italic"
+        font-size="40" fill="#ffffff" letter-spacing="0.5">A</text>
+</svg>

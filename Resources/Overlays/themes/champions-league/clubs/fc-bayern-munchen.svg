@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <g fill="#ffffff" stroke="none">
+    <!-- left stein, tilted in toward centre -->
+    <g transform="rotate(-14 170 50)">
+      <path d="M140 30 L196 30 L196 78 C196 84 190 88 182 88 L154 88
+               C146 88 140 84 140 78 Z"/>
+      <rect x="192" y="40" width="14" height="26" rx="6"/>
+      <path d="M140 30 C136 22 140 12 150 12 C158 12 162 20 160 28 Z"/>
+    </g>
+    <!-- right stein, tilted in toward centre -->
+    <g transform="rotate(14 260 50)">
+      <path d="M204 30 L260 30 L260 78 C260 84 254 88 246 88 L218 88
+               C210 88 204 84 204 78 Z"/>
+      <rect x="200" y="40" width="14" height="26" rx="6"/>
+      <path d="M240 30 C238 22 242 12 250 12 C260 12 264 22 260 30 Z"/>
+    </g>
+    <!-- clink spark where the rims meet -->
+    <path d="M200 6 L204 20 L214 12 L206 24 L220 26 L205 30 L200 6 Z"/>
+    <!-- foam droplets flung off -->
+    <circle cx="182" cy="4" r="6"/>
+    <circle cx="222" cy="0" r="5"/>
+    <circle cx="238" cy="14" r="4"/>
+  </g>
+</svg>

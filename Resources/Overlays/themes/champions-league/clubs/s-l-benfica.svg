@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <g fill="#ffffff" stroke="none">
+    <!-- left wing, three fanned flight feathers -->
+    <polygon points="198,44 188,32 90,-10"/>
+    <polygon points="200,52 190,40 80,20"/>
+    <polygon points="202,60 192,48 85,55"/>
+    <!-- right wing, mirrored -->
+    <polygon points="222,44 232,32 330,-10"/>
+    <polygon points="220,52 230,40 340,20"/>
+    <polygon points="218,60 228,48 335,55"/>
+    <!-- tail, small fanned feathers below the body -->
+    <polygon points="202,74 200,86 214,66"/>
+    <polygon points="218,74 220,86 206,66"/>
+    <!-- body -->
+    <ellipse cx="210" cy="50" rx="16" ry="22"/>
+    <!-- head -->
+    <circle cx="210" cy="16" r="13"/>
+    <!-- beak, hooked, pointing down -->
+    <path d="M199 26 L221 26 L210 42 Z"/>
+  </g>
+</svg>

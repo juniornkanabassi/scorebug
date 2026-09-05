@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20 400 120">
+  <g fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <!-- flagpole -->
+    <path d="M70 -14 L70 88"/>
+    <!-- waving pennant, a triangle with a rippled trailing edge -->
+    <path d="M70 4 C 130 -6, 170 14, 220 4 C 260 -4, 290 10, 330 6
+             L 250 40 C 210 46, 180 30, 140 38 C 110 44, 90 40, 70 46 Z"/>
+  </g>
+  <text x="118" y="34" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-style="italic"
+        font-size="26" fill="#ffffff">PSV</text>
+</svg>

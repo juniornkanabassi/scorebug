@@ -1,0 +1,9 @@
+/* FK Bodo/Glimt -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). Bodo sits above the Arctic Circle and the club's own name "Glimt"
+   means glimmer/flash -- drawn here as three ribbons of aurora borealis waving across the bar with small
+   glimmer sparkles, standing in for that shared identity the same way Arsenal's cannon stands in for the
+   Gunners. Never the club's actual crest. Slug "fk-bodo-glimt" matches seed-library.json's club name,
+   lowercased/hyphenated with diacritics stripped (FK Bodo/Glimt -> fk-bodo-glimt) -- see Research/UCL goal
+   motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="fk-bodo-glimt"] { --motif-home: url("fk-bodo-glimt.svg"); }
+body[data-family="uefa"] .bug[data-away-club="fk-bodo-glimt"] { --motif-away: url("fk-bodo-glimt-away.svg"); }

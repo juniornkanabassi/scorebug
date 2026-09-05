@@ -1,0 +1,8 @@
+/* Manchester City -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the
+   club's own identity, not any reference clip). City's crest has long carried a ship, a nod to the
+   Manchester Ship Canal that made the city an inland port -- a ship's steering wheel (helm), drawn as
+   simple white line art, stands in for that maritime thread the same way Arsenal's cannon stands in for
+   the Gunners. Never the club's actual crest. Slug "manchester-city" matches seed-library.json's club name,
+   lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="manchester-city"] { --motif-home: url("manchester-city.svg"); }
+body[data-family="uefa"] .bug[data-away-club="manchester-city"] { --motif-away: url("manchester-city-away.svg"); }

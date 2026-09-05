@@ -1,0 +1,8 @@
+/* Real Betis -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). Real Betis Balompie plays in Seville, in the heart of Andalusian
+   olive-growing country -- drawn here as a simple olive branch with three leaves and two olives, standing
+   in for that shared identity the same way Arsenal's cannon stands in for the Gunners. Never the club's
+   actual crest. Slug "real-betis" matches seed-library.json's club name, lowercased/hyphenated (Real Betis
+   -> real-betis) -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="real-betis"] { --motif-home: url("real-betis.svg"); }
+body[data-family="uefa"] .bug[data-away-club="real-betis"] { --motif-away: url("real-betis-away.svg"); }

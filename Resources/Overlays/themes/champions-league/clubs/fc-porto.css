@@ -1,0 +1,8 @@
+/* FC Porto -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). Porto's own nickname is "Dragoes" (Dragons) and their crest carries a
+   dragon/griffin -- a dragon in profile, wings out, drawn as simple white line art, stands in for that
+   nickname the same way Arsenal's cannon stands in for the Gunners. Never the club's actual crest. Slug
+   "fc-porto" matches seed-library.json's club name, lowercased and hyphenated -- see
+   Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="fc-porto"] { --motif-home: url("fc-porto.svg"); }
+body[data-family="uefa"] .bug[data-away-club="fc-porto"] { --motif-away: url("fc-porto-away.svg"); }

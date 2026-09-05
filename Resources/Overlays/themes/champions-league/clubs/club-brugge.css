@@ -1,0 +1,13 @@
+/* Club Brugge -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_4.gif -- note: the brief's own file-suffix table lists this as _6.gif; direct frame
+   inspection shows _4.gif is actually BRU and _6.gif is actually Inter Milan, a consistent -2 offset
+   across the whole 2nd-timestamp batch -- see this agent's report). A canal barge glides across the bar,
+   bow pointed toward the score -- Bruges is a canal city ("Venice of the North"), drawn as simple white
+   line art rather than the club's actual crest (never bundled, see the trademark rule). Original drawing
+   at Resources/Overlays/themes/champions-league/clubs/club-brugge.svg / -away.svg (the away file is the
+   same drawing mirrored left-right in the SVG itself, so the bow points toward the score from the right
+   instead of from the left). Slug "club-brugge" follows the same lowercase-and-hyphenate rule as every
+   other slug in this set (see Research/UCL goal motifs.md) even though Club Brugge is not yet in
+   seed-library.json -- a future crest-import pass will add the club and this file starts working then. */
+body[data-family="uefa"] .bug[data-home-club="club-brugge"] { --motif-home: url("club-brugge.svg"); }
+body[data-family="uefa"] .bug[data-away-club="club-brugge"] { --motif-away: url("club-brugge-away.svg"); }

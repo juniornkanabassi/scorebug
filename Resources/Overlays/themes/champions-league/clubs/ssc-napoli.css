@@ -1,0 +1,8 @@
+/* SSC Napoli -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). Vesuvius is Naples' own skyline landmark, visible across the whole
+   city and its bay -- a simple erupting volcano, drawn as white line art with rising smoke wisps and
+   embers, stands in for that landmark the same way Arsenal's cannon stands in for the Gunners. Never the
+   club's actual crest. Slug "ssc-napoli" matches seed-library.json's club name, lowercased and hyphenated
+   -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="ssc-napoli"] { --motif-home: url("ssc-napoli.svg"); }
+body[data-family="uefa"] .bug[data-away-club="ssc-napoli"] { --motif-away: url("ssc-napoli-away.svg"); }

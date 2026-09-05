@@ -1,0 +1,54 @@
+/* Champions League club goal motifs -- shared plumbing (brief 7, 5 September 2026).
+   Every per-club file in this folder sets exactly one custom property pair (--motif-home / --motif-away,
+   each a background-image pointing at that club's own SVG) and nothing else; this file owns the one shared
+   canvas both draw into, so no two club files fight over layout.
+
+   Canvas: .comp::after, not .score.away or .main's own pseudo-elements. Three things ruled those out during
+   build/QA (agent-ucl/capture.py, headless CDP screenshots):
+     - .main::before/::after are already the base bar's GOAL word and stripe-wipe layers (theme.css, kept as
+       committed, not part of this club section) -- already spoken for.
+     - .score.home/.score.away themselves are what the base rule fades out for the goal reveal
+       (".bug.goal .team, .bug.goal .score { animation: uefa-text ... }", theme.css) -- opacity applies to
+       an element AND everything painted as part of it, pseudo-elements included, so a motif living on
+       .score.away::before/::after was invisible for the entire 8%-89% hold of that fade regardless of its
+       own opacity. First attempt at this, caught by capturing a real frame instead of trusting computed
+       style alone (computed opacity read back as 1; the rendered pixel was still blank).
+     - .comp is never targeted by that fade (only .team/.score are), so a motif on .comp::after keeps its
+       own opacity throughout .bug.goal. .comp itself has no `position`, so its ::after (position:absolute)
+       still resolves its containing block to .main (the nearest positioned ancestor, same as .main::before
+       does) -- meaning the same left/width formula the base bar already uses for the GOAL word
+       (calc(h*3.89), widening to calc(h*4.89) once .has-added pushes the word over) lands the motif over
+       the same stretch of bar regardless of where .comp itself sits, per the brief ("the bar sweep exists;
+       the motif layer sits over it") -- and because .comp is a real descendant of .main, .main's own
+       overflow:hidden still clips it at the bar's true (score-digit-width-dependent) right edge, exactly
+       like the base bar surface.
+   One pseudo-element covers both sides: .bug.goal-home and .bug.goal-away are mutually exclusive, so the
+   home/away gate is which custom property resolves (--motif-home vs --motif-away), not which pseudo fires.
+   Both ride the existing goal-<side> class overlay.js already sets -- no JS change needed for this part.
+
+   What overlay.js is still missing: a way to know WHICH club is scoring, so the right club's rule can match.
+   Every per-club file is gated on .bug[data-home-club="<slug>"] / .bug[data-away-club="<slug>"], attributes
+   overlay.js does not currently set (renderStatic() sets --home-crest/--home-primary/--home-text per side in
+   a loop, but never a stable per-club identifier). See "Research/UCL goal motifs.md" and the agent report
+   for the exact two-line addition needed. Until that lands, QA sets bug.dataset.homeClub/awayClub by hand
+   (agent-ucl/capture.py) -- nothing here depends on overlay.js being touched first, the selectors just wait
+   for the attribute to exist. */
+
+body[data-family="uefa"] .comp::after {
+  content: ""; position: absolute; top: 0; height: 100%;
+  left: calc(var(--h) * 3.89); width: calc(var(--h) * 4.11);
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+  opacity: 0; pointer-events: none; z-index: 3;
+}
+body[data-family="uefa"] .bug.has-added .comp::after { left: calc(var(--h) * 4.89); width: calc(var(--h) * 3.11); }
+body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.4s linear forwards; }
+body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.4s linear forwards; }
+/* Same build/hold/fade envelope as the base uefa-text/uefa-goal-word keyframes (theme.css) so the motif
+   appears and disappears in step with the rest of the goal choreography instead of fighting it. */
+@keyframes ucl-motif-in {
+  0%   { opacity: 0; transform: scale(0.82); }
+  10%  { opacity: 0; }
+  22%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}

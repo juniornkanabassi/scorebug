@@ -1,0 +1,14 @@
+/* LOSC Lille -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_9.gif -- note: the brief's own file-suffix table lists this as _11.gif; direct frame
+   inspection shows _9.gif is actually LIL, while _11.gif is actually PSV Eindhoven -- the real file order
+   is the brief's table order with Real Madrid and PSV (originally listed 3rd/4th) relocated to the very
+   end of the run, so everything from Dortmund through Lille shifts two suffixes earlier while Real Madrid
+   and PSV land two suffixes later -- see this agent's report for the full breakdown. A snarling mastiff
+   head grows in, ears
+   back, teeth bared -- Lille's own nickname is "Les Dogues" (the Mastiffs), drawn as simple white line art
+   rather than the club's actual crest (never bundled, see the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/losc-lille.svg / -away.svg (the away file is the same
+   drawing mirrored left-right in the SVG itself). Slug "losc-lille" matches seed-library.json's club name,
+   lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="losc-lille"] { --motif-home: url("losc-lille.svg"); }
+body[data-family="uefa"] .bug[data-away-club="losc-lille"] { --motif-away: url("losc-lille-away.svg"); }

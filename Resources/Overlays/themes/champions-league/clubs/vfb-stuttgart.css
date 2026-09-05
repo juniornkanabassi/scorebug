@@ -1,0 +1,9 @@
+/* VfB Stuttgart -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). The old Stuttgart city coat-of-arms carries a rearing horse (the
+   city's own name comes from "Stutengarten", stud farm) -- drawn here as a plain line-art horse rearing in
+   profile, mane and tail flowing, standing in for that shared civic identity the same way Arsenal's cannon
+   stands in for the Gunners. This is the historic city arms, not any car-brand mark, and never the club's
+   actual crest artwork. Slug "vfb-stuttgart" matches seed-library.json's club name, lowercased/hyphenated
+   (VfB Stuttgart -> vfb-stuttgart) -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="vfb-stuttgart"] { --motif-home: url("vfb-stuttgart.svg"); }
+body[data-family="uefa"] .bug[data-away-club="vfb-stuttgart"] { --motif-away: url("vfb-stuttgart-away.svg"); }

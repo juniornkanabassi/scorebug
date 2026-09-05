@@ -1,0 +1,15 @@
+/* PSV Eindhoven -- from the Behance reference (Vincent Portolan, "Champions League GOAL ANIMATIONS",
+   2026-09-05 19-24-30_11.gif -- note: the brief's own file-suffix table lists this as _3.gif; direct frame
+   inspection shows _3.gif is actually Borussia Dortmund and _11.gif is actually PSV Eindhoven, the same
+   rotation across the 2nd-timestamp batch noted in real-madrid.css and liverpool.css -- code PSV). A
+   waving supporter's pennant flag on a pole, reading "PSV". Drawn as simple white line art plus the flag's
+   own lettering, never the club's actual crest (never bundled, see the trademark rule). Original drawing at
+   Resources/Overlays/themes/champions-league/clubs/psv-eindhoven.svg / -away.svg -- this one is a hybrid:
+   the pole and pennant shape are pure icon and DO mirror (the flag waves in toward the centre from the
+   right instead of from the left), but "PSV" is text, so per the brief's text exception the away file keeps
+   the letters upright rather than flipping them backwards -- the flag/pole are wrapped in the usual
+   translate+scale mirror, while the text is a separate, non-mirrored element repositioned to the mirrored
+   spot. Slug "psv-eindhoven" matches seed-library.json's club name, lowercased and hyphenated -- see
+   Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="psv-eindhoven"] { --motif-home: url("psv-eindhoven.svg"); }
+body[data-family="uefa"] .bug[data-away-club="psv-eindhoven"] { --motif-away: url("psv-eindhoven-away.svg"); }
