@@ -250,7 +250,9 @@
       "primaryColour": "#FFD500",
       "secondaryColour": "#00843D",
       "textColour": "#000000",
-      "competitionIds": [],
+      "competitionIds": [
+        "other"
+      ],
       "crestSource": null
     },
     {
@@ -313,7 +315,9 @@
       "primaryColour": "#7D1D3F",
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
-      "competitionIds": [],
+      "competitionIds": [
+        "other"
+      ],
       "crestSource": null
     },
     {
@@ -350,7 +354,9 @@
       "primaryColour": "#0B8A3C",
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
-      "competitionIds": [],
+      "competitionIds": [
+        "other"
+      ],
       "crestSource": "AS Saint-Étienne.png"
     },
     {
@@ -361,7 +367,9 @@
       "primaryColour": "#D6001C",
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
-      "competitionIds": [],
+      "competitionIds": [
+        "other"
+      ],
       "crestSource": "Stade de Reims.png"
     },
     {
@@ -497,7 +505,9 @@
       "primaryColour": "#D71920",
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
-      "competitionIds": [],
+      "competitionIds": [
+        "other"
+      ],
       "crestSource": "FC Southampton.png"
     },
     {
@@ -954,7 +964,9 @@
       "primaryColour": "#00245E",
       "secondaryColour": "#9DC2EA",
       "textColour": "#FFFFFF",
-      "competitionIds": [],
+      "competitionIds": [
+        "other"
+      ],
       "crestSource": "Vancouver Whitecaps FC.png"
     },
     {
