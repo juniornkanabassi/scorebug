@@ -53,7 +53,10 @@ public final class Store: @unchecked Sendable {
     }
 
     public func loadLibrary() throws -> Library {
-        if let lib = try load("library.json", as: Library.self, schemaOf: { $0.schema }) { return lib }
+        if var lib = try load("library.json", as: Library.self, schemaOf: { $0.schema }) {
+            if let seed = SeedLibrary.load(from: Store.locateSeedFile()), Store.mergeSeed(seed, into: &lib) { try saveLibrary(lib) }
+            return lib
+        }
         let seeded = SeedLibrary.load(from: Store.locateSeedFile()) ?? SeedLibrary.make()
         try saveLibrary(seeded)
         return seeded
@@ -69,6 +72,28 @@ public final class Store: @unchecked Sendable {
         try load("settings.json", as: Settings.self, schemaOf: { $0.schema }) ?? Settings()
     }
     public func saveSettings(_ settings: Settings) throws { try save(settings, to: "settings.json") }
+
+    /// Brings an existing library up to date with the bundled seed without touching what the user edits:
+    /// adds missing competitions and clubs, fills empty squads, confederations and crest sources, and refreshes
+    /// competition memberships and per-competition codes from the seed. Colours, crests, names and logos are kept.
+    /// Returns true when anything changed.
+    public static func mergeSeed(_ seed: Library, into lib: inout Library) -> Bool {
+        var changed = false
+        for comp in seed.competitions where !lib.competitions.contains(where: { $0.id == comp.id }) { lib.competitions.append(comp); changed = true }
+        for sc in seed.clubs {
+            if let i = lib.clubs.firstIndex(where: { $0.name == sc.name }) {
+                var c = lib.clubs[i]
+                if c.squad == nil, let sq = sc.squad { c.squad = sq }
+                if c.confederation == nil, let cf = sc.confederation { c.confederation = cf }
+                if c.crestSource == nil, let cs = sc.crestSource { c.crestSource = cs }
+                if c.competitionIds != sc.competitionIds { c.competitionIds = sc.competitionIds }
+                if c.codes != sc.codes { c.codes = sc.codes }
+                if c.defaultCode != sc.defaultCode { c.defaultCode = sc.defaultCode }
+                if c != lib.clubs[i] { lib.clubs[i] = c; changed = true }
+            } else { lib.clubs.append(sc); changed = true }
+        }
+        return changed
+    }
 
     /// Finds the bundled seed-library.json: the app bundle, or the source tree during development.
     public static func locateSeedFile() -> URL? {

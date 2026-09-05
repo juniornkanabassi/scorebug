@@ -128,5 +128,16 @@ do {
     try FileManager.default.removeItem(at: crestTmp)
 } catch { failures += 1; print("FAIL crest import: \(error)") }
 
+// Seed merge into an existing library keeps user edits and adds what is new
+if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
+    var old = Library(competitions: [seed.competitions[0]], clubs: [seed.clubs[0]])
+    old.clubs[0].primaryColour = "#123456"; old.clubs[0].crestFile = "mine.png"; old.clubs[0].squad = ["X. Custom"]
+    let changed = Store.mergeSeed(seed, into: &old)
+    check(changed && old.clubs.count == seed.clubs.count && old.competitions.count == seed.competitions.count, "merge adds missing clubs and competitions")
+    check(old.clubs[0].primaryColour == "#123456" && old.clubs[0].crestFile == "mine.png" && old.clubs[0].squad == ["X. Custom"], "merge keeps the user's colour, crest and squad")
+    check(seed.clubs.first { $0.name == "Arsenal" }?.squad?.contains("B. Saka") == true, "squads.json is merged into the seed")
+    var again = old; check(!Store.mergeSeed(seed, into: &again), "a second merge changes nothing")
+}
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)
