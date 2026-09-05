@@ -3,9 +3,24 @@ import SwiftUI
 import ScorebugCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var screenObserver: Any?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        let wanted = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).screenName
+        guard let wanted else { NSApp.activate(ignoringOtherApps: true); return }
+        // `--screen`: every window this process opens goes to the named display, and the app never takes focus,
+        // so agents' test instances stay off Junior's monitors. Falls back to normal behaviour if the screen is absent.
+        let place: (NSWindow) -> Void = { window in
+            guard let screen = NSScreen.screens.first(where: { $0.localizedName == wanted }) else { return }
+            let f = screen.visibleFrame
+            let size = window.frame.size
+            window.setFrameOrigin(NSPoint(x: f.minX + 40, y: f.maxY - size.height - 40))
+        }
+        NSApp.windows.forEach(place)
+        screenObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { note in
+            if let w = note.object as? NSWindow, w.screen?.localizedName != wanted { place(w) }
+        }
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { true }
 }

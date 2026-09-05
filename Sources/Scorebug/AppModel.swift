@@ -9,6 +9,9 @@ struct LaunchOptions {
     var port: Int?
     /// `--import-crests <folder>`: import a crest folder once at launch (the launch-time default import only runs on a first run).
     var importCrests: String?
+    /// `--screen <name>`: open the window on that display (by its name in System Settings) and do not steal focus.
+    /// Agents' test instances use `--screen "Agent Screen"` so nothing lands on Junior's monitors.
+    var screenName: String?
 
     static func parse(_ args: [String]) -> LaunchOptions {
         var opts = LaunchOptions(dataDirectory: Store.defaultDirectory(), overlaysDirectory: nil, port: nil)
@@ -19,6 +22,7 @@ struct LaunchOptions {
             case "--overlays-directory" where i + 1 < args.count: opts.overlaysDirectory = args[i + 1]; i += 1
             case "--port" where i + 1 < args.count: opts.port = Int(args[i + 1]); i += 1
             case "--import-crests" where i + 1 < args.count: opts.importCrests = args[i + 1]; i += 1
+            case "--screen" where i + 1 < args.count: opts.screenName = args[i + 1]; i += 1
             default: break
             }
             i += 1
