@@ -1,6 +1,6 @@
 /* Shared overlay layout. Transparent body, fixed canvas by orientation, a grid the themes rearrange with grid-template-areas.
    Typefaces are open-licence lookalikes bundled under fonts/ (SIL OFL): Montserrat, Barlow, Barlow Condensed, Archivo, Oswald, Inter. */
-@font-face { font-family: "Montserrat"; src: url(/assets/fonts/Montserrat-900.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Montserrat"; src: url(/assets/fonts/Montserrat-900.woff2) format("woff2"); font-weight: 900; }
 @font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-500.woff2) format("woff2"); font-weight: 500; }
 @font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-600.woff2) format("woff2"); font-weight: 600; }
 @font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-700.woff2) format("woff2"); font-weight: 700; }
@@ -9,7 +9,11 @@
 @font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-800.woff2) format("woff2"); font-weight: 800; }
 @font-face { font-family: "Archivo"; src: url(/assets/fonts/Archivo-800.woff2) format("woff2"); font-weight: 100 900; }
 @font-face { font-family: "Oswald"; src: url(/assets/fonts/Oswald-700.woff2) format("woff2"); font-weight: 200 700; }
-@font-face { font-family: "Inter"; src: url(/assets/fonts/Inter-800.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Inter"; src: url(/assets/fonts/Inter-800.woff2) format("woff2"); font-weight: 800; }
+/* Variable instances (wght axis 100-900) so themes can call any weight below 800/900 without hitting the black
+   static faces above; the ranges are split so the two faces never overlap for the same requested weight. */
+@font-face { font-family: "Inter"; src: url(/assets/fonts/Inter-var.woff2) format("woff2"); font-weight: 100 799; }
+@font-face { font-family: "Montserrat"; src: url(/assets/fonts/Montserrat-var.woff2) format("woff2"); font-weight: 100 899; }
 
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
 body { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }

@@ -12,8 +12,8 @@
     "v": {
       "top": 260,
       "maxWidth": 800,
-      "scale": 1.75,
-      "top2": 358
+      "scale": 1.25,
+      "top2": 351
     }
   },
   "scorersEverySeconds": 90,
