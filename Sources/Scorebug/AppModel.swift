@@ -184,6 +184,24 @@ final class AppModel: ObservableObject {
         } catch { lastError = "Could not import crest: \(error.localizedDescription)" }
     }
 
+    func importCompetitionLogo(from url: URL, for competitionId: String) {
+        do {
+            let name = try store.importCompetitionLogo(from: url, for: competitionId)
+            if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) { library.competitions[idx].logoFile = name }
+            saveLibrary()
+        } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
+    }
+
+    func updateCompetition(_ comp: Competition) {
+        if let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) { library.competitions[idx] = comp; saveLibrary() }
+    }
+
+    /// Interface zoom, Cmd-plus and Cmd-minus, remembered between launches.
+    @Published var uiScale: CGFloat = CGFloat(UserDefaults.standard.double(forKey: "uiScale") == 0 ? 1 : UserDefaults.standard.double(forKey: "uiScale")) {
+        didSet { UserDefaults.standard.set(Double(uiScale), forKey: "uiScale") }
+    }
+    func zoom(_ delta: CGFloat) { uiScale = min(1.6, max(0.8, (uiScale + delta).rounded(toPlaces: 2))) }
+
     func saveSettings() {
         do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)" }
     }

@@ -1,56 +1,61 @@
-// Renders the Scorebug app icon: a charcoal tile with a small score bug (two club plates, white digits, a blue clock).
-// Usage: swift Scripts/render-icon.swift Resources/AppIcon.iconset ; then iconutil -c icns Resources/AppIcon.iconset
+// Renders the Scorebug app icon in the current macOS style: a squircle with a deep blue gradient, a soft light sweep,
+// and a white score bug glyph with two digits and a green live clock strip. Usage: swift Scripts/render-icon.swift <iconset dir>
 import AppKit
 
 let out = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
 try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+
+func squircle(in r: NSRect, radius: CGFloat) -> NSBezierPath { NSBezierPath(roundedRect: r, xRadius: radius, yRadius: radius) }
 
 func render(_ size: CGFloat) -> NSImage {
     let img = NSImage(size: NSSize(width: size, height: size))
     img.lockFocus()
     let s = size / 1024
     let ctx = NSGraphicsContext.current!.cgContext
-    // Tile with macOS-style rounded corners and an inset.
-    let inset = 100 * s
-    let tile = NSBezierPath(roundedRect: NSRect(x: inset, y: inset, width: size - 2 * inset, height: size - 2 * inset), xRadius: 190 * s, yRadius: 190 * s)
-    let grad = NSGradient(colors: [NSColor(red: 0.13, green: 0.12, blue: 0.18, alpha: 1), NSColor(red: 0.06, green: 0.05, blue: 0.09, alpha: 1)])!
-    grad.draw(in: tile, angle: -90)
-    // Bug plates
-    let bugY = size * 0.44, bugH = size * 0.17
-    let x0 = size * 0.20, w = size * 0.60
-    let homeW = w * 0.31, scoreW = w * 0.14, clockW = w * 0.41 - w * 0.10
-    func plate(_ x: CGFloat, _ width: CGFloat, _ color: NSColor, corners: (CGFloat, CGFloat)) {
-        let p = NSBezierPath()
-        let r = NSRect(x: x, y: bugY, width: width, height: bugH)
-        p.appendRoundedRect(r, xRadius: 0, yRadius: 0)
-        color.setFill(); p.fill()
-    }
+    let inset = 92 * s
+    let tileRect = NSRect(x: inset, y: inset, width: size - 2 * inset, height: size - 2 * inset)
+    let tile = squircle(in: tileRect, radius: 226 * s)
+    // shadow
     ctx.saveGState()
-    let clip = NSBezierPath(roundedRect: NSRect(x: x0, y: bugY, width: w, height: bugH), xRadius: 22 * s, yRadius: 22 * s)
-    clip.addClip()
-    plate(x0, homeW, NSColor(red: 0.0, green: 0.25, blue: 0.44, alpha: 1), corners: (1, 0))
-    plate(x0 + homeW, scoreW, NSColor(red: 0.08, green: 0.08, blue: 0.1, alpha: 1), corners: (0, 0))
-    plate(x0 + homeW + scoreW, scoreW, NSColor(red: 0.08, green: 0.08, blue: 0.1, alpha: 1), corners: (0, 0))
-    plate(x0 + homeW + 2 * scoreW, w * 0.10, NSColor(red: 0.85, green: 0.16, blue: 0.11, alpha: 1), corners: (0, 0))
-    plate(x0 + homeW + 2 * scoreW + w * 0.10, clockW, NSColor(red: 0.03, green: 0.37, blue: 1.0, alpha: 1), corners: (0, 1))
+    ctx.setShadow(offset: CGSize(width: 0, height: -14 * s), blur: 40 * s, color: NSColor.black.withAlphaComponent(0.35).cgColor)
+    NSColor(red: 0.05, green: 0.12, blue: 0.55, alpha: 1).setFill(); tile.fill()
     ctx.restoreGState()
-    // Digits
-    let font = NSFont.systemFont(ofSize: bugH * 0.66, weight: .black)
-    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.white]
-    func text(_ t: String, cx: CGFloat) {
-        let str = NSAttributedString(string: t, attributes: attrs)
-        let sz = str.size()
-        str.draw(at: NSPoint(x: cx - sz.width / 2, y: bugY + (bugH - sz.height) / 2))
+    // gradient body
+    ctx.saveGState(); tile.addClip()
+    NSGradient(colors: [NSColor(red: 0.16, green: 0.36, blue: 1.0, alpha: 1), NSColor(red: 0.04, green: 0.10, blue: 0.48, alpha: 1)])!.draw(in: tileRect, angle: -70)
+    // pitch lines, faint
+    NSColor.white.withAlphaComponent(0.07).setStroke()
+    let pitch = NSBezierPath(); pitch.lineWidth = 6 * s
+    pitch.appendOval(in: NSRect(x: size * 0.36, y: size * 0.16, width: size * 0.28, height: size * 0.28))
+    pitch.move(to: NSPoint(x: tileRect.minX, y: size * 0.30)); pitch.line(to: NSPoint(x: tileRect.maxX, y: size * 0.30))
+    pitch.stroke()
+    // light sweep
+    let sweep = NSBezierPath(); sweep.move(to: NSPoint(x: tileRect.minX, y: tileRect.maxY)); sweep.line(to: NSPoint(x: tileRect.maxX, y: tileRect.maxY)); sweep.line(to: NSPoint(x: tileRect.maxX, y: tileRect.minY + tileRect.height * 0.55)); sweep.close()
+    NSGradient(colors: [NSColor.white.withAlphaComponent(0.16), NSColor.white.withAlphaComponent(0.0)])!.draw(in: sweep, angle: -90)
+    ctx.restoreGState()
+    // the bug glyph: white rounded bar with two digit cells and a green clock strip beneath
+    let barW = size * 0.62, barH = size * 0.20, barX = (size - barW) / 2, barY = size * 0.47
+    let bar = squircle(in: NSRect(x: barX, y: barY, width: barW, height: barH), radius: 34 * s)
+    ctx.saveGState()
+    ctx.setShadow(offset: CGSize(width: 0, height: -8 * s), blur: 24 * s, color: NSColor.black.withAlphaComponent(0.25).cgColor)
+    NSColor.white.setFill(); bar.fill()
+    ctx.restoreGState()
+    let cellW = barW * 0.24
+    let homeCell = squircle(in: NSRect(x: barX + barW * 0.06, y: barY + barH * 0.16, width: cellW, height: barH * 0.68), radius: 18 * s)
+    let awayCell = squircle(in: NSRect(x: barX + barW - barW * 0.06 - cellW, y: barY + barH * 0.16, width: cellW, height: barH * 0.68), radius: 18 * s)
+    NSColor(red: 0.04, green: 0.10, blue: 0.48, alpha: 1).setFill(); homeCell.fill()
+    NSColor(red: 0.93, green: 0.20, blue: 0.24, alpha: 1).setFill(); awayCell.fill()
+    let font = NSFont.systemFont(ofSize: barH * 0.52, weight: .heavy)
+    func text(_ t: String, cx: CGFloat, cy: CGFloat, color: NSColor, font: NSFont) {
+        let str = NSAttributedString(string: t, attributes: [.font: font, .foregroundColor: color]); let sz = str.size()
+        str.draw(at: NSPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
     }
-    text("1", cx: x0 + homeW + scoreW / 2)
-    text("0", cx: x0 + homeW + scoreW * 1.5)
-    let clockFont = NSFont.monospacedDigitSystemFont(ofSize: bugH * 0.5, weight: .bold)
-    let cstr = NSAttributedString(string: "90:00", attributes: [.font: clockFont, .foregroundColor: NSColor.white])
-    let csz = cstr.size()
-    cstr.draw(at: NSPoint(x: x0 + homeW + 2 * scoreW + w * 0.10 + (clockW - csz.width) / 2, y: bugY + (bugH - csz.height) / 2))
-    // Orange accent bar under the bug, a nod to the control panel
-    let bar = NSBezierPath(roundedRect: NSRect(x: x0, y: bugY - size * 0.06, width: w * 0.34, height: size * 0.028), xRadius: 8 * s, yRadius: 8 * s)
-    NSGradient(colors: [NSColor(red: 1, green: 0.48, blue: 0.1, alpha: 1), NSColor(red: 1, green: 0.31, blue: 0.16, alpha: 1)])!.draw(in: bar, angle: 0)
+    text("2", cx: homeCell.bounds.midX, cy: homeCell.bounds.midY, color: .white, font: font)
+    text("1", cx: awayCell.bounds.midX, cy: awayCell.bounds.midY, color: .white, font: font)
+    text("–", cx: size / 2, cy: barY + barH / 2, color: NSColor(white: 0.15, alpha: 1), font: NSFont.systemFont(ofSize: barH * 0.42, weight: .bold))
+    let clock = squircle(in: NSRect(x: size * 0.34, y: barY - size * 0.115, width: size * 0.32, height: size * 0.085), radius: 22 * s)
+    NSColor(red: 0.13, green: 0.80, blue: 0.45, alpha: 1).setFill(); clock.fill()
+    text("90:00", cx: size / 2, cy: clock.bounds.midY, color: NSColor(red: 0.02, green: 0.16, blue: 0.10, alpha: 1), font: NSFont.monospacedDigitSystemFont(ofSize: size * 0.052, weight: .heavy))
     img.unlockFocus()
     return img
 }

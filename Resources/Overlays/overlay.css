@@ -1,10 +1,22 @@
-/* Shared overlay layout. Transparent body, fixed canvas by orientation, a grid the themes rearrange with grid-template-areas. */
+/* Shared overlay layout. Transparent body, fixed canvas by orientation, a grid the themes rearrange with grid-template-areas.
+   Typefaces are open-licence lookalikes bundled under fonts/ (SIL OFL): Montserrat, Barlow, Barlow Condensed, Archivo, Oswald, Inter. */
+@font-face { font-family: "Montserrat"; src: url(/assets/fonts/Montserrat-900.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-500.woff2) format("woff2"); font-weight: 500; }
+@font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-600.woff2) format("woff2"); font-weight: 600; }
+@font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-700.woff2) format("woff2"); font-weight: 700; }
+@font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-600.woff2) format("woff2"); font-weight: 600; }
+@font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-700.woff2) format("woff2"); font-weight: 700; }
+@font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-800.woff2) format("woff2"); font-weight: 800; }
+@font-face { font-family: "Archivo"; src: url(/assets/fonts/Archivo-800.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Oswald"; src: url(/assets/fonts/Oswald-700.woff2) format("woff2"); font-weight: 200 700; }
+@font-face { font-family: "Inter"; src: url(/assets/fonts/Inter-800.woff2) format("woff2"); font-weight: 100 900; }
+
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }
+body { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }
 body[data-orientation="h"] #stage { position: relative; width: 1920px; height: 1080px; }
 body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1920px; }
 
-.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 320ms ease, transform 320ms ease; }
+.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 380ms cubic-bezier(.2,.8,.2,1), transform 480ms cubic-bezier(.2,.9,.25,1.15); }
 .bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
 body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; transform: scale(var(--bug-scale, 1)); }
 body[data-orientation="h"] .bug.hidden { transform: scale(var(--bug-scale, 1)) translateY(-14px); }
@@ -16,17 +28,20 @@ body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(-
 .comp { grid-area: comp; } .team.home { grid-area: home; } .score.home { grid-area: hs; } .sep { grid-area: sep; }
 .score.away { grid-area: as; } .team.away { grid-area: away; } .clock { grid-area: clock; } .added { grid-area: added; }
 .comp, .team, .score, .sep, .clock, .added { display: flex; align-items: center; justify-content: center; }
-.comp:empty, .comp.unused, .sep.unused, .team .name.unused, .team .crest.unused, .team .code.unused { display: none; }
 .team { gap: 10px; }
+.team .code, .team .name, .score .digit, .clock .time, .clock .state, .added .plus, .added .counter, .comp .label { line-height: 1; display: inline-block; }
 .crest { display: inline-block; width: 44px; height: 44px; background-size: contain; background-repeat: no-repeat; background-position: center; flex: none; }
 .crest.monogram { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800; font-size: 18px; }
+/* Official competition mark, when the user has imported one; themes draw a fallback glyph otherwise. */
+.comp .mark { background-image: var(--comp-logo, none); background-size: contain; background-repeat: no-repeat; background-position: center; }
+.bug.has-comp-logo .comp .mark::before, .bug.has-comp-logo .comp .mark::after { display: none; }
+.bug.has-comp-logo .comp .mark { background-color: transparent !important; clip-path: none !important; transform: none !important; }
 .added { display: none; }
 .bug.has-added .added { display: flex; }
 .clock .state { display: none; }
 .clock.stopped .time { display: none; }
 .clock.stopped .state { display: inline; }
 .score .digit { font-variant-numeric: tabular-nums; }
-.team .code, .team .name, .score .digit, .clock .time, .clock .state, .added .plus, .added .counter, .comp .label { line-height: 1; display: inline-block; }
 
 .shootout, .scorers { display: none; }
 .bug.has-shootout .shootout { display: flex; align-items: center; }
@@ -39,8 +54,11 @@ body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(-
 .scorers .list { display: flex; flex-direction: column; }
 .scorers .entry { white-space: nowrap; }
 
-@keyframes goal-flash { 0% { transform: scale(1); } 25% { transform: scale(1.3); } 100% { transform: scale(1); } }
-.score.goal .digit { display: inline-block; animation: goal-flash 700ms cubic-bezier(.2,.9,.3,1.4); }
+/* Digit roll on a score change, used by themes that show it. */
+.score { overflow: hidden; }
+.score.roll .digit { animation: digit-roll 520ms cubic-bezier(.2,.8,.2,1); }
+@keyframes digit-roll { 0% { transform: translateY(110%); opacity: 0; } 60% { transform: translateY(-8%); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bug, .bug * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
-/* GOAL wipes: themes style .main::after and turn it on with .bug.goal */
-.main::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+/* GOAL layers: themes style .main::before and .main::after and turn them on with .bug.goal */
+.main::before, .main::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; }

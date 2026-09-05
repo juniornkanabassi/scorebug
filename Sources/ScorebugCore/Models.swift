@@ -230,8 +230,10 @@ public struct Competition: Codable, Sendable, Identifiable, Equatable {
     public var shortName: String
     public var themeId: String
     public var sourceIds: [String: String]
-    public init(id: String, name: String, shortName: String, themeId: String, sourceIds: [String: String] = [:]) {
-        self.id = id; self.name = name; self.shortName = shortName; self.themeId = themeId; self.sourceIds = sourceIds
+    /// Optional official mark imported by the user, stored under crests/. Optional since schema 1.
+    public var logoFile: String?
+    public init(id: String, name: String, shortName: String, themeId: String, sourceIds: [String: String] = [:], logoFile: String? = nil) {
+        self.id = id; self.name = name; self.shortName = shortName; self.themeId = themeId; self.sourceIds = sourceIds; self.logoFile = logoFile
     }
 }
 

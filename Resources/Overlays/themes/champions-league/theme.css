@@ -1,39 +1,47 @@
-/* UEFA Champions League 2024-27 world feed (Vasava identity). Verified against the 2025 final: blue square with the starball,
-   white clock plate, a gap, then a navy bar with home code, the two scores split by faint chevrons, away code and a colour tab
-   at the right edge. GOAL: the navy bar wipes to an italic GOAL. Europa and Conference reuse it with their colours. */
-body[data-family="uefa"] .bug { --h: 40px; --uefa-navy: #0B1F8F; --uefa-navy-2: #061366; --uefa-blue: #1F3BFF; --uefa-light: #FFFFFF; --uefa-accent: #F59E0B;
+/* UEFA Champions League 2024-27 world feed. Verified against the 2025 final on TNT and the 4K goal-animation clip:
+   blue square with the starball, white clock plate, a gap, navy bar with home code, scores split by faint chevrons, away code,
+   colour tab at the right edge. Goal, 1.2 s: text drops out and the bar darkens, a lighter sweep runs left to right, italic GOAL
+   scales in, diagonal white stripes slice through, the score returns. Europa and Conference recolour it. */
+body[data-family="uefa"] .bug { --h: 42px; --uefa-navy: #0C1E96; --uefa-navy-2: #050D5C; --uefa-blue: #1F3BFF; --uefa-light: #FFFFFF; --uefa-dark: #0A1445;
   --kick-pending: #2a3a8a; --kick-scored: #29D65E; --kick-missed: #FF3B4E;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-stretch: condensed; font-weight: 500; letter-spacing: 0.05em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.45)); }
-body[data-theme="europa-league"] .bug { --uefa-navy: #1A1A1A; --uefa-navy-2: #000; --uefa-blue: #F26A21; }
-body[data-theme="conference-league"] .bug { --uefa-navy: #0B3D2E; --uefa-navy-2: #062A1F; --uefa-blue: #00A86B; }
+  font-family: "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-weight: 600; letter-spacing: 0.04em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.45)); }
+body[data-theme="europa-league"] .bug { --uefa-navy: #1E1E1E; --uefa-navy-2: #000; --uefa-blue: #F26A21; --uefa-dark: #111; }
+body[data-theme="conference-league"] .bug { --uefa-navy: #0B4A37; --uefa-navy-2: #062A1F; --uefa-blue: #00A86B; --uefa-dark: #06231A; }
 body[data-family="uefa"] .main { grid-template-areas: "comp clock added home hs as away"; height: var(--h); }
 body[data-family="uefa"] .team .name, body[data-family="uefa"] .team .crest, body[data-family="uefa"] .comp .label, body[data-family="uefa"] .sep { display: none; }
 body[data-family="uefa"] .comp { width: var(--h); background: var(--uefa-blue); }
-body[data-family="uefa"] .comp .mark { width: calc(var(--h) * 0.62); height: calc(var(--h) * 0.62); border-radius: 50%; background: #fff; position: relative; overflow: hidden; }
-body[data-family="uefa"] .comp .mark::before { content: "★ ★\A★ ★ ★\A★ ★"; white-space: pre; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--uefa-blue); font-size: calc(var(--h) * 0.2); line-height: 0.9; letter-spacing: -0.08em; transform: rotate(15deg); }
-body[data-family="uefa"] .clock { padding: 0 12px; min-width: calc(var(--h) * 2.1); background: var(--uefa-light); color: #111; font-size: calc(var(--h) * 0.6); font-weight: 500; font-variant-numeric: tabular-nums; }
+body[data-family="uefa"] .comp .mark { width: calc(var(--h) * 0.66); height: calc(var(--h) * 0.66); border-radius: 50%; background-color: #fff; position: relative; overflow: hidden; }
+body[data-family="uefa"] .comp .mark::before { content: "★ ★\A★ ★ ★\A★ ★"; white-space: pre; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--uefa-blue); font-family: Arial, sans-serif; font-size: calc(var(--h) * 0.2); line-height: 0.9; letter-spacing: -0.08em; transform: rotate(15deg); }
+body[data-family="uefa"] .clock { padding: 0 12px; min-width: calc(var(--h) * 2.2); background: var(--uefa-light); color: #111; font-size: calc(var(--h) * 0.64); font-weight: 600; font-variant-numeric: tabular-nums; }
 body[data-family="uefa"] .clock.stopped { color: var(--uefa-navy); }
-body[data-family="uefa"] .added { padding: 0 10px; background: var(--uefa-light); color: var(--uefa-navy); gap: 8px; font-size: calc(var(--h) * 0.5); border-left: 2px solid #ddd; }
-body[data-family="uefa"] .added .counter { font-size: calc(var(--h) * 0.38); color: #444; }
+body[data-family="uefa"] .added { padding: 0 10px; background: var(--uefa-light); color: var(--uefa-navy); gap: 8px; font-size: calc(var(--h) * 0.52); border-left: 2px solid #ddd; }
+body[data-family="uefa"] .added .counter { font-size: calc(var(--h) * 0.4); color: #444; }
 body[data-family="uefa"] .added .counter:empty { display: none; }
-body[data-family="uefa"] .team { padding: 0 18px; color: #fff; font-size: calc(var(--h) * 0.6); background: linear-gradient(180deg, var(--uefa-navy), var(--uefa-navy-2)); }
-body[data-family="uefa"] .team.home { margin-left: 10px; padding-right: 26px; }
-body[data-family="uefa"] .team.away { padding-left: 26px; position: relative; padding-right: 26px; }
-body[data-family="uefa"] .team.away::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 7px; background: var(--away-primary); }
-body[data-family="uefa"] .team.home::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0; }
-body[data-family="uefa"] .score { min-width: calc(var(--h) * 0.85); color: #fff; font-size: calc(var(--h) * 0.6); background: linear-gradient(180deg, var(--uefa-navy), var(--uefa-navy-2)); position: relative; }
-body[data-family="uefa"] .score.home::before, body[data-family="uefa"] .score.away::after { content: ""; position: absolute; top: 15%; bottom: 15%; width: 10px; border: 1px solid rgba(255,255,255,0.25); border-right: none; border-radius: 6px 0 0 6px; }
-body[data-family="uefa"] .score.home::before { left: -4px; }
-body[data-family="uefa"] .score.away::after { right: -4px; transform: scaleX(-1); }
+body[data-family="uefa"] .team { padding: 0 18px; color: #fff; font-size: calc(var(--h) * 0.62); background: linear-gradient(180deg, var(--uefa-navy), var(--uefa-navy-2)); position: relative; }
+body[data-family="uefa"] .team.home { margin-left: 10px; padding-right: 22px; }
+body[data-family="uefa"] .team.away { padding-left: 22px; padding-right: 26px; }
+body[data-family="uefa"] .team.away::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 7px; background: var(--away-secondary); }
+body[data-family="uefa"] .score { min-width: calc(var(--h) * 0.9); color: #fff; font-size: calc(var(--h) * 0.64); background: linear-gradient(180deg, var(--uefa-navy), var(--uefa-navy-2)); position: relative; overflow: visible; }
+body[data-family="uefa"] .score.home::before, body[data-family="uefa"] .score.away::after { content: ""; position: absolute; top: 12%; bottom: 12%; width: 12px; border: 1px solid rgba(255,255,255,0.28); border-right: none; border-radius: 8px 0 0 8px; }
+body[data-family="uefa"] .score.home::before { left: -6px; }
+body[data-family="uefa"] .score.away::after { right: -6px; transform: scaleX(-1); }
 body[data-family="uefa"] .score.home { border-right: 1px solid rgba(255,255,255,0.35); }
-/* GOAL wipe over the navy bar only (clock and mark stay). */
-body[data-family="uefa"] .main::after { content: "GOAL"; left: calc(var(--h) + var(--h) * 2.1 + 10px); display: flex; align-items: center; justify-content: center; background: var(--uefa-navy);
-  color: #fff; font-style: italic; font-weight: 700; font-size: calc(var(--h) * 0.72); letter-spacing: 0.12em; clip-path: inset(0 100% 0 0); }
-body[data-family="uefa"] .bug.has-added .main::after { left: calc(var(--h) + var(--h) * 2.1 + 10px + var(--h) * 1.4); }
-body[data-family="uefa"] .bug.goal .main::after { opacity: 1; animation: uefa-wipe 3.2s cubic-bezier(.3,.7,.2,1) forwards; }
-@keyframes uefa-wipe { 0% { clip-path: inset(0 100% 0 0); } 14% { clip-path: inset(0 0 0 0); } 78% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 0 0 100%); } }
-body[data-family="uefa"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 14px; background: var(--uefa-navy); font-size: calc(var(--h) * 0.55); }
+/* GOAL in four phases over the navy bar only. ::before is the darkened bar and the light sweep, ::after carries GOAL and the stripes. */
+body[data-family="uefa"] .main::before, body[data-family="uefa"] .main::after { left: calc(var(--h) + var(--h) * 2.2 + 10px); }
+body[data-family="uefa"] .bug.has-added .main::before, body[data-family="uefa"] .bug.has-added .main::after { left: calc(var(--h) + var(--h) * 2.2 + 10px + var(--h) * 1.5); }
+body[data-family="uefa"] .main::before { background: linear-gradient(90deg, var(--uefa-navy) 0 30%, var(--uefa-dark) 30% 100%); background-size: 300% 100%; background-position: 100% 0; }
+body[data-family="uefa"] .main::after { content: "GOAL"; display: flex; align-items: center; justify-content: center; color: #fff; font-style: italic; font-weight: 700; font-size: calc(var(--h) * 0.8); letter-spacing: 0.1em;
+  background-image: repeating-linear-gradient(115deg, transparent 0 34px, #ffffff 34px 52px); mix-blend-mode: normal; background-size: 200% 100%; background-position: 200% 0; background-repeat: no-repeat; }
+body[data-family="uefa"] .bug.goal .main::before { opacity: 1; animation: uefa-bar 1.4s linear forwards; }
+body[data-family="uefa"] .bug.goal .main::after { opacity: 1; animation: uefa-goal 1.4s linear forwards; }
+body[data-family="uefa"] .bug.goal .team, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.4s linear forwards; }
+@keyframes uefa-bar { 0% { background-position: 100% 0; opacity: 1; } 18% { background-position: 100% 0; } 45% { background-position: 0 0; } 92% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes uefa-goal { 0%, 22% { transform: scale(0.6); color: transparent; background-position: 200% 0; opacity: 1; } 30% { transform: scale(1); color: #fff; } 60% { color: #fff; background-position: 200% 0; } 74% { color: #fff; background-position: 90% 0; } 84% { color: transparent; background-position: -20% 0; } 100% { opacity: 0; background-position: -60% 0; } }
+@keyframes uefa-text { 0% { opacity: 1; } 10% { opacity: 0; } 88% { opacity: 0; } 100% { opacity: 1; } }
+body[data-family="uefa"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 14px; background: var(--uefa-navy); font-size: calc(var(--h) * 0.58); }
 body[data-family="uefa"] .kick { border-radius: 2px; transform: rotate(45deg) scale(0.75); }
-body[data-family="uefa"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(11,31,143,0.94); font-size: calc(var(--h) * 0.42); font-weight: 500; letter-spacing: 0.03em; }
+body[data-family="uefa"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(12,30,150,0.94); font-size: calc(var(--h) * 0.46); font-weight: 500; letter-spacing: 0.03em; }
 body[data-family="uefa"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-family="uefa"] .shootout, body[data-orientation="v"][data-family="uefa"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
+
+body[data-family="uefa"] .bug.has-comp-logo .comp .mark { width: calc(var(--h) * 0.74); height: calc(var(--h) * 0.74); border-radius: 0; background-color: transparent; }

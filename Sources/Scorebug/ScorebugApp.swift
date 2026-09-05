@@ -29,6 +29,13 @@ struct ScorebugApp: App {
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(.presented)
         .restorationBehavior(.disabled)
+        .commands {
+            CommandGroup(after: .toolbar) {
+                Button("Zoom In") { model.zoom(0.1) }.keyboardShortcut("=", modifiers: .command)
+                Button("Zoom Out") { model.zoom(-0.1) }.keyboardShortcut("-", modifiers: .command)
+                Button("Actual Size") { model.uiScale = 1 }.keyboardShortcut("0", modifiers: .command)
+            }
+        }
 
         MenuBarExtra("Scorebug", systemImage: model.serverRunning ? "sportscourt.fill" : "sportscourt") {
             MenuBarContent().environmentObject(model)
@@ -88,11 +95,13 @@ struct ContentView: View {
                 }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
             }
         } detail: {
-            switch section {
-            case .slot(let s): SlotView(slot: s).id(s)
-            case .library: LibraryView()
-            case .settings: SettingsView()
-            case nil: ContentUnavailableView("Choose a match", systemImage: "sportscourt")
+            Zoomed(scale: model.uiScale) {
+                switch section {
+                case .slot(let s): SlotView(slot: s).id(s)
+                case .library: LibraryView()
+                case .settings: SettingsView()
+                case nil: ContentUnavailableView("Choose a match", systemImage: "sportscourt")
+                }
             }
         }
         .alert("Scorebug", isPresented: Binding(get: { model.lastError != nil }, set: { if !$0 { model.lastError = nil } })) {

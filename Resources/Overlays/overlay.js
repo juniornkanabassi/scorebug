@@ -59,10 +59,15 @@
     if (g.maxWidth != null) bug.style.setProperty("--bug-max-width", g.maxWidth + "px");
     bug.style.setProperty("--bug-scale", String(g.scale != null ? g.scale : 1));
   }
+  const badCrests = new Set();
   function setCrest(node, team) {
-    if (team.crestFile) {
+    if (team.crestFile && !badCrests.has(team.crestFile)) {
+      const url = "/crests/" + encodeURIComponent(team.crestFile);
       node.classList.remove("monogram"); node.textContent = ""; node.style.background = "";
-      node.style.backgroundImage = "url(/crests/" + encodeURIComponent(team.crestFile) + ")";
+      node.style.backgroundImage = "url(" + url + ")";
+      const probe = new Image();
+      probe.onerror = () => { badCrests.add(team.crestFile); setCrest(node, Object.assign({}, team, { crestFile: null })); };
+      probe.src = url;
     } else {
       node.classList.add("monogram"); node.style.backgroundImage = "";
       node.style.background = team.primaryColour; node.style.color = team.textColour;
@@ -73,6 +78,9 @@
     const comp = competitionFor(m);
     loadTheme(m.themeId || (comp ? comp.themeId : m.competitionId));
     el.compLabel.textContent = comp ? comp.shortName : "";
+    const logo = comp && comp.logoFile ? "url(/crests/" + encodeURIComponent(comp.logoFile) + ")" : "none";
+    bug.style.setProperty("--comp-logo", logo);
+    bug.classList.toggle("has-comp-logo", logo !== "none");
     for (const [side, t] of [["home", m.home], ["away", m.away]]) {
       bug.style.setProperty("--" + side + "-crest", t.crestFile ? "url(/crests/" + encodeURIComponent(t.crestFile) + ")" : "none");
       bug.style.setProperty("--" + side + "-primary", t.primaryColour);
@@ -82,7 +90,10 @@
     el.homeCode.textContent = m.home.code; el.awayCode.textContent = m.away.code;
     el.homeName.textContent = m.home.shortName || m.home.name; el.awayName.textContent = m.away.shortName || m.away.name;
     setCrest(el.homeCrest, m.home); setCrest(el.awayCrest, m.away);
-    el.homeDigit.textContent = m.homeScore; el.awayDigit.textContent = m.awayScore;
+    for (const [box, digit, value] of [[el.homeScore, el.homeDigit, m.homeScore], [el.awayScore, el.awayDigit, m.awayScore]]) {
+      if (digit.textContent !== String(value) && renderedRevision !== -1) { box.classList.remove("roll"); void box.offsetWidth; box.classList.add("roll"); }
+      digit.textContent = value;
+    }
     bug.classList.toggle("hidden", !m.visible);
     bug.classList.toggle("has-added", !!m.addedMinutes && !!PERIOD[m.phase]);
     bug.dataset.phase = m.phase;
@@ -102,8 +113,9 @@
       bug.style.setProperty("--goal-crest", "var(--" + m.lastGoal.side + "-crest)");
       bug.style.setProperty("--goal-primary", "var(--" + m.lastGoal.side + "-primary)");
       bug.style.setProperty("--goal-text", "var(--" + m.lastGoal.side + "-text)");
+      bug.classList.remove("goal"); void bug.offsetWidth;
       bug.classList.add("goal-" + m.lastGoal.side, "goal");
-      setTimeout(() => bug.classList.remove("goal"), 4000);
+      setTimeout(() => bug.classList.remove("goal"), 4200);
       setTimeout(() => bug.classList.remove("goal-" + m.lastGoal.side), 4000);
     }
     lastGoalKey = key;
@@ -144,6 +156,23 @@
     match = m;
     if (m.revision !== renderedRevision) { renderStatic(m); renderedRevision = m.revision; }
   }
+  // Debug hook for screenshots and QA: /overlay/h/1?demo=goal:home:1200 fires a goal animation on first render and freezes it at 1200 ms.
+  const demo = new URLSearchParams(location.search).get("demo");
+  if (demo) {
+    const [kind, side, at] = demo.split(":");
+    setTimeout(() => {
+      if (!match) return;
+      if (kind === "goal") {
+        bug.style.setProperty("--goal-crest", "var(--" + (side || "home") + "-crest)");
+        bug.style.setProperty("--goal-primary", "var(--" + (side || "home") + "-primary)");
+        bug.style.setProperty("--goal-text", "var(--" + (side || "home") + "-text)");
+        bug.classList.add("goal-" + (side || "home"), "goal");
+        const box = side === "away" ? el.awayScore : el.homeScore; box.classList.add("roll");
+      }
+      if (at) requestAnimationFrame(() => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = parseInt(at, 10); }));
+    }, 900);
+  }
+
   let retry = 500;
   function connect() {
     const ws = new WebSocket((location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + "/ws");

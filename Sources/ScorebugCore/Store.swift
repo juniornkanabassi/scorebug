@@ -108,6 +108,16 @@ public final class Store: @unchecked Sendable {
         return count
     }
 
+    /// Copies a competition mark into crests/ as competition-<id>.<ext> and returns the stored file name.
+    public func importCompetitionLogo(from source: URL, for competitionId: String) throws -> String {
+        let ext = source.pathExtension.isEmpty ? "png" : source.pathExtension.lowercased()
+        let name = "competition-\(competitionId).\(ext)"
+        let target = crestsDirectory.appendingPathComponent(name)
+        if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
+        try FileManager.default.copyItem(at: source, to: target)
+        return name
+    }
+
     /// Copies an image into crests/ under the club id and returns the stored file name.
     public func importCrest(from source: URL, for clubId: UUID) throws -> String {
         let ext = source.pathExtension.isEmpty ? "png" : source.pathExtension.lowercased()

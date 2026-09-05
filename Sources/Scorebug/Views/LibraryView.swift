@@ -7,12 +7,34 @@ struct LibraryView: View {
     @EnvironmentObject var model: AppModel
     @State private var selected: UUID?
     @State private var filter = ""
+    @State private var mode = 0
+    @State private var selectedCompetition: String?
 
     private var clubs: [Club] {
         model.library.clubs.filter { filter.isEmpty || $0.name.localizedCaseInsensitiveContains(filter) }.sorted { $0.name < $1.name }
     }
 
     var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }.pickerStyle(.segmented).labelsHidden().frame(width: 260).padding(10)
+            if mode == 1 { competitions } else { clubsSplit }
+        }
+        .navigationTitle("Library")
+    }
+
+    private var competitions: some View {
+        HSplitView {
+            List(model.library.competitions, selection: $selectedCompetition) { c in
+                HStack { CompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }.tag(c.id)
+            }.frame(minWidth: 260, idealWidth: 300)
+            Group {
+                if let id = selectedCompetition, let c = model.library.competitions.first(where: { $0.id == id }) { CompetitionEditor(competition: c).id(id) }
+                else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
+            }.frame(minWidth: 420)
+        }
+    }
+
+    private var clubsSplit: some View {
         HSplitView {
             VStack(spacing: 0) {
                 TextField("Filter clubs", text: $filter).textFieldStyle(.roundedBorder).padding(8)
@@ -41,9 +63,44 @@ struct LibraryView: View {
                 }
             }.frame(minWidth: 420)
         }
-        .navigationTitle("Library")
     }
 }
+
+struct CompetitionEditor: View {
+    @EnvironmentObject var model: AppModel
+    @State var competition: Competition
+    @State private var importing = false
+    var body: some View {
+        Form {
+            Section("Competition") {
+                TextField("Name", text: $competition.name)
+                TextField("Short name", text: $competition.shortName)
+                Picker("Score bug design", selection: $competition.themeId) {
+                    ForEach(model.resolver.availableThemeIds(), id: \.self) { id in Text(model.resolver.themeConfig(id: id)?.name ?? id).tag(id) }
+                }
+            }
+            Section("Official mark") {
+                HStack(spacing: 14) {
+                    CompetitionMark(competition: competition, size: 56)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Button("Import Image…") { importing = true }
+                        Text("A PNG or SVG with transparency. Shown in the app and on the bug in place of the drawn mark, for example the lion roundel or the starball.").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.png, .svg, .jpeg, .webP]) { result in
+            if case .success(let url) = result {
+                let ok = url.startAccessingSecurityScopedResource(); defer { if ok { url.stopAccessingSecurityScopedResource() } }
+                model.importCompetitionLogo(from: url, for: competition.id)
+                if let c = model.library.competitions.first(where: { $0.id == competition.id }) { competition.logoFile = c.logoFile }
+            }
+        }
+        .onChange(of: competition) { _, new in model.updateCompetition(new) }
+    }
+}
+
 
 struct ClubEditor: View {
     @EnvironmentObject var model: AppModel
@@ -98,15 +155,3 @@ struct ClubEditor: View {
     }
 }
 
-extension Color {
-    init(hex: String) {
-        var s = hex.trimmingCharacters(in: .whitespaces); if s.hasPrefix("#") { s.removeFirst() }
-        var v: UInt64 = 0; Scanner(string: s).scanHexInt64(&v)
-        let r = Double((v >> 16) & 0xFF) / 255, g = Double((v >> 8) & 0xFF) / 255, b = Double(v & 0xFF) / 255
-        self.init(.sRGB, red: r, green: g, blue: b, opacity: 1)
-    }
-    var hexString: String {
-        let c = NSColor(self).usingColorSpace(.sRGB) ?? .black
-        return String(format: "#%02X%02X%02X", Int(round(c.redComponent * 255)), Int(round(c.greenComponent * 255)), Int(round(c.blueComponent * 255)))
-    }
-}
