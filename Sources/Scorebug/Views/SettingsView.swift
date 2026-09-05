@@ -34,6 +34,10 @@ struct SettingsView: View {
                 Toggle("Use override folder", isOn: $model.settings.themeOverridesEnabled).onChange(of: model.settings.themeOverridesEnabled) { _, _ in model.saveSettings() }
                 Button("Reveal Data Folder in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.directory]) }
             }
+            Section("About") {
+                LabeledContent("Scorebug", value: AppInfo.version)
+                Text("© 2026 Junior Nkana Bassi.").font(.caption).foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .navigationTitle("Settings")

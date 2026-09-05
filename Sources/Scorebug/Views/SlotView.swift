@@ -5,13 +5,13 @@ import ScorebugCore
 struct SlotView: View {
     @EnvironmentObject var model: AppModel
     let slot: Int
-    @State private var tick = Date()
-    private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
+    /// Goal whose scorer popover should be open. Set right after a plus button scores a goal so the
+    /// popover appears on that goal's row without the plus button itself waiting on anything.
+    @State private var scorerPopoverGoalId: UUID?
 
     private var match: Match { model.match(slot) }
     private var competition: Competition? { model.library.competitions.first { $0.id == match.competitionId } }
     private var themeConfig: ThemeConfig? { model.resolver.themeConfig(id: match.themeId ?? competition?.themeId ?? match.competitionId) }
-    private var display: ClockDisplay { ClockEngine.display(match: match, style: themeConfig?.clockStyle ?? .runOn, now: tick) }
 
     var body: some View {
         VSplitView {
@@ -39,7 +39,6 @@ struct SlotView: View {
                     .help("Zero the score, clock and shootout; keep the teams")
             }
         }
-        .onReceive(timer) { tick = $0 }
     }
 
     // MARK: Match card
@@ -72,7 +71,11 @@ struct SlotView: View {
                 Button { model.apply(.goal(side, -1), slot: slot) } label: { Image(systemName: "minus").frame(width: 14) }
                     .controlSize(.large).disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
                 Text("\(match.score(side))").font(.system(size: 48, weight: .bold, design: .rounded)).monospacedDigit().frame(minWidth: 60)
-                Button { model.apply(.goal(side, 1), slot: slot) } label: { Image(systemName: "plus").frame(width: 14) }
+                Button {
+                    model.apply(.goal(side, 1), slot: slot)
+                    // Open the new goal's scorer popover without making the plus button wait on it.
+                    scorerPopoverGoalId = match.lastGoal?.goalId
+                } label: { Image(systemName: "plus").frame(width: 14) }
                     .controlSize(.large).buttonStyle(.borderedProminent).disabled(match.phase == .shootout).help("Goal for \(team.shortName)")
             }
         }
@@ -89,15 +92,10 @@ struct SlotView: View {
                 }.labelsHidden().frame(maxWidth: 210)
             }
             Text(competition?.name ?? "Competition").font(.caption.weight(.semibold)).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
-            Text(display.state ?? display.main).font(.system(size: 40, weight: .semibold, design: .rounded)).monospacedDigit()
-            HStack(spacing: 8) {
-                if let a = display.added { Text(a).font(.title3.weight(.semibold)).foregroundStyle(.orange) }
-                if let c = display.addedCounter { Text(c).font(.callout).monospacedDigit().foregroundStyle(.secondary) }
-            }.frame(height: 20)
-            Text(phaseTitle).font(.callout).foregroundStyle(.secondary)
+            ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
             HStack(spacing: 8) {
                 Button(match.clock.running ? "Pause" : "Play") { model.apply(.play, slot: slot) }.disabled(match.currentPeriod == nil)
-                Button("End Period") { model.apply(.endPeriod, slot: slot) }.disabled(match.currentPeriod == nil)
+                Button("End half") { model.apply(.endPeriod, slot: slot) }.disabled(match.currentPeriod == nil)
                 Button("Swap") { model.apply(.swapTeams, slot: slot) }.help("Swap home and away")
             }
         }
@@ -132,15 +130,6 @@ struct SlotView: View {
         }
     }
 
-    private var phaseTitle: String {
-        switch match.phase {
-        case .preMatch: return "Pre-match"; case .firstHalf: return "First half"; case .halfTime: return "Half time"
-        case .secondHalf: return "Second half"; case .fullTime: return "Full time"; case .extraFirst: return "Extra time, first half"
-        case .extraBreak: return "Extra time break"; case .extraSecond: return "Extra time, second half"; case .extraFullTime: return "After extra time"
-        case .shootout: return "Penalty shootout"; case .finished: return "Finished"
-        }
-    }
-
     // MARK: Goals
 
     private var goalsSection: some View {
@@ -150,8 +139,7 @@ struct SlotView: View {
             }
             ForEach(match.goals) { goal in
                 LabeledContent("\(match.team(goal.side).shortName)  \(goal.minuteLabel)") {
-                    TextField("Scorer", text: Binding(get: { goal.scorer ?? "" }, set: { model.apply(.setScorer(goal.id, $0), slot: slot) }))
-                        .textFieldStyle(.roundedBorder).frame(maxWidth: 280)
+                    ScorerButton(goal: goal, squad: match.team(goal.side).squad ?? [], slot: slot, openGoalId: $scorerPopoverGoalId)
                 }
             }
             if !match.goals.isEmpty {
@@ -201,6 +189,106 @@ struct SlotView: View {
             }
             Text("Official competition marks (the lion, the starball) can be imported in Library › Competitions and replace the drawn glyph.").font(.caption).foregroundStyle(.secondary)
         }
+    }
+}
+
+/// The ticking clock and phase label, alone. This is the only part of a slot that changes four times a second,
+/// so it owns its own `Timer.publish` subscription; `SlotView` does not subscribe, and a tick here re-renders
+/// only this small view, leaving pickers and buttons elsewhere in the tree untouched.
+struct ClockReadout: View {
+    let match: Match
+    let style: ClockStyle
+    @State private var tick = Date()
+    private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
+    private var display: ClockDisplay { ClockEngine.display(match: match, style: style, now: tick) }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(display.state ?? display.main).font(.system(size: 40, weight: .semibold, design: .rounded)).monospacedDigit()
+            HStack(spacing: 8) {
+                if let a = display.added { Text(a).font(.title3.weight(.semibold)).foregroundStyle(.orange) }
+                if let c = display.addedCounter { Text(c).font(.callout).monospacedDigit().foregroundStyle(.secondary) }
+            }.frame(height: 20)
+            Text(phaseTitle).font(.callout).foregroundStyle(.secondary)
+        }
+        .onReceive(timer) { tick = $0 }
+    }
+
+    private var phaseTitle: String {
+        switch match.phase {
+        case .preMatch: return "Pre-match"; case .firstHalf: return "First half"; case .halfTime: return "Half time"
+        case .secondHalf: return "Second half"; case .fullTime: return "Full time"; case .extraFirst: return "Extra time, first half"
+        case .extraBreak: return "Extra time break"; case .extraSecond: return "Extra time, second half"; case .extraFullTime: return "After extra time"
+        case .shootout: return "Penalty shootout"; case .finished: return "Finished"
+        }
+    }
+}
+
+/// A goal's scorer control: a button showing the current scorer, or "Add scorer", that opens a popover with a
+/// search field over the scoring club's squad. Clicking a name (or pressing Return with no exact match, which
+/// uses the typed text as a custom name) sets the scorer and closes the popover.
+struct ScorerButton: View {
+    @EnvironmentObject var model: AppModel
+    let goal: Goal
+    let squad: [String]
+    let slot: Int
+    @Binding var openGoalId: UUID?
+    @State private var query = ""
+    @FocusState private var searchFocused: Bool
+
+    private var isOpen: Bool { openGoalId == goal.id }
+    private var filtered: [String] { query.isEmpty ? squad : squad.filter { squadNameMatches($0, query: query) } }
+
+    var body: some View {
+        Button(goal.scorer?.isEmpty == false ? goal.scorer! : "Add scorer") {
+            query = ""
+            openGoalId = goal.id
+        }
+        .frame(maxWidth: 280, alignment: .leading)
+        .popover(isPresented: Binding(get: { isOpen }, set: { if !$0 { openGoalId = nil } })) {
+            VStack(alignment: .leading, spacing: 0) {
+                TextField("Search scorer", text: $query)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($searchFocused)
+                    .padding(8)
+                    .onSubmit(submitQuery)
+                Divider()
+                if squad.isEmpty {
+                    Text("No squad on file, type a name").font(.caption).foregroundStyle(.secondary).padding(8)
+                } else if filtered.isEmpty {
+                    Text("No match. Press Return to use \"\(query)\".").font(.caption).foregroundStyle(.secondary).padding(8)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(filtered, id: \.self) { name in
+                                Button(name) { pick(name) }
+                                    .buttonStyle(.plain)
+                                    .padding(.vertical, 4).padding(.horizontal, 8)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                        }
+                    }.frame(maxHeight: 200)
+                }
+            }
+            .frame(width: 260)
+            .onAppear { searchFocused = true }
+        }
+    }
+
+    private func submitQuery() {
+        let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !typed.isEmpty else { return }
+        if let exact = squad.first(where: { $0.compare(typed, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) {
+            pick(exact)
+        } else {
+            pick(typed)
+        }
+    }
+
+    private func pick(_ name: String) {
+        model.apply(.setScorer(goal.id, name), slot: slot)
+        openGoalId = nil
     }
 }
 

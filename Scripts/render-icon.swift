@@ -1,5 +1,6 @@
-// Renders the Scorebug app icon in the current macOS style: a squircle with a deep blue gradient, a soft light sweep,
-// and a white score bug glyph with two digits and a green live clock strip. Usage: swift Scripts/render-icon.swift <iconset dir>
+// Renders the Scorebug app icon in the macOS Tahoe style: a squircle with a deep-blue to
+// electric-blue vertical gradient, a soft top light, and a centred broadcast score bug glyph
+// (two digit cells, a dash, and a clock plate). Usage: swift Scripts/render-icon.swift <iconset dir>
 import AppKit
 
 let out = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
@@ -7,55 +8,116 @@ try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: t
 
 func squircle(in r: NSRect, radius: CGFloat) -> NSBezierPath { NSBezierPath(roundedRect: r, xRadius: radius, yRadius: radius) }
 
+func roundedFont(size: CGFloat, weight: NSFont.Weight) -> NSFont {
+    let base = NSFont.systemFont(ofSize: size, weight: weight)
+    if let rounded = base.fontDescriptor.withDesign(.rounded) {
+        return NSFont(descriptor: rounded, size: size) ?? base
+    }
+    return base
+}
+
+func text(_ t: String, cx: CGFloat, cy: CGFloat, color: NSColor, font: NSFont) {
+    let str = NSAttributedString(string: t, attributes: [.font: font, .foregroundColor: color])
+    let sz = str.size()
+    str.draw(at: NSPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
+}
+
 func render(_ size: CGFloat) -> NSImage {
     let img = NSImage(size: NSSize(width: size, height: size))
     img.lockFocus()
     let s = size / 1024
     let ctx = NSGraphicsContext.current!.cgContext
-    let inset = 92 * s
+
+    // squircle tile: macOS Tahoe grid, ~100px inset / 224px corner radius at 1024
+    let inset = 100 * s
     let tileRect = NSRect(x: inset, y: inset, width: size - 2 * inset, height: size - 2 * inset)
-    let tile = squircle(in: tileRect, radius: 226 * s)
-    // shadow
+    let tile = squircle(in: tileRect, radius: 224 * s)
+
+    let deepBlue = NSColor(red: 0x0B / 255.0, green: 0x1A / 255.0, blue: 0x5C / 255.0, alpha: 1)
+    let electricBlue = NSColor(red: 0x2F / 255.0, green: 0x5B / 255.0, blue: 0xFF / 255.0, alpha: 1)
+
+    // shadow behind the tile
     ctx.saveGState()
     ctx.setShadow(offset: CGSize(width: 0, height: -14 * s), blur: 40 * s, color: NSColor.black.withAlphaComponent(0.35).cgColor)
-    NSColor(red: 0.05, green: 0.12, blue: 0.55, alpha: 1).setFill(); tile.fill()
+    deepBlue.setFill(); tile.fill()
     ctx.restoreGState()
-    // gradient body
+
+    // gradient body: electric blue at top, deep blue at bottom, straight vertical
     ctx.saveGState(); tile.addClip()
-    NSGradient(colors: [NSColor(red: 0.16, green: 0.36, blue: 1.0, alpha: 1), NSColor(red: 0.04, green: 0.10, blue: 0.48, alpha: 1)])!.draw(in: tileRect, angle: -70)
-    // pitch lines, faint
-    NSColor.white.withAlphaComponent(0.07).setStroke()
-    let pitch = NSBezierPath(); pitch.lineWidth = 6 * s
-    pitch.appendOval(in: NSRect(x: size * 0.36, y: size * 0.16, width: size * 0.28, height: size * 0.28))
-    pitch.move(to: NSPoint(x: tileRect.minX, y: size * 0.30)); pitch.line(to: NSPoint(x: tileRect.maxX, y: size * 0.30))
-    pitch.stroke()
-    // light sweep
-    let sweep = NSBezierPath(); sweep.move(to: NSPoint(x: tileRect.minX, y: tileRect.maxY)); sweep.line(to: NSPoint(x: tileRect.maxX, y: tileRect.maxY)); sweep.line(to: NSPoint(x: tileRect.maxX, y: tileRect.minY + tileRect.height * 0.55)); sweep.close()
-    NSGradient(colors: [NSColor.white.withAlphaComponent(0.16), NSColor.white.withAlphaComponent(0.0)])!.draw(in: sweep, angle: -90)
+    NSGradient(colors: [deepBlue, electricBlue])!.draw(in: tileRect, angle: 90)
+    // very soft top light, no clutter, no pitch lines
+    let sweep = NSGradient(colors: [NSColor.white.withAlphaComponent(0.0), NSColor.white.withAlphaComponent(0.16)])!
+    sweep.draw(in: NSRect(x: tileRect.minX, y: tileRect.minY + tileRect.height * 0.45, width: tileRect.width, height: tileRect.height * 0.55), angle: 90)
     ctx.restoreGState()
-    // the bug glyph: white rounded bar with two digit cells and a green clock strip beneath
-    let barW = size * 0.62, barH = size * 0.20, barX = (size - barW) / 2, barY = size * 0.47
-    let bar = squircle(in: NSRect(x: barX, y: barY, width: barW, height: barH), radius: 34 * s)
+
+    // the score bug glyph
+    let tiny = size <= 32
+    let barW = size * 0.68
+    let barH = size * 0.19
+    let barX = (size - barW) / 2
+    let barRadius = 36 * s
+
+    let clockW = barW * 0.42
+    let clockH = size * 0.082
+    let overlap = size * 0.008
+    let shiftUp = size * 0.03
+
+    let barY: CGFloat
+    if tiny {
+        barY = size / 2 - barH / 2
+    } else {
+        let span = barH + clockH - overlap
+        let barTop = size * 0.5 + shiftUp + span / 2
+        barY = barTop - barH
+    }
+
+    let bar = squircle(in: NSRect(x: barX, y: barY, width: barW, height: barH), radius: barRadius)
     ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -8 * s), blur: 24 * s, color: NSColor.black.withAlphaComponent(0.25).cgColor)
+    ctx.setShadow(offset: CGSize(width: 0, height: -6 * s), blur: 28 * s, color: NSColor.black.withAlphaComponent(0.25).cgColor)
     NSColor.white.setFill(); bar.fill()
     ctx.restoreGState()
+
+    // subtle 1px inner shadow along the bar's top inner edge
+    ctx.saveGState(); bar.addClip()
+    let innerShadow = NSGradient(colors: [NSColor.black.withAlphaComponent(0.10), NSColor.black.withAlphaComponent(0.0)])!
+    innerShadow.draw(in: NSRect(x: barX, y: barY + barH - barH * 0.22, width: barW, height: barH * 0.22), angle: -90)
+    ctx.restoreGState()
+
     let cellW = barW * 0.24
-    let homeCell = squircle(in: NSRect(x: barX + barW * 0.06, y: barY + barH * 0.16, width: cellW, height: barH * 0.68), radius: 18 * s)
-    let awayCell = squircle(in: NSRect(x: barX + barW - barW * 0.06 - cellW, y: barY + barH * 0.16, width: cellW, height: barH * 0.68), radius: 18 * s)
-    NSColor(red: 0.04, green: 0.10, blue: 0.48, alpha: 1).setFill(); homeCell.fill()
+    let cellH = barH * 0.68
+    let cellY = barY + barH * 0.16
+    let homeCell = squircle(in: NSRect(x: barX + barW * 0.06, y: cellY, width: cellW, height: cellH), radius: 18 * s)
+    let awayCell = squircle(in: NSRect(x: barX + barW - barW * 0.06 - cellW, y: cellY, width: cellW, height: cellH), radius: 18 * s)
+    deepBlue.setFill(); homeCell.fill()
     NSColor(red: 0.93, green: 0.20, blue: 0.24, alpha: 1).setFill(); awayCell.fill()
-    let font = NSFont.systemFont(ofSize: barH * 0.52, weight: .heavy)
-    func text(_ t: String, cx: CGFloat, cy: CGFloat, color: NSColor, font: NSFont) {
-        let str = NSAttributedString(string: t, attributes: [.font: font, .foregroundColor: color]); let sz = str.size()
-        str.draw(at: NSPoint(x: cx - sz.width / 2, y: cy - sz.height / 2))
+
+    let digitFont = roundedFont(size: cellH * 0.60, weight: .black)
+    text("2", cx: homeCell.bounds.midX, cy: homeCell.bounds.midY, color: .white, font: digitFont)
+    text("1", cx: awayCell.bounds.midX, cy: awayCell.bounds.midY, color: .white, font: digitFont)
+
+    if !tiny {
+        // thin white dash between the cells, embossed with a soft shadow so it reads on the white bar
+        ctx.saveGState()
+        ctx.setShadow(offset: CGSize(width: 0, height: -1 * s), blur: 3 * s, color: NSColor.black.withAlphaComponent(0.22).cgColor)
+        text("–", cx: size / 2, cy: barY + barH / 2, color: NSColor.white, font: roundedFont(size: barH * 0.34, weight: .semibold))
+        ctx.restoreGState()
+
+        // clock plate: white, tucked under the bar, overlapping its bottom edge by a few px.
+        // Cast the drop shadow only below the bar so it doesn't smudge into the bar's white fill,
+        // then lay a shadow-free fill on top so the overlapped seam stays clean.
+        let clockX = (size - clockW) / 2
+        let clockTop = barY + overlap
+        let clockY = clockTop - clockH
+        let clock = squircle(in: NSRect(x: clockX, y: clockY, width: clockW, height: clockH), radius: 18 * s)
+        ctx.saveGState()
+        NSBezierPath(rect: NSRect(x: 0, y: 0, width: size, height: barY)).addClip()
+        ctx.setShadow(offset: CGSize(width: 0, height: -3 * s), blur: 10 * s, color: NSColor.black.withAlphaComponent(0.18).cgColor)
+        NSColor.white.setFill(); clock.fill()
+        ctx.restoreGState()
+        NSColor.white.setFill(); clock.fill()
+        text("90:00", cx: clock.bounds.midX, cy: clock.bounds.midY, color: NSColor(white: 0.08, alpha: 1), font: NSFont.monospacedDigitSystemFont(ofSize: clockH * 0.52, weight: .black))
     }
-    text("2", cx: homeCell.bounds.midX, cy: homeCell.bounds.midY, color: .white, font: font)
-    text("1", cx: awayCell.bounds.midX, cy: awayCell.bounds.midY, color: .white, font: font)
-    text("–", cx: size / 2, cy: barY + barH / 2, color: NSColor(white: 0.15, alpha: 1), font: NSFont.systemFont(ofSize: barH * 0.42, weight: .bold))
-    let clock = squircle(in: NSRect(x: size * 0.34, y: barY - size * 0.115, width: size * 0.32, height: size * 0.085), radius: 22 * s)
-    NSColor(red: 0.13, green: 0.80, blue: 0.45, alpha: 1).setFill(); clock.fill()
-    text("90:00", cx: size / 2, cy: clock.bounds.midY, color: NSColor(red: 0.02, green: 0.16, blue: 0.10, alpha: 1), font: NSFont.monospacedDigitSystemFont(ofSize: size * 0.052, weight: .heavy))
+
     img.unlockFocus()
     return img
 }

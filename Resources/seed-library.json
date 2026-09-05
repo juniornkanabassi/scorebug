@@ -111,8 +111,6 @@
    "competitionIds": [
     "ligue1",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "PSG.png"
@@ -122,8 +120,6 @@
    "shortName": "Marseille",
    "defaultCode": "MAR",
    "codes": {
-    "champions-league": "MAR",
-    "europa-league": "MAR",
     "ligue1": "OM"
    },
    "primaryColour": "#2FAEE0",
@@ -131,10 +127,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "Olympique de Marseille.png"
   },
@@ -143,8 +136,6 @@
    "shortName": "Lyon",
    "defaultCode": "LYO",
    "codes": {
-    "champions-league": "LYO",
-    "europa-league": "LYO",
     "ligue1": "OL"
    },
    "primaryColour": "#1B3F94",
@@ -152,10 +143,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "Olympique Lyonnais.png"
   },
@@ -163,18 +151,13 @@
    "name": "AS Monaco",
    "shortName": "Monaco",
    "defaultCode": "MON",
-   "codes": {
-    "champions-league": "MON"
-   },
+   "codes": {},
    "primaryColour": "#E51B22",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
     "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "conference-league"
    ],
    "crestSource": "AS Monaco.png"
   },
@@ -182,19 +165,13 @@
    "name": "LOSC Lille",
    "shortName": "Lille",
    "defaultCode": "LIL",
-   "codes": {
-    "champions-league": "LIL",
-    "europa-league": "LIL"
-   },
+   "codes": {},
    "primaryColour": "#E01E13",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
     "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "Lille.png"
   },
@@ -202,19 +179,12 @@
    "name": "OGC Nice",
    "shortName": "Nice",
    "defaultCode": "NIC",
-   "codes": {
-    "champions-league": "NIC",
-    "europa-league": "NIC"
-   },
+   "codes": {},
    "primaryColour": "#D2001C",
    "secondaryColour": "#000000",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "ligue1"
    ],
    "crestSource": "OGC Nice.png"
   },
@@ -222,18 +192,13 @@
    "name": "RC Lens",
    "shortName": "Lens",
    "defaultCode": "LEN",
-   "codes": {
-    "champions-league": "LEN"
-   },
+   "codes": {},
    "primaryColour": "#FFD100",
    "secondaryColour": "#D31E1B",
    "textColour": "#000000",
    "competitionIds": [
     "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "RC Lens.png"
   },
@@ -241,18 +206,13 @@
    "name": "Stade Rennais FC",
    "shortName": "Rennes",
    "defaultCode": "REN",
-   "codes": {
-    "champions-league": "REN"
-   },
+   "codes": {},
    "primaryColour": "#E30613",
    "secondaryColour": "#000000",
    "textColour": "#FFFFFF",
    "competitionIds": [
     "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "Stade Rennais FC.png"
   },
@@ -260,18 +220,12 @@
    "name": "RC Strasbourg Alsace",
    "shortName": "Strasbourg",
    "defaultCode": "STR",
-   "codes": {
-    "conference-league": "STR"
-   },
+   "codes": {},
    "primaryColour": "#1E90FF",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "ligue1"
    ],
    "crestSource": "RC Strasbourg.png"
   },
@@ -284,11 +238,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "ligue1"
    ],
    "crestSource": "Tolouse FC.png"
   },
@@ -300,27 +250,19 @@
    "primaryColour": "#FFD500",
    "secondaryColour": "#00843D",
    "textColour": "#000000",
-   "competitionIds": [
-    "ligue1"
-   ],
+   "competitionIds": [],
    "crestSource": null
   },
   {
    "name": "Stade Brestois 29",
    "shortName": "Brest",
    "defaultCode": "BRE",
-   "codes": {
-    "champions-league": "BRE"
-   },
+   "codes": {},
    "primaryColour": "#E2001A",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "ligue1",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "ligue1"
    ],
    "crestSource": "Stade Brestois 29.png"
   },
@@ -371,9 +313,7 @@
    "primaryColour": "#7D1D3F",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
+   "competitionIds": [],
    "crestSource": null
   },
   {
@@ -410,9 +350,7 @@
    "primaryColour": "#0B8A3C",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
+   "competitionIds": [],
    "crestSource": "AS Saint-Étienne.png"
   },
   {
@@ -423,9 +361,7 @@
    "primaryColour": "#D6001C",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
-   "competitionIds": [
-    "ligue1"
-   ],
+   "competitionIds": [],
    "crestSource": "Stade de Reims.png"
   },
   {
@@ -438,10 +374,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "Arsenal.png"
   },
@@ -455,10 +388,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "Aston Villa FC.png"
   },
@@ -472,9 +402,6 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Chelsea.png"
@@ -489,10 +416,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "Crystal Palace FC.png"
   },
@@ -519,10 +443,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "Liverpool.png"
   },
@@ -537,8 +458,6 @@
    "competitionIds": [
     "premier-league",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Manchester City.png"
@@ -553,10 +472,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "Manchester United.png"
   },
@@ -569,11 +485,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "premier-league"
    ],
    "crestSource": "Newcastle.png"
   },
@@ -585,9 +497,7 @@
    "primaryColour": "#D71920",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
-   "competitionIds": [
-    "premier-league"
-   ],
+   "competitionIds": [],
    "crestSource": "FC Southampton.png"
   },
   {
@@ -599,11 +509,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "premier-league",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "premier-league"
    ],
    "crestSource": "Tottenham.png"
   },
@@ -618,8 +524,6 @@
    "competitionIds": [
     "la-liga",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Real Madrid.png"
@@ -634,10 +538,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "la-liga",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "FC Barcelona.png"
   },
@@ -652,8 +553,6 @@
    "competitionIds": [
     "la-liga",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Atletico Madrid.png"
@@ -667,11 +566,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "la-liga",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "la-liga"
    ],
    "crestSource": "Athletic Club.png"
   },
@@ -685,10 +580,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "la-liga",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "Real Sociedad.png"
   },
@@ -713,13 +605,7 @@
    "primaryColour": "#CD2534",
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
-   "competitionIds": [
-    "la-liga",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
-   ],
+   "competitionIds": [],
    "crestSource": "Girona FC.png"
   },
   {
@@ -748,8 +634,6 @@
    "competitionIds": [
     "bundesliga",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "FC Bayern München.png"
@@ -767,8 +651,6 @@
    "competitionIds": [
     "bundesliga",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Borussia Dortmund.png"
@@ -778,17 +660,14 @@
    "shortName": "Leverkusen",
    "defaultCode": "B04",
    "codes": {
-    "champions-league": "LEV"
+    "europa-league": "LEV"
    },
    "primaryColour": "#E32221",
    "secondaryColour": "#000000",
    "textColour": "#FFFFFF",
    "competitionIds": [
     "bundesliga",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "Bayer 04 Leverkusen.png"
   },
@@ -804,10 +683,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "bundesliga",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "RB Leipzig.png"
   },
@@ -821,10 +697,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "serie-a",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "europa-league"
    ],
    "crestSource": "AC Milan.png"
   },
@@ -839,8 +712,6 @@
    "competitionIds": [
     "serie-a",
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Inter Milan.png"
@@ -855,9 +726,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "serie-a",
-    "champions-league",
     "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "Juventus.png"
@@ -872,10 +741,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "serie-a",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "SSC Napoli.png"
   },
@@ -889,10 +755,7 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "serie-a",
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "conference-league"
    ],
    "crestSource": "Atalanta.png"
   },
@@ -906,8 +769,6 @@
    "textColour": "#FFFFFF",
    "competitionIds": [
     "champions-league",
-    "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "FC Porto.png"
@@ -921,9 +782,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "champions-league",
     "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "S.L. Benfica.png"
@@ -937,10 +796,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "Sporting CP.png"
   },
@@ -953,10 +809,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "PSV Eindhoven.png"
   },
@@ -969,9 +822,7 @@
    "secondaryColour": "#FFFFFF",
    "textColour": "#FFFFFF",
    "competitionIds": [
-    "champions-league",
     "europa-league",
-    "conference-league",
     "club-world-cup"
    ],
    "crestSource": "FC Red Bull Salzburg.png"
@@ -985,10 +836,7 @@
    "secondaryColour": "#000000",
    "textColour": "#000000",
    "competitionIds": [
-    "champions-league",
-    "europa-league",
-    "conference-league",
-    "club-world-cup"
+    "champions-league"
    ],
    "crestSource": "FK Bodø:Glimt.png"
   },
@@ -1104,9 +952,7 @@
    "primaryColour": "#00245E",
    "secondaryColour": "#9DC2EA",
    "textColour": "#FFFFFF",
-   "competitionIds": [
-    "club-world-cup"
-   ],
+   "competitionIds": [],
    "crestSource": "Vancouver Whitecaps FC.png"
   },
   {
@@ -1120,7 +966,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Albania.png"
+   "crestSource": "Albania.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Argentina",
@@ -1133,7 +980,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Argentina 1.png"
+   "crestSource": "Argentina 1.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Austria",
@@ -1146,7 +994,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Austria.png"
+   "crestSource": "Austria.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Belgium",
@@ -1159,7 +1008,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Belgium.png"
+   "crestSource": "Belgium.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Bolivia",
@@ -1172,7 +1022,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Bolivia.png"
+   "crestSource": "Bolivia.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Bosnia and Herzegovina",
@@ -1185,7 +1036,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Bosnia and Herzegovina.png"
+   "crestSource": "Bosnia and Herzegovina.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Brazil",
@@ -1198,7 +1050,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Brazil.png"
+   "crestSource": "Brazil.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Canada",
@@ -1211,7 +1064,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Canada.png"
+   "crestSource": "Canada.png",
+   "confederation": "CONCACAF"
   },
   {
    "name": "Chile",
@@ -1224,7 +1078,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Chile.png"
+   "crestSource": "Chile.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Colombia",
@@ -1237,7 +1092,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Colombia.png"
+   "crestSource": "Colombia.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Croatia",
@@ -1250,7 +1106,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Croatia.png"
+   "crestSource": "Croatia.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Czechia",
@@ -1263,7 +1120,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Czechia.png"
+   "crestSource": "Czechia.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Denmark",
@@ -1276,7 +1134,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Denmark.png"
+   "crestSource": "Denmark.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Ecuador",
@@ -1289,7 +1148,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Ecuador.png"
+   "crestSource": "Ecuador.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "England",
@@ -1302,7 +1162,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "England.png"
+   "crestSource": "England.png",
+   "confederation": "UEFA"
   },
   {
    "name": "France",
@@ -1315,7 +1176,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "France 1.png"
+   "crestSource": "France 1.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Georgia",
@@ -1328,7 +1190,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Georgia.png"
+   "crestSource": "Georgia.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Germany",
@@ -1341,7 +1204,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Germany.png"
+   "crestSource": "Germany.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Hungary",
@@ -1354,7 +1218,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Hungary.png"
+   "crestSource": "Hungary.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Iceland",
@@ -1367,7 +1232,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Iceland.png"
+   "crestSource": "Iceland.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Iraq",
@@ -1380,7 +1246,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Iraq.png"
+   "crestSource": "Iraq.png",
+   "confederation": "AFC"
   },
   {
    "name": "Israel",
@@ -1393,7 +1260,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Israel.png"
+   "crestSource": "Israel.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Italy",
@@ -1406,7 +1274,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Italy.png"
+   "crestSource": "Italy.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Japan",
@@ -1419,7 +1288,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Japan.png"
+   "crestSource": "Japan.png",
+   "confederation": "AFC"
   },
   {
    "name": "Mexico",
@@ -1432,7 +1302,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Mexico.png"
+   "crestSource": "Mexico.png",
+   "confederation": "CONCACAF"
   },
   {
    "name": "Morocco",
@@ -1445,7 +1316,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Morocco.png"
+   "crestSource": "Morocco.png",
+   "confederation": "CAF"
   },
   {
    "name": "Netherlands",
@@ -1458,7 +1330,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Netherlands.png"
+   "crestSource": "Netherlands.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Norway",
@@ -1471,7 +1344,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Norway.png"
+   "crestSource": "Norway.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Panama",
@@ -1484,7 +1358,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Panama.png"
+   "crestSource": "Panama.png",
+   "confederation": "CONCACAF"
   },
   {
    "name": "Paraguay",
@@ -1497,7 +1372,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Paraguay.png"
+   "crestSource": "Paraguay.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Peru",
@@ -1510,7 +1386,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Peru.png"
+   "crestSource": "Peru.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Poland",
@@ -1523,7 +1400,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Poland.png"
+   "crestSource": "Poland.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Portugal",
@@ -1536,7 +1414,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Portugal.png"
+   "crestSource": "Portugal.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Romania",
@@ -1549,7 +1428,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Romania.png"
+   "crestSource": "Romania.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Scotland",
@@ -1562,7 +1442,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Scotland.png"
+   "crestSource": "Scotland.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Senegal",
@@ -1575,7 +1456,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Senegal.png"
+   "crestSource": "Senegal.png",
+   "confederation": "CAF"
   },
   {
    "name": "Serbia",
@@ -1588,7 +1470,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Serbia.png"
+   "crestSource": "Serbia.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Slovakia",
@@ -1601,7 +1484,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Slovakia.png"
+   "crestSource": "Slovakia.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Slovenia",
@@ -1614,7 +1498,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Slovenia.png"
+   "crestSource": "Slovenia.png",
+   "confederation": "UEFA"
   },
   {
    "name": "South Africa",
@@ -1627,7 +1512,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "South Africa.png"
+   "crestSource": "South Africa.png",
+   "confederation": "CAF"
   },
   {
    "name": "Spain",
@@ -1640,7 +1526,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Spain.png"
+   "crestSource": "Spain.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Sweden",
@@ -1653,7 +1540,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Sweden.png"
+   "crestSource": "Sweden.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Switzerland",
@@ -1666,7 +1554,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Switzerland.png"
+   "crestSource": "Switzerland.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Türkiye",
@@ -1679,7 +1568,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Türkiye.png"
+   "crestSource": "Türkiye.png",
+   "confederation": "UEFA"
   },
   {
    "name": "USA",
@@ -1692,7 +1582,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "USA.png"
+   "crestSource": "USA.png",
+   "confederation": "CONCACAF"
   },
   {
    "name": "Ukraine",
@@ -1705,7 +1596,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Ukraine.png"
+   "crestSource": "Ukraine.png",
+   "confederation": "UEFA"
   },
   {
    "name": "Uruguay",
@@ -1718,7 +1610,8 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Uruguay.png"
+   "crestSource": "Uruguay.png",
+   "confederation": "CONMEBOL"
   },
   {
    "name": "Venezuela",
@@ -1731,7 +1624,36 @@
    "competitionIds": [
     "international"
    ],
-   "crestSource": "Venezuela.png"
+   "crestSource": "Venezuela.png",
+   "confederation": "CONMEBOL"
+  },
+  {
+   "name": "Real Betis",
+   "shortName": "Real Betis",
+   "defaultCode": "BET",
+   "codes": {},
+   "primaryColour": "#00954C",
+   "secondaryColour": "#FFFFFF",
+   "textColour": "#FFFFFF",
+   "competitionIds": [
+    "la-liga",
+    "champions-league"
+   ],
+   "crestSource": null
+  },
+  {
+   "name": "Villarreal CF",
+   "shortName": "Villarreal",
+   "defaultCode": "VIL",
+   "codes": {},
+   "primaryColour": "#FFE667",
+   "secondaryColour": "#005187",
+   "textColour": "#000000",
+   "competitionIds": [
+    "la-liga",
+    "champions-league"
+   ],
+   "crestSource": null
   }
  ]
 }

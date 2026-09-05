@@ -20,7 +20,10 @@ body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1
 .bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
 body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; transform: scale(var(--bug-scale, 1)); }
 body[data-orientation="h"] .bug.hidden { transform: scale(var(--bug-scale, 1)) translateY(-14px); }
-body[data-orientation="v"] .bug { left: 50%; top: var(--bug-top, 400px); max-width: var(--bug-max-width, 800px); transform: translateX(-50%) scale(var(--bug-scale, 1)); transform-origin: top center; }
+/* Slot 2 mirrors slot 1 in landscape: same inset from the right edge as slot 1 has from the left, same top, contents unchanged. */
+body[data-orientation="h"][data-slot="2"] .bug { left: auto; right: var(--bug-left, 58px); transform-origin: top right; }
+/* max-width is expressed in the same px the theme was measured in; divide by scale so the box is capped post-transform, at the visual size the number names. */
+body[data-orientation="v"] .bug { left: 50%; top: var(--bug-top, 400px); max-width: calc(var(--bug-max-width, 800px) / var(--bug-scale, 1)); transform: translateX(-50%) scale(var(--bug-scale, 1)); transform-origin: top center; }
 body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(--bug-scale, 1)) translateY(-14px); }
 
 /* The main block is a grid. Every element has a named area; themes set grid-template-areas and hide what they do not use. */
@@ -62,3 +65,9 @@ body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(-
 
 /* GOAL layers: themes style .main::before and .main::after and turn them on with .bug.goal */
 .main::before, .main::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+
+/* BUILD layers: overlay.js adds .bug.building-in when the bug comes on (hidden removed first, so the wrapper itself is
+   already opaque) and .bug.building-out when it goes off (hidden added once the animation finishes). Themes animate
+   their own children under these two classes, transform/opacity/clip-path only, 0.5-0.8s, and are exempt from the
+   reduced-motion squash above only in that the squash still applies (animation-duration collapses to ~0), which is the
+   desired reduced-motion behaviour: an instant cut instead of a construction. */

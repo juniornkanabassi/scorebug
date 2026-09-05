@@ -40,3 +40,23 @@ body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; paddin
 body[data-theme="premier-league"] .scorers { margin-top: 6px; gap: 20px; padding: 6px 14px; background: rgba(55,0,60,0.94); border-radius: 8px; font-size: calc(var(--h) * 0.38); font-weight: 600; }
 body[data-theme="premier-league"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
+
+/* BUILD, ~0.7s: the purple clock plate drops from under the bar first, then the two plates wipe outward from the roundel. */
+body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home { transform-origin: right center; will-change: transform; }
+body[data-theme="premier-league"] .bug.building-in .team.away, body[data-theme="premier-league"] .bug.building-in .score.away { transform-origin: left center; will-change: transform; }
+body[data-theme="premier-league"] .bug.building-in .clock { animation: pl-build-clock 0.7s cubic-bezier(.34,1.56,.64,1) both; will-change: transform, opacity; }
+body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home,
+body[data-theme="premier-league"] .bug.building-in .team.away, body[data-theme="premier-league"] .bug.building-in .score.away {
+  animation: pl-build-wipe 0.42s cubic-bezier(.16,.9,.2,1.1) both; animation-delay: 0.28s; }
+body[data-theme="premier-league"] .bug.building-in .sep span { animation: pl-build-pop 0.35s cubic-bezier(.34,1.56,.64,1) both; animation-delay: 0.32s; will-change: transform, opacity; }
+@keyframes pl-build-clock { from { transform: translateX(-50%) translateY(-100%); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+@keyframes pl-build-wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes pl-build-pop { from { transform: translate(-50%,-50%) scale(0); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+/* Take-off: the same sequence in reverse, plates first, clock last. */
+body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home { transform-origin: right center; will-change: transform; }
+body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme="premier-league"] .bug.building-out .score.away { transform-origin: left center; will-change: transform; }
+body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home,
+body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme="premier-league"] .bug.building-out .score.away {
+  animation: pl-build-wipe 0.36s cubic-bezier(.4,0,.2,1) reverse both; will-change: transform; }
+body[data-theme="premier-league"] .bug.building-out .sep span { animation: pl-build-pop 0.3s cubic-bezier(.4,0,.2,1) reverse both; will-change: transform, opacity; }
+body[data-theme="premier-league"] .bug.building-out .clock { animation: pl-build-clock 0.4s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.24s; will-change: transform, opacity; }

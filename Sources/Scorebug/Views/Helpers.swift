@@ -1,8 +1,6 @@
-// Small shared views: competition mark, crest thumbnail, zoom container, colour helpers.
+// Small shared views: competition mark, crest thumbnail, colour helpers, squad search matching.
 import SwiftUI
 import ScorebugCore
-
-extension CGFloat { func rounded(toPlaces p: Int) -> CGFloat { let f = pow(10, CGFloat(p)); return (self * f).rounded() / f } }
 
 enum CompetitionColours {
     static func colour(for id: String) -> Color {
@@ -53,16 +51,23 @@ struct CrestView: View {
     }
 }
 
-/// Scales its content like browser zoom while keeping it laid out to the available size.
-struct Zoomed<Content: View>: View {
-    let scale: CGFloat
-    @ViewBuilder let content: Content
-    var body: some View {
-        GeometryReader { geo in
-            content.frame(width: geo.size.width / scale, height: geo.size.height / scale)
-                .scaleEffect(scale, anchor: .topLeading)
-        }
+/// Case- and diacritic-insensitive squad search: matches anywhere in the name, the surname, or the initial
+/// in a "K. Mbappé" style entry, so typing "mbap" or "k" both find the right player.
+func squadNameMatches(_ name: String, query: String) -> Bool {
+    let q = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+    guard !q.isEmpty else { return true }
+    let folded = name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+    if folded.contains(q) { return true }
+    let dotParts = name.split(separator: ".", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+    if dotParts.count == 2 {
+        let initial = dotParts[0].folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        let surname = dotParts[1].folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        if surname.hasPrefix(q) || initial.hasPrefix(q) { return true }
+    } else if let last = name.split(separator: " ").last {
+        let surname = String(last).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        if surname.hasPrefix(q) { return true }
     }
+    return false
 }
 
 extension Color {

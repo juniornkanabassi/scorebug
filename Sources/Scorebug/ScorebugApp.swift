@@ -25,20 +25,44 @@ struct ScorebugApp: App {
     var body: some Scene {
         WindowGroup("Scorebug", id: "main") {
             ContentView().environmentObject(model).frame(minWidth: 960, minHeight: 640)
+                .dynamicTypeSize(model.typeSize)
+                .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(.presented)
         .restorationBehavior(.disabled)
         .commands {
             CommandGroup(after: .toolbar) {
-                Button("Zoom In") { model.zoom(0.1) }.keyboardShortcut("=", modifiers: .command)
-                Button("Zoom Out") { model.zoom(-0.1) }.keyboardShortcut("-", modifiers: .command)
-                Button("Actual Size") { model.uiScale = 1 }.keyboardShortcut("0", modifiers: .command)
+                Button("Bigger Text") { model.zoom(1) }.keyboardShortcut("=", modifiers: .command)
+                Button("Smaller Text") { model.zoom(-1) }.keyboardShortcut("-", modifiers: .command)
+                Button("Actual Size") { model.zoomLevel = 0 }.keyboardShortcut("0", modifiers: .command)
             }
         }
 
         MenuBarExtra("Scorebug", systemImage: model.serverRunning ? "sportscourt.fill" : "sportscourt") {
             MenuBarContent().environmentObject(model)
+        }
+    }
+}
+
+/// Command with = + - 0 zooms the interface text from anywhere in the window, including while a text field has
+/// focus, and Command-Shift-= (the + key) counts as Command-+. Handled with a local key-down monitor, in the
+/// style of the sister app Content Template, so the menu equivalents never fire the change twice.
+enum WindowSetup {
+    private static var keyMonitor: Any?
+    static func apply(zoom: @escaping (Int) -> Void, reset: @escaping () -> Void) {
+        guard keyMonitor == nil else { return }
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting([.shift, .numericPad, .function])
+            guard flags == .command else { return event }
+            // Key codes cover every layout; the characters cover keyboards where = and - sit elsewhere.
+            let characters = event.charactersIgnoringModifiers ?? ""
+            switch (event.keyCode, characters) {
+            case (24, _), (69, _), (_, "="), (_, "+"): zoom(1); return nil
+            case (27, _), (78, _), (_, "-"), (_, "_"): zoom(-1); return nil
+            case (29, _), (82, _), (_, "0"): reset(); return nil
+            default: return event
+            }
         }
     }
 }
@@ -89,19 +113,20 @@ struct ContentView: View {
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230)
             .safeAreaInset(edge: .bottom) {
-                HStack(spacing: 6) {
-                    Circle().fill(model.serverRunning ? Color.green : Color.red).frame(width: 7, height: 7)
-                    Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Circle().fill(model.serverRunning ? Color.green : Color.red).frame(width: 7, height: 7)
+                        Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    }
+                    Text("Scorebug \(AppInfo.version)").font(.caption2).foregroundStyle(.secondary)
                 }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
             }
         } detail: {
-            Zoomed(scale: model.uiScale) {
-                switch section {
-                case .slot(let s): SlotView(slot: s).id(s)
-                case .library: LibraryView()
-                case .settings: SettingsView()
-                case nil: ContentUnavailableView("Choose a match", systemImage: "sportscourt")
-                }
+            switch section {
+            case .slot(let s): SlotView(slot: s).id(s)
+            case .library: LibraryView()
+            case .settings: SettingsView()
+            case nil: ContentUnavailableView("Choose a match", systemImage: "sportscourt")
             }
         }
         .alert("Scorebug", isPresented: Binding(get: { model.lastError != nil }, set: { if !$0 { model.lastError = nil } })) {

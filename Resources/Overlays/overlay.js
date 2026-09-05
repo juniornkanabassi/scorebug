@@ -24,6 +24,29 @@
   let state = null, match = null, theme = null, themeId = null;
   let renderedRevision = -1, lastGoalKey = null, skewMs = 0;
 
+  // Build-in/build-out: themes animate their own children under .bug.building-in / .bug.building-out (see overlay.css).
+  // null means "never seen a state yet" so the very first appearance still plays the build-in once, per the page starting hidden.
+  const BUILD_MS = 820; // covers every theme's 0.5-0.8s choreography with a small buffer before the marker class is dropped
+  let visibleState = null, buildTimer = null;
+  function setVisible(visible) {
+    if (visibleState === visible) return;
+    const isFirstEver = visibleState === null;
+    visibleState = visible;
+    if (buildTimer) { clearTimeout(buildTimer); buildTimer = null; }
+    bug.classList.remove("building-in", "building-out");
+    if (visible) {
+      bug.classList.remove("hidden");
+      void bug.offsetWidth; // restart animations even if building-in was already mid-flight
+      bug.classList.add("building-in");
+      buildTimer = setTimeout(() => { bug.classList.remove("building-in"); buildTimer = null; }, BUILD_MS);
+    } else if (isFirstEver) {
+      bug.classList.add("hidden"); // never shown yet: nothing to take apart, just stay off
+    } else {
+      bug.classList.add("building-out");
+      buildTimer = setTimeout(() => { bug.classList.remove("building-out"); bug.classList.add("hidden"); buildTimer = null; }, BUILD_MS);
+    }
+  }
+
   const PERIOD = { firstHalf: [0, 2700], secondHalf: [2700, 5400], extraFirst: [5400, 6300], extraSecond: [6300, 7200] };
   const STATE_LABEL = { preMatch: "KO", halfTime: "HT", fullTime: "FT", extraBreak: "HT", extraFullTime: "AET", shootout: "PENS", finished: "FT" };
   const LAST_END = { halfTime: 2700, fullTime: 5400, extraBreak: 6300, extraFullTime: 7200, shootout: 7200, finished: 7200 };
@@ -55,7 +78,10 @@
     const g = theme && theme.geometry && theme.geometry[orientation];
     if (!g) return;
     if (g.left != null) bug.style.setProperty("--bug-left", g.left + "px");
-    if (g.top != null) bug.style.setProperty("--bug-top", g.top + "px");
+    // Slot 2 in portrait sits below slot 1's bug, not on top of it; top2 (default top + slot 1's scaled height + 24px gap)
+    // is measured per theme and stored in theme.json. Landscape slot 2 reuses the same top and left inset (mirrored to the right edge in CSS).
+    const top = orientation === "v" && slot === 2 && g.top2 != null ? g.top2 : g.top;
+    if (top != null) bug.style.setProperty("--bug-top", top + "px");
     if (g.maxWidth != null) bug.style.setProperty("--bug-max-width", g.maxWidth + "px");
     bug.style.setProperty("--bug-scale", String(g.scale != null ? g.scale : 1));
   }
@@ -94,7 +120,7 @@
       if (digit.textContent !== String(value) && renderedRevision !== -1) { box.classList.remove("roll"); void box.offsetWidth; box.classList.add("roll"); }
       digit.textContent = value;
     }
-    bug.classList.toggle("hidden", !m.visible);
+    setVisible(!!m.visible);
     bug.classList.toggle("has-added", !!m.addedMinutes && !!PERIOD[m.phase]);
     bug.dataset.phase = m.phase;
     const s = m.shootout;
@@ -136,6 +162,7 @@
     const every = (theme && theme.scorersEverySeconds) || 90, dur = (theme && theme.scorersForSeconds) || 8;
     return now() % every < dur;
   }
+  let demoForceScorers = false; // set by ?demo=scorers, for layout QA screenshots
   function frame() {
     if (match) {
       const d = clockDisplay(match, (theme && theme.clockStyle) || "freezeAndCount");
@@ -144,7 +171,7 @@
       el.clock.classList.toggle("running", !!match.clock.running);
       el.addedPlus.textContent = d.added || ""; el.addedCounter.textContent = d.counter || "";
       bug.classList.toggle("has-counter", !!d.counter);
-      bug.classList.toggle("show-scorers", scorersVisible(match));
+      bug.classList.toggle("show-scorers", demoForceScorers || scorersVisible(match));
     }
     requestAnimationFrame(frame);
   }
@@ -157,17 +184,34 @@
     if (m.revision !== renderedRevision) { renderStatic(m); renderedRevision = m.revision; }
   }
   // Debug hook for screenshots and QA: /overlay/h/1?demo=goal:home:1200 fires a goal animation on first render and freezes it at 1200 ms.
+  // /overlay/*/1?demo=show:600 replays the build-in from scratch and freezes it at 600 ms.
+  // /overlay/*/1?demo=scorers forces the scorers strap on (class show-scorers) for layout QA.
   const demo = new URLSearchParams(location.search).get("demo");
   if (demo) {
-    const [kind, side, at] = demo.split(":");
+    const [kind, p1, p2] = demo.split(":");
     setTimeout(() => {
       if (!match) return;
+      let at = null;
       if (kind === "goal") {
+        const side = p1; at = p2;
         bug.style.setProperty("--goal-crest", "var(--" + (side || "home") + "-crest)");
         bug.style.setProperty("--goal-primary", "var(--" + (side || "home") + "-primary)");
         bug.style.setProperty("--goal-text", "var(--" + (side || "home") + "-text)");
         bug.classList.add("goal-" + (side || "home"), "goal");
         const box = side === "away" ? el.awayScore : el.homeScore; box.classList.add("roll");
+      } else if (kind === "show") {
+        at = p1;
+        // No follow-up timer here (unlike the real setVisible flow): under headless capture with a virtual clock,
+        // a queued removal of .building-in can fire in the same accelerated tick as the pause below, wiping the
+        // frozen frame before it is ever painted. The demo path is QA-only, so just freeze and leave it be.
+        if (buildTimer) { clearTimeout(buildTimer); buildTimer = null; }
+        bug.classList.remove("hidden", "building-out");
+        void bug.offsetWidth;
+        bug.classList.add("building-in");
+        visibleState = true;
+      } else if (kind === "scorers") {
+        demoForceScorers = true;
+        bug.classList.add("show-scorers");
       }
       if (at) requestAnimationFrame(() => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = parseInt(at, 10); }));
     }, 900);

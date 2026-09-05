@@ -196,11 +196,22 @@ final class AppModel: ObservableObject {
         if let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) { library.competitions[idx] = comp; saveLibrary() }
     }
 
-    /// Interface zoom, Cmd-plus and Cmd-minus, remembered between launches.
-    @Published var uiScale: CGFloat = CGFloat(UserDefaults.standard.double(forKey: "uiScale") == 0 ? 1 : UserDefaults.standard.double(forKey: "uiScale")) {
-        didSet { UserDefaults.standard.set(Double(uiScale), forKey: "uiScale") }
+    /// Interface text size, Cmd-plus and Cmd-minus, remembered between launches. This maps to `DynamicTypeSize`
+    /// rather than a `scaleEffect`: an AppKit-backed view (VSplitView, a grouped Form, WKWebView) scaled with
+    /// scaleEffect draws in one place and takes clicks in another, which is why nothing responded when zoomed.
+    @Published var zoomLevel: Int = {
+        let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 0
+        return min(3, max(-2, stored))
+    }() {
+        didSet { UserDefaults.standard.set(zoomLevel, forKey: "zoomLevel") }
     }
-    func zoom(_ delta: CGFloat) { uiScale = min(1.6, max(0.8, (uiScale + delta).rounded(toPlaces: 2))) }
+    /// Level 0 is `.large`, the system default. The clamp of -2...3 reaches from `.small` up to `.xxxLarge`.
+    private static let typeSizes: [DynamicTypeSize] = [.xSmall, .small, .medium, .large, .xLarge, .xxLarge, .xxxLarge]
+    var typeSize: DynamicTypeSize {
+        let index = zoomLevel + 3
+        return AppModel.typeSizes[min(max(index, 0), AppModel.typeSizes.count - 1)]
+    }
+    func zoom(_ delta: Int) { zoomLevel = min(3, max(-2, zoomLevel + delta)) }
 
     func saveSettings() {
         do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)" }
@@ -223,4 +234,9 @@ final class AppModel: ObservableObject {
             }
         }
     }
+}
+
+/// Bundle facts shown in the sidebar and Settings › About.
+enum AppInfo {
+    static var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development" }
 }
