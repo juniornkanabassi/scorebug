@@ -1,6 +1,8 @@
 // Connects to /ws, keeps the latest state, renders the bug for its slot every frame from the master clock fields.
 // Club name to a stable slug for per-club CSS (accents stripped, lowercase, dashes): "AS Saint-Étienne" -> "as-saint-etienne".
-const slug = (s) => (s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+// Club slug for per-club goal motifs (themes/*/clubs/<slug>.css). Letters NFKD cannot decompose
+// (ø, æ, ß, ł, đ) are mapped by hand first, so "FK Bodø/Glimt" becomes "fk-bodo-glimt", not "fk-bod-glimt".
+const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").replace(/ß/g, "ss").replace(/[łŁ]/g, "l").replace(/[đĐ]/g, "d").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 // The clock maths mirrors ScorebugCore/ClockEngine.swift. Keep them in step.
 (function () {
   const body = document.body;
