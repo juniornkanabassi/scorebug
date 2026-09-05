@@ -100,16 +100,16 @@ struct ContentView: View {
                         let m = model.match(slot)
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(slot == 1 ? "Primary" : "Secondary")
+                                Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
                                 Text("\(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                             }
-                        } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square") }
+                        } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square").scaledFont(.body) }
                         .tag(SidebarSection.slot(slot))
                     }
                 }
                 Section {
-                    Label("Library", systemImage: "books.vertical").tag(SidebarSection.library)
-                    Label("Settings", systemImage: "gearshape").tag(SidebarSection.settings)
+                    Label("Library", systemImage: "books.vertical").scaledFont(.body).tag(SidebarSection.library)
+                    Label("Settings", systemImage: "gearshape").scaledFont(.body).tag(SidebarSection.settings)
                 }
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230)

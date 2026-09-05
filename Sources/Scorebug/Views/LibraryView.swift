@@ -19,7 +19,7 @@ struct LibraryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }.pickerStyle(.segmented).labelsHidden().frame(width: 260).padding(10)
+            Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().frame(width: 260).padding(10)
             if mode == 1 { competitions } else { clubsSplit }
         }
         .navigationTitle("Library")
@@ -39,10 +39,10 @@ struct LibraryView: View {
                 // The filter sits ahead of the list, same reading order as the Clubs tab.
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search competitions", text: $competitionSearch).textFieldStyle(.plain)
+                    TextField("Search competitions", text: $competitionSearch).scaledFont(.body).textFieldStyle(.plain)
                     if !competitionSearch.isEmpty {
                         Button { competitionSearch = "" } label: { Image(systemName: "xmark.circle.fill") }
-                            .buttonStyle(.plain).foregroundStyle(.secondary)
+                            .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
                     }
                 }
                 .padding(6)
@@ -52,7 +52,9 @@ struct LibraryView: View {
                 // 22 pt marks (CompetitionMark's own `size` is the one source of truth for that; it is
                 // never scaled up by anything here), full name, short code.
                 List(filteredCompetitions, selection: $selectedCompetition) { c in
-                    HStack { CompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }.tag(c.id)
+                    HStack { CompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
+                        .scaledFont(.body)
+                        .tag(c.id)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -123,7 +125,7 @@ struct LibraryView: View {
                 toolbarRow
                 Picker("", selection: $clubsNationsFilter) {
                     ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
-                }.pickerStyle(.segmented).labelsHidden().padding(.horizontal, 10).padding(.top, 8)
+                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().padding(.horizontal, 10).padding(.top, 8)
                 countsRow
                 Divider()
                 Group { if viewMode == .list { clubList } else { clubGrid } }
@@ -171,7 +173,7 @@ struct LibraryView: View {
                 Picker("", selection: $viewMode) {
                     Image(systemName: "list.bullet").tag(LibraryViewMode.list)
                     Image(systemName: "square.grid.2x2").tag(LibraryViewMode.icons)
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 76)
+                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().frame(width: 76)
             }
             if hasActiveFilters { chipsRow }
         }
@@ -183,38 +185,38 @@ struct LibraryView: View {
             ForEach(model.library.competitions) { comp in
                 Toggle(isOn: bindingFor(comp.id, in: $selectedCompetitions)) {
                     HStack { CompetitionMark(competition: comp, size: 16); Text(comp.name) }
-                }
+                }.scaledFont(.body)
             }
             if !selectedCompetitions.isEmpty {
                 Divider()
-                Button("Show All Competitions") { selectedCompetitions.removeAll() }
+                Button("Show All Competitions") { selectedCompetitions.removeAll() }.scaledFont(.body)
             }
         } label: {
-            Label("Competitions", systemImage: "trophy")
+            Label("Competitions", systemImage: "trophy").scaledFont(.body)
         }
     }
 
     private var nationsMenu: some View {
         Menu {
             ForEach(confederationsPresent, id: \.self) { conf in
-                Toggle(conf, isOn: bindingFor(conf, in: $selectedConfederations))
+                Toggle(conf, isOn: bindingFor(conf, in: $selectedConfederations)).scaledFont(.body)
             }
             if !selectedConfederations.isEmpty {
                 Divider()
-                Button("Show All Nations") { selectedConfederations.removeAll() }
+                Button("Show All Nations") { selectedConfederations.removeAll() }.scaledFont(.body)
             }
         } label: {
-            Label("Nations", systemImage: "globe")
+            Label("Nations", systemImage: "globe").scaledFont(.body)
         }.disabled(confederationsPresent.isEmpty)
     }
 
     private var searchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField("Search clubs and nations", text: $search).textFieldStyle(.plain)
+            TextField("Search clubs and nations", text: $search).scaledFont(.body).textFieldStyle(.plain)
             if !search.isEmpty {
                 Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }
-                    .buttonStyle(.plain).foregroundStyle(.secondary)
+                    .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
             }
         }
         .padding(6)
@@ -268,6 +270,7 @@ struct LibraryView: View {
                 Text(club.defaultCode).foregroundStyle(.secondary).monospaced()
                 HStack(spacing: 2) { ForEach(clubCompetitions(club)) { comp in CompetitionMark(competition: comp, size: 14) } }
             }
+            .scaledFont(.body)
             .tag(club.id)
             .padding(.vertical, 2)
         }
@@ -299,7 +302,9 @@ struct LibraryView: View {
     private var addRemoveRow: some View {
         HStack {
             Button { let c = Club(name: "New club", shortName: "New", defaultCode: "NEW", primaryColour: "#333333"); model.upsertClub(c); selected = c.id } label: { Image(systemName: "plus") }
-            Button { if let id = selected { model.deleteClub(id); selected = nil } } label: { Image(systemName: "minus") }.disabled(selected == nil)
+                .scaledFont(.body)
+            Button { if let id = selected { model.deleteClub(id); selected = nil } } label: { Image(systemName: "minus") }
+                .scaledFont(.body).disabled(selected == nil)
             Spacer()
         }.padding(8)
     }
@@ -322,17 +327,17 @@ struct CompetitionEditor: View {
     var body: some View {
         Form {
             Section("Competition") {
-                TextField("Name", text: $competition.name)
-                TextField("Short name", text: $competition.shortName)
+                TextField("Name", text: $competition.name).scaledFont(.body)
+                TextField("Short name", text: $competition.shortName).scaledFont(.body)
                 Picker("Score bug design", selection: $competition.themeId) {
                     ForEach(model.resolver.availableThemeIds(), id: \.self) { id in Text(model.resolver.themeConfig(id: id)?.name ?? id).tag(id) }
-                }
+                }.scaledFont(.body)
             }
             Section("Official mark") {
                 HStack(spacing: 14) {
                     CompetitionMark(competition: competition, size: 56)
                     VStack(alignment: .leading, spacing: 4) {
-                        Button("Import Image…") { importing = true }
+                        Button("Import Image…") { importing = true }.scaledFont(.body)
                         Text("A PNG or SVG with transparency. Shown in the app and on the bug in place of the drawn mark, for example the lion roundel or the starball.").scaledFont(.caption).foregroundStyle(.secondary)
                     }
                 }
@@ -365,16 +370,16 @@ struct ClubEditor: View {
     var body: some View {
         Form {
             Section("Club") {
-                TextField("Full name", text: $club.name)
-                TextField("Short name", text: $club.shortName)
-                TextField("Default code", text: $club.defaultCode)
+                TextField("Full name", text: $club.name).scaledFont(.body)
+                TextField("Short name", text: $club.shortName).scaledFont(.body)
+                TextField("Default code", text: $club.defaultCode).scaledFont(.body)
             }
             if club.competitionIds.contains("international") {
                 Section("Confederation") {
                     Picker("Confederation", selection: Binding(get: { club.confederation ?? "" }, set: { club.confederation = $0.isEmpty ? nil : $0 })) {
                         Text("None").tag("")
                         ForEach(LibraryFilters.confederationOrder, id: \.self) { conf in Text(conf).tag(conf) }
-                    }
+                    }.scaledFont(.body)
                 }
             }
             Section("Code per competition") {
@@ -382,20 +387,21 @@ struct ClubEditor: View {
                     TextField(comp.name, text: Binding(
                         get: { club.codes[comp.id] ?? "" },
                         set: { v in let t = v.uppercased().trimmingCharacters(in: .whitespaces); if t.isEmpty { club.codes[comp.id] = nil } else { club.codes[comp.id] = t } }))
+                    .scaledFont(.body)
                     .help("Leave empty to use the default code")
                 }
             }
             Section("Colours") {
-                ColorPicker("Primary", selection: Binding(get: { Color(hex: club.primaryColour) }, set: { club.primaryColour = $0.hexString }))
-                ColorPicker("Secondary", selection: Binding(get: { Color(hex: club.secondaryColour) }, set: { club.secondaryColour = $0.hexString }))
-                ColorPicker("Text on primary", selection: Binding(get: { Color(hex: club.textColour) }, set: { club.textColour = $0.hexString }))
+                ColorPicker("Primary", selection: Binding(get: { Color(hex: club.primaryColour) }, set: { club.primaryColour = $0.hexString })).scaledFont(.body)
+                ColorPicker("Secondary", selection: Binding(get: { Color(hex: club.secondaryColour) }, set: { club.secondaryColour = $0.hexString })).scaledFont(.body)
+                ColorPicker("Text on primary", selection: Binding(get: { Color(hex: club.textColour) }, set: { club.textColour = $0.hexString })).scaledFont(.body)
             }
             Section("Crest") {
                 HStack {
                     if let file = club.crestFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(file)) {
                         Image(nsImage: img).resizable().scaledToFit().frame(width: 48, height: 48)
-                    } else { Text("No crest").foregroundStyle(.secondary) }
-                    Button("Import image") { importing = true }
+                    } else { Text("No crest").scaledFont(.body).foregroundStyle(.secondary) }
+                    Button("Import image") { importing = true }.scaledFont(.body)
                 }
             }
             Section("Competitions") {
@@ -403,6 +409,7 @@ struct ClubEditor: View {
                     Toggle(comp.name, isOn: Binding(
                         get: { club.competitionIds.contains(comp.id) },
                         set: { on in if on { club.competitionIds.append(comp.id) } else { club.competitionIds.removeAll { $0 == comp.id } } }))
+                    .scaledFont(.body)
                 }
             }
             Section("Squad") {

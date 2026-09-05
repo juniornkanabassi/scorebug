@@ -41,12 +41,12 @@ struct SlotView: View {
         .navigationSubtitle("\(match.home.name) v \(match.away.name)")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button { model.apply(.play, slot: slot) } label: { Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill") }
+                Button { model.apply(.play, slot: slot) } label: { Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body) }
                     .disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)").keyboardShortcut(.space, modifiers: [])
                 Toggle(isOn: Binding(get: { match.visible }, set: { model.apply(.setVisible($0), slot: slot) })) {
-                    Label(match.visible ? "Bug shown" : "Bug hidden", systemImage: match.visible ? "eye" : "eye.slash")
+                    Label(match.visible ? "Bug shown" : "Bug hidden", systemImage: match.visible ? "eye" : "eye.slash").scaledFont(.body)
                 }.toggleStyle(.button).help("Show or hide the bug in OBS")
-                Button(role: .destructive) { model.apply(.reset, slot: slot) } label: { Label("Reset", systemImage: "arrow.counterclockwise") }
+                Button(role: .destructive) { model.apply(.reset, slot: slot) } label: { Label("Reset", systemImage: "arrow.counterclockwise").scaledFont(.body) }
                     .help("Zero the score, clock and shootout; keep the teams")
             }
         }
@@ -104,20 +104,20 @@ struct SlotView: View {
                 if let c = competition { CompetitionMark(competition: c, size: 30, plate: true) }
                 Picker("Competition", selection: Binding(get: { match.competitionId }, set: { model.setCompetition($0, slot: slot) })) {
                     ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
-                }.labelsHidden().frame(maxWidth: 210)
+                }.scaledFont(.body).labelsHidden().frame(maxWidth: 210)
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
             HStack(spacing: 16) {
                 Button { model.apply(.play, slot: slot) } label: {
-                    Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill")
+                    Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
                 }.disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
-                Button("End half") { model.apply(.endPeriod, slot: slot) }.disabled(match.currentPeriod == nil)
+                Button { model.apply(.endPeriod, slot: slot) } label: { Text("End half").scaledFont(.body) }.disabled(match.currentPeriod == nil)
             }
             // Swapping ends is rare and deliberate, unlike Play/End half which are pressed live and
             // often, so it sits apart and smaller rather than sharing weight with them.
             Button("Swap", systemImage: "arrow.left.arrow.right") { model.apply(.swapTeams, slot: slot) }
-                .controlSize(.small).buttonStyle(.plain).foregroundStyle(.secondary)
+                .scaledFont(.body).controlSize(.small).buttonStyle(.plain).foregroundStyle(.secondary)
                 .help("Swap home and away")
         }
         .frame(maxWidth: .infinity)
@@ -148,7 +148,7 @@ struct SlotView: View {
     private func clockNudgeButton(_ delta: Int, _ amount: String) -> some View {
         Button { model.apply(.adjustClock(deltaSeconds: delta), slot: slot) } label: {
             // Text, not a Label: ControlGroup on macOS collapses Labels to their icons, and the amount must stay visible.
-            Text("\(delta < 0 ? "−" : "+")\(amount)").monospacedDigit().frame(minWidth: 44)
+            Text("\(delta < 0 ? "−" : "+")\(amount)").scaledFont(.body).monospacedDigit().frame(minWidth: 44)
         }
         .disabled(match.currentPeriod == nil)
         .help("\(delta < 0 ? "Subtract" : "Add") \(amount) \(delta < 0 ? "from" : "to") the clock")
@@ -168,17 +168,19 @@ struct SlotView: View {
                     ForEach(Period.allCases, id: \.self) { p in
                         Text(p.shortLabel).help(p.title).tag(Period?.some(p))
                     }
-                }.labelsHidden().pickerStyle(.segmented).frame(maxWidth: 260)
+                }.scaledFont(.body).labelsHidden().pickerStyle(.segmented).frame(maxWidth: 260)
             }
-            LabeledContent("Adjust") { clockNudgeRow }
+            .scaledFont(.body)
+            LabeledContent("Adjust") { clockNudgeRow }.scaledFont(.body)
             LabeledContent("Added time") {
                 HStack(spacing: 12) {
                     Stepper(value: Binding(get: { match.addedMinutes ?? 0 }, set: { model.apply(.setAddedMinutes($0), slot: slot) }), in: 0...15) {
-                        Text(match.addedMinutes.map { "+\($0) min" } ?? "None").monospacedDigit().frame(minWidth: 64, alignment: .leading)
+                        Text(match.addedMinutes.map { "+\($0) min" } ?? "None").scaledFont(.body).monospacedDigit().frame(minWidth: 64, alignment: .leading)
                     }
-                    Button("Clear") { model.apply(.setAddedMinutes(nil), slot: slot) }.disabled(match.addedMinutes == nil)
+                    Button("Clear") { model.apply(.setAddedMinutes(nil), slot: slot) }.scaledFont(.body).disabled(match.addedMinutes == nil)
                 }
             }
+            .scaledFont(.body)
             if let t = themeConfig {
                 Text(t.clockStyle == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").scaledFont(.caption).foregroundStyle(.secondary)
             }
@@ -196,6 +198,7 @@ struct SlotView: View {
                 LabeledContent("\(match.team(goal.side).shortName)  \(goal.minuteLabel)") {
                     ScorerButton(goal: goal, squad: match.team(goal.side).squad ?? [], slot: slot, openGoalId: $scorerPopoverGoalId)
                 }
+                .scaledFont(.body)
             }
             if !match.goals.isEmpty {
                 Text("Scorers appear in a strap under the bug for a few seconds every minute or so.").scaledFont(.caption).foregroundStyle(.secondary)
@@ -217,14 +220,15 @@ struct SlotView: View {
                                 }
                             }.frame(minWidth: 90, alignment: .leading)
                             if s.nextSide == side && match.phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.secondary) }
-                            Button("Scored") { model.apply(.recordKick(side, .scored), slot: slot) }.disabled(match.phase != .shootout)
-                            Button("Missed") { model.apply(.recordKick(side, .missed), slot: slot) }.disabled(match.phase != .shootout)
+                            Button("Scored") { model.apply(.recordKick(side, .scored), slot: slot) }.scaledFont(.body).disabled(match.phase != .shootout)
+                            Button("Missed") { model.apply(.recordKick(side, .missed), slot: slot) }.scaledFont(.body).disabled(match.phase != .shootout)
                         }
                     }
+                    .scaledFont(.body)
                 }
-                Button("Undo Last Kick") { model.apply(.undoKick, slot: slot) }.disabled(s.kicks.isEmpty)
+                Button("Undo Last Kick") { model.apply(.undoKick, slot: slot) }.scaledFont(.body).disabled(s.kicks.isEmpty)
             } else {
-                LabeledContent("Shootout") { Button("Start Shootout") { model.apply(.startShootout(.home), slot: slot) } }
+                LabeledContent("Shootout") { Button("Start Shootout") { model.apply(.startShootout(.home), slot: slot) }.scaledFont(.body) }.scaledFont(.body)
                 Text("The bug shows PENS with a kick row; the match score stays and the shootout tally sits beside it.").scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
@@ -283,11 +287,13 @@ struct SetClockButton: View {
 
     var body: some View {
         Button("Set time…") { text = ""; isOpen = true }
+            .scaledFont(.body)
             .disabled(match.currentPeriod == nil)
             .popover(isPresented: $isOpen) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Set match clock").scaledFont(.headline)
                     TextField("mm:ss, minutes, or seconds", text: $text)
+                        .scaledFont(.body)
                         .textFieldStyle(.roundedBorder)
                         .focused($fieldFocused)
                         .frame(width: 220)
@@ -302,6 +308,7 @@ struct SetClockButton: View {
                     HStack {
                         Spacer()
                         Button("Apply", action: apply)
+                            .scaledFont(.body)
                             .keyboardShortcut(.defaultAction)
                             .disabled(parsedSeconds == nil)
                     }
@@ -358,10 +365,12 @@ struct ScorerButton: View {
             query = ""
             openGoalId = goal.id
         }
+        .scaledFont(.body)
         .frame(maxWidth: 280, alignment: .leading)
         .popover(isPresented: Binding(get: { isOpen }, set: { if !$0 { openGoalId = nil } })) {
             VStack(alignment: .leading, spacing: 0) {
                 TextField("Search scorer", text: $query)
+                    .scaledFont(.body)
                     .textFieldStyle(.roundedBorder)
                     .focused($searchFocused)
                     .padding(8)
@@ -376,6 +385,7 @@ struct ScorerButton: View {
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(filtered, id: \.self) { name in
                                 Button(name) { pick(name) }
+                                    .scaledFont(.body)
                                     .buttonStyle(.plain)
                                     .padding(.vertical, 4).padding(.horizontal, 8)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -464,6 +474,7 @@ struct ClubPickerButton: View {
         .popover(isPresented: $isOpen) {
             VStack(alignment: .leading, spacing: 0) {
                 TextField("Search club or nation", text: $query)
+                    .scaledFont(.body)
                     .textFieldStyle(.roundedBorder)
                     .focused($searchFocused)
                     .padding(8)
@@ -495,6 +506,7 @@ struct ClubPickerButton: View {
                 Image(systemName: "xmark.circle").foregroundStyle(.secondary)
                 Text("None").foregroundStyle(.secondary)
             }
+            .scaledFont(.body)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
@@ -516,7 +528,7 @@ struct ClubPickerButton: View {
         return Button { pick(club) } label: {
             HStack(spacing: 8) {
                 CrestView(team: entry, size: 20)
-                Text(entry.name)
+                Text(entry.name).scaledFont(.body)
                 Spacer()
                 Text(entry.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
             }
