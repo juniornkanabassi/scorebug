@@ -1,5 +1,10 @@
 /* Stealth: the Uno Overlays bug Junior streams with today. Crest, code and score on each club's colour, clock on black. */
-body[data-theme="stealth"] .bug { --h: 58px; --kick-pending: #4b5563; font-weight: 700; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
+/* Fonts, 5 September 2026 (round 6): the Uno bug Junior streams with today sets everything in a clean grotesk UI
+   face with tight, even tracking and tabular digits -- Inter (already the app's own default body font and bundled
+   as a true variable file) is the closest OFL match without picking a face that fights the rest of the UI, so this
+   pins it explicitly on the theme instead of leaving it to inherit from body (see Research/Theme fonts.md). No
+   change of face or weight from what shipped, just documented and no longer implicit. */
+body[data-theme="stealth"] .bug { --h: 58px; --kick-pending: #4b5563; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: 0; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
 body[data-theme="stealth"] .main { grid-template-areas: "home hs away as clock added"; height: var(--h); border-radius: 4px; overflow: hidden; }
 body[data-theme="stealth"] .comp, body[data-theme="stealth"] .sep, body[data-theme="stealth"] .team .name { display: none; }
 body[data-theme="stealth"] .team { padding: 0 14px 0 10px; gap: 10px; font-size: calc(var(--h) * 0.5); letter-spacing: 0.01em; }

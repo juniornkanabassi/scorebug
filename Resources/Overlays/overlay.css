@@ -1,5 +1,7 @@
 /* Shared overlay layout. Transparent body, fixed canvas by orientation, a grid the themes rearrange with grid-template-areas.
-   Typefaces are open-licence lookalikes bundled under fonts/ (SIL OFL): Montserrat, Barlow, Barlow Condensed, Archivo, Oswald, Inter. */
+   Typefaces are open-licence lookalikes bundled under fonts/ (SIL OFL): Montserrat, Barlow, Barlow Condensed, Archivo, Oswald, Inter.
+   Which face plays which broadcast role per theme, and the footage each was checked against, is documented in
+   Research/Theme fonts.md -- keep that file current instead of repeating the reasoning here. */
 @font-face { font-family: "Montserrat"; src: url(/assets/fonts/Montserrat-900.woff2) format("woff2"); font-weight: 900; }
 @font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-500.woff2) format("woff2"); font-weight: 500; }
 @font-face { font-family: "Barlow Condensed"; src: url(/assets/fonts/Barlow-Condensed-600.woff2) format("woff2"); font-weight: 600; }
@@ -7,6 +9,10 @@
 @font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-600.woff2) format("woff2"); font-weight: 600; }
 @font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-700.woff2) format("woff2"); font-weight: 700; }
 @font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-800.woff2) format("woff2"); font-weight: 800; }
+/* Archivo-800.woff2 is misleadingly named: fontTools confirms it is already a true variable file (fvar, wght
+   100-900, verified 5 September 2026, round 6) rather than a static 800-weight face, so unlike Inter/Montserrat
+   below it needs no separate "-var" sibling and no split ranges -- one @font-face already covers every weight a
+   theme asks for (ligue1 uses 900). Do not add an "Archivo-var.woff2"; it would be byte-identical to this file. */
 @font-face { font-family: "Archivo"; src: url(/assets/fonts/Archivo-800.woff2) format("woff2"); font-weight: 100 900; }
 @font-face { font-family: "Oswald"; src: url(/assets/fonts/Oswald-700.woff2) format("woff2"); font-weight: 200 700; }
 @font-face { font-family: "Inter"; src: url(/assets/fonts/Inter-800.woff2) format("woff2"); font-weight: 800; }

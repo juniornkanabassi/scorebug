@@ -10,6 +10,13 @@
    left and is clipped by the bar, diagonal white stripes (25 deg off vertical) slice through from the right over the
    closing ~400ms, and the score returns while the last stripe is still leaving. Europa and Conference recolour it (not
    filmed yet, kept as recolours until footage arrives). */
+/* Fonts, 5 September 2026 (round 6): re-verified team/score/clock weights against the 4K PSG v Inter frames pixel
+   by pixel (see Research/Theme fonts.md) -- the round-3 choices below already match: Montserrat 700 for the code
+   ("bold-but-not-black", confirmed, not the 800/900 a first glance at the blurred broadcast crop suggested),
+   Inter 400 for the score (confirmed regular weight -- the "0" glyph in ucl4k-steady.png is genuinely thin,
+   low-contrast and tall, not a medium weight), Montserrat 600 for the clock ("medium-weight", confirmed). No
+   change made; kept as-is rather than "fixing" something that was already right. Europa and Conference share this
+   file byte-for-byte (their own recolours are the blocks below), so any real change here must be copied to both. */
 body[data-family="uefa"] .bug { --h: 53.33px;
   --uefa-navy: #1D2AA0; --uefa-navy-2: #0C1262; --uefa-blue: #1B2ACF; --uefa-light: #FFFFFF; --uefa-dark: #1B2A5C;
   --uefa-sq-a: #2B3FE6; --uefa-sq-b: #1526C8; --uefa-topline: #2F45FF; --uefa-bracket: #3050FF; --uefa-tick: rgba(60,90,255,0.75);

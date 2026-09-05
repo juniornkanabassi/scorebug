@@ -20,7 +20,11 @@ body[data-theme="la-liga"] .team.away::before { background: var(--away-primary);
 body[data-theme="la-liga"] .team.away { border-top: 1px solid #2a2a2a; }
 body[data-theme="la-liga"] .score { background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-weight: 800; font-size: calc(var(--h) * 0.62); }
 body[data-theme="la-liga"] .score.away { border-top: 2px solid #111; }
-body[data-theme="la-liga"] .clock { background: var(--ll-white); color: #111; font-size: calc(var(--h) * 0.52); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Fonts, 5 September 2026 (round 6): the real LaLiga plate sets its clock digits in the same wide, bold face as the
+   score cell, not the condensed face the club rows use (see Research/Theme fonts.md, g-laliga.png crop) -- this
+   theme's .clock previously had no font-family override so it inherited "Barlow Condensed" 700 from .bug above.
+   Match .score's family and weight instead. */
+body[data-theme="la-liga"] .clock { background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-size: calc(var(--h) * 0.52); font-weight: 800; font-variant-numeric: tabular-nums; }
 body[data-theme="la-liga"] .clock.stopped { color: #c00; }
 body[data-theme="la-liga"] .added { height: calc(var(--h) * 0.7); justify-content: flex-start; padding: 0 12px; background: var(--ll-black); color: #fff; gap: 8px; font-size: calc(var(--h) * 0.44); }
 body[data-theme="la-liga"] .added .counter { color: #bbb; font-size: calc(var(--h) * 0.36); }

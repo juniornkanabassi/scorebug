@@ -2,7 +2,11 @@
    with one row per club (code left, score right, club-colour tab at the edge), white clock plate under the square.
    Goal, about 1.3 s: the square flashes white with a slash, a white plate wipes across the block carrying a blue BUT, the rows return. */
 body[data-theme="ligue1"] .bug { --h: 41px; --l1-blue: #0A5CFF; --l1-charcoal: #2A2A2A; --l1-line: #3d3d3d;
-  --kick-pending: #4a4a4a; --kick-scored: #2BD576; --kick-missed: #FF3B5C; font-family: "Archivo", "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: 0.02em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
+  --kick-pending: #4a4a4a; --kick-scored: #2BD576; --kick-missed: #FF3B5C; font-family: "Archivo", "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 900; letter-spacing: 0.01em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
+/* Fonts, 5 September 2026 (round 6): the LFP world feed sets its codes and digits in a tight, near-black grotesque
+   (see Research/Theme fonts.md) -- Archivo is already bundled as a true variable file (fvar wght 100-900, confirmed
+   with fontTools; overlay.css already exposes the full range, not a synthetic bold), so this bumps the bug from the
+   800 it shipped with to a true 900 and tightens tracking to 0.01em to match the reference's tight set. */
 body[data-theme="ligue1"] .main { grid-template-areas: "comp home hs" "comp away as" "clock added ."; grid-template-columns: calc(var(--h) * 2) max-content max-content; grid-template-rows: var(--h) var(--h) calc(var(--h) * 0.8); }
 body[data-theme="ligue1"] .sep, body[data-theme="ligue1"] .team .name, body[data-theme="ligue1"] .team .crest, body[data-theme="ligue1"] .comp .label { display: none; }
 body[data-theme="ligue1"] .comp { background: var(--l1-blue); }
