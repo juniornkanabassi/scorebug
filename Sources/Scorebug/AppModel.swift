@@ -142,7 +142,14 @@ final class AppModel: ObservableObject {
     }
 
     func snapshotData() -> Data {
-        (try? JSONCoding.encoder().encode(snapshot())) ?? Data("{}".utf8)
+        guard let base = try? JSONCoding.encoder().encode(snapshot()),
+              var obj = (try? JSONSerialization.jsonObject(with: base)) as? [String: Any] else {
+            return Data("{}".utf8)
+        }
+        // Overlay-wide settings, distinct from per-match state. portraitTop overrides every theme's
+        // geometry.v.top for the primary portrait slot; overlay.js derives the secondary slot's top from it.
+        obj["overlay"] = ["portraitTop": settings.portraitTop]
+        return (try? JSONSerialization.data(withJSONObject: obj, options: [.sortedKeys])) ?? base
     }
 
     private func broadcast() {
@@ -217,6 +224,9 @@ final class AppModel: ObservableObject {
 
     func saveSettings() {
         do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)" }
+        // Settings (e.g. portraitTop) ride inside every state snapshot, so overlay clients need a fresh
+        // broadcast on change, the same way a match edit does via persistAndBroadcast().
+        broadcast()
     }
 
     // MARK: Server

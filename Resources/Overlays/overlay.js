@@ -80,7 +80,16 @@
     if (g.left != null) bug.style.setProperty("--bug-left", g.left + "px");
     // Slot 2 in portrait sits below slot 1's bug, not on top of it; top2 (default top + slot 1's scaled height + 24px gap)
     // is measured per theme and stored in theme.json. Landscape slot 2 reuses the same top and left inset (mirrored to the right edge in CSS).
-    const top = orientation === "v" && slot === 2 && g.top2 != null ? g.top2 : g.top;
+    // The app's live "portrait bug top" setting (state.overlay.portraitTop) overrides every theme's top for
+    // orientation v; the secondary slot keeps the same distance below the primary that the theme defines
+    // (top2 - top). No override, or orientation h, falls back to the theme's own values untouched.
+    const overlayTop = orientation === "v" && state && state.overlay && typeof state.overlay.portraitTop === "number" ? state.overlay.portraitTop : null;
+    let top;
+    if (overlayTop != null) {
+      top = slot === 2 ? overlayTop + (g.top2 != null ? g.top2 - g.top : 0) : overlayTop;
+    } else {
+      top = orientation === "v" && slot === 2 && g.top2 != null ? g.top2 : g.top;
+    }
     if (top != null) bug.style.setProperty("--bug-top", top + "px");
     if (g.maxWidth != null) bug.style.setProperty("--bug-max-width", g.maxWidth + "px");
     bug.style.setProperty("--bug-scale", String(g.scale != null ? g.scale : 1));

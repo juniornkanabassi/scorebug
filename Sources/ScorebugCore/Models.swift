@@ -271,8 +271,28 @@ public struct Settings: Codable, Sendable, Equatable {
     public var themeOverridesEnabled: Bool
     /// Folder scanned for crest images by club name. Optional since schema 1.
     public var crestFolder: String?
-    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true) {
+    /// Live override for the top edge (px) of the primary portrait bug on the 1080x1920 canvas, applied over every
+    /// theme's `geometry.v.top`. Optional in Codable so settings.json files saved before this field decode fine;
+    /// defaults to 100 when absent. Schema unchanged.
+    public var portraitTop: Int
+
+    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true, crestFolder: String? = nil, portraitTop: Int = 100) {
         self.schema = schema; self.port = port; self.dataSourceOrder = dataSourceOrder; self.themeOverridesEnabled = themeOverridesEnabled
+        self.crestFolder = crestFolder; self.portraitTop = portraitTop
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schema, port, dataSourceOrder, themeOverridesEnabled, crestFolder, portraitTop
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schema = try c.decode(Int.self, forKey: .schema)
+        port = try c.decode(Int.self, forKey: .port)
+        dataSourceOrder = try c.decode([String].self, forKey: .dataSourceOrder)
+        themeOverridesEnabled = try c.decode(Bool.self, forKey: .themeOverridesEnabled)
+        crestFolder = try c.decodeIfPresent(String.self, forKey: .crestFolder)
+        portraitTop = try c.decodeIfPresent(Int.self, forKey: .portraitTop) ?? 100
     }
 }
 

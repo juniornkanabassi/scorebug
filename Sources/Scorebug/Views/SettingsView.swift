@@ -19,6 +19,10 @@ struct SettingsView: View {
                 }
                 Text("Position 0,0, no crop, no scale. Vertical pages go on the Aitum Vertical canvas.").scaledFont(.caption).foregroundStyle(.secondary)
             }
+            Section("Overlays") {
+                Stepper("Portrait bug top \(String(model.settings.portraitTop)) px", value: $model.settings.portraitTop, in: 0...800, step: 10).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
+                Text("Top edge of the primary bug on the 1080 x 1920 canvas. The secondary bug keeps its distance below it. TikTok draws its own controls in the top 250 px.").scaledFont(.caption).foregroundStyle(.secondary)
+            }
             Section("Crests") {
                 LabeledContent("Logo folder") {
                     HStack {
