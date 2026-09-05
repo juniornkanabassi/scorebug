@@ -19,6 +19,7 @@ cp "$BIN_PATH/Scorebug" "$APP_PATH/Contents/MacOS/Scorebug"
 cp Resources/Info.plist "$APP_PATH/Contents/Info.plist"
 [[ -f Resources/AppIcon.icns ]] && cp Resources/AppIcon.icns "$APP_PATH/Contents/Resources/AppIcon.icns"
 cp -R Resources/Overlays "$APP_PATH/Contents/Resources/Overlays"
+cp Resources/seed-library.json "$APP_PATH/Contents/Resources/seed-library.json"
 if /usr/bin/xattr -p com.apple.FinderInfo "$APP_PATH" >/dev/null 2>&1; then /usr/bin/xattr -d com.apple.FinderInfo "$APP_PATH"; fi
 /usr/bin/codesign --force --sign - "$APP_PATH"
 /usr/bin/codesign --verify --strict "$APP_PATH"

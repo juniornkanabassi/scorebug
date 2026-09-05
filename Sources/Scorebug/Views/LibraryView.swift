@@ -16,9 +16,12 @@ struct LibraryView: View {
         HSplitView {
             VStack(spacing: 0) {
                 TextField("Filter clubs", text: $filter).textFieldStyle(.roundedBorder).padding(8)
+                Text("\(model.library.clubs.count) clubs and nations, \(model.library.clubs.filter { $0.crestFile != nil }.count) with crests").font(.system(size: 11)).foregroundStyle(Uno.muted).padding(.bottom, 4)
                 List(clubs, selection: $selected) { club in
                     HStack {
-                        Circle().fill(Color(hex: club.primaryColour)).frame(width: 12, height: 12)
+                        if let f = club.crestFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(f)) {
+                            Image(nsImage: img).resizable().scaledToFit().frame(width: 18, height: 18)
+                        } else { Circle().fill(Color(hex: club.primaryColour)).frame(width: 12, height: 12).frame(width: 18) }
                         Text(club.name)
                         Spacer()
                         Text(club.defaultCode).foregroundStyle(.secondary).monospaced()
@@ -38,7 +41,7 @@ struct LibraryView: View {
                 }
             }.frame(minWidth: 420)
         }
-        .navigationTitle("Library")
+        .background(Uno.bg)
     }
 }
 

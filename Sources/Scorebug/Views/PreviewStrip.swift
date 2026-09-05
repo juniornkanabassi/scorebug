@@ -1,32 +1,6 @@
-// Live preview of the horizontal and vertical pages, rendered by WebKit from the local server so it matches OBS.
+// WebKit view of an overlay page from the local server, scaled to fit. Used by PreviewStage.
 import SwiftUI
 import WebKit
-
-struct PreviewStrip: View {
-    @EnvironmentObject var model: AppModel
-    let slot: Int
-
-    var body: some View {
-        GroupBox("Preview") {
-            HStack(alignment: .top, spacing: 16) {
-                previewBox(orientation: "h", width: 1920, height: 1080, shown: 560)
-                previewBox(orientation: "v", width: 1080, height: 1920, shown: 180)
-                Spacer()
-            }.padding(6)
-        }
-    }
-
-    private func previewBox(orientation: String, width: CGFloat, height: CGFloat, shown: CGFloat) -> some View {
-        let scale = shown / width
-        return VStack(alignment: .leading, spacing: 4) {
-            OverlayWebView(url: URL(string: "\(model.baseURL)/overlay/\(orientation)/\(slot)")!, scale: scale, size: CGSize(width: width, height: height))
-                .frame(width: width * scale, height: height * scale)
-                .background(Color(nsColor: .darkGray))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-            Text("\(model.baseURL)/overlay/\(orientation)/\(slot)").font(.caption).textSelection(.enabled)
-        }
-    }
-}
 
 struct OverlayWebView: NSViewRepresentable {
     let url: URL

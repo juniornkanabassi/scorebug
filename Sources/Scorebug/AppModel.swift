@@ -52,6 +52,41 @@ final class AppModel: ObservableObject {
         let bundled = OverlayResolver.locateBundledOverlays(explicit: options.overlaysDirectory)
             ?? URL(fileURLWithPath: "/nonexistent")
         self.resolver = OverlayResolver(bundled: bundled, overrides: settings.themeOverridesEnabled ? store.overlayOverridesDirectory : nil)
+        importDefaultCrestFolderIfPresent()
+    }
+
+    /// First run on Junior's Mac: his logo library exists at a known place, so crests are imported without asking.
+    /// Any other Mac skips this and uses Settings > Choose and import.
+    private func importDefaultCrestFolderIfPresent() {
+        guard settings.crestFolder == nil else { return }
+        let candidate = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Content Creation/03 Media/03 Graphics/01 Images/02 Logos", isDirectory: true)
+        guard FileManager.default.fileExists(atPath: candidate.path) else { return }
+        importCrestFolder(candidate)
+    }
+
+    func importCrestFolder(_ url: URL) {
+        var lib = library
+        let n = store.importCrests(from: url, into: &lib)
+        library = lib
+        settings.crestFolder = url.path
+        saveSettings()
+        saveLibrary()
+        refreshTeamsFromLibrary()
+        if n == 0 { lastError = "No new crests matched in \(url.lastPathComponent)." }
+    }
+
+    /// Re-copies crest and colours into live matches whose clubs are in the library.
+    private func refreshTeamsFromLibrary() {
+        for idx in state.matches.indices {
+            var m = state.matches[idx]
+            for side in Side.allCases {
+                if let id = m.team(side).clubId, let club = library.clubs.first(where: { $0.id == id }) {
+                    m = MatchEngine.apply(.setTeam(side, club.entry(for: m.competitionId)), to: m, now: Date())
+                }
+            }
+            state.matches[idx] = m
+        }
+        try? store.saveState(state)
     }
 
     // MARK: Matches

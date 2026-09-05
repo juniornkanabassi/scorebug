@@ -19,6 +19,7 @@ public enum Command: Sendable, Equatable {
     case swapTeams
     case setCompetition(String)
     case setKickoff(Date?)
+    case setTheme(String?)
     case reset
 }
 
@@ -35,10 +36,11 @@ public struct CommandRequest: Codable, Sendable {
     public var scorer: String?
     public var competitionId: String?
     public var team: TeamEntry?
+    public var themeId: String?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, competitionId: String? = nil, team: TeamEntry? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil) {
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
-        self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.competitionId = competitionId; self.team = team
+        self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.competitionId = competitionId; self.team = team; self.themeId = themeId
     }
 
     public func toCommand() throws -> Command {
@@ -74,6 +76,7 @@ public struct CommandRequest: Codable, Sendable {
         case "setCompetition":
             guard let c = competitionId else { throw EngineError.badRequest("competitionId required") }
             return .setCompetition(c)
+        case "setTheme": return .setTheme(themeId)
         case "reset": return .reset
         default: throw EngineError.badRequest("unknown command \(command)")
         }
@@ -158,10 +161,13 @@ public enum MatchEngine {
             m.competitionId = id
         case .setKickoff(let date):
             m.kickoff = date
+        case .setTheme(let id):
+            m.themeId = (id?.isEmpty ?? true) ? nil : id
         case .reset:
             var fresh = Match(slot: m.slot, competitionId: m.competitionId, home: m.home, away: m.away)
             fresh.kickoff = m.kickoff
             fresh.visible = m.visible
+            fresh.themeId = m.themeId
             fresh.revision = m.revision
             m = fresh
         }

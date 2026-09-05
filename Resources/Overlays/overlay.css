@@ -1,40 +1,43 @@
-/* Shared overlay layout. Transparent body, fixed canvas by orientation, centring rules for vertical. Themes colour and shape it. */
+/* Shared overlay layout. Transparent body, fixed canvas by orientation, a grid the themes rearrange with grid-template-areas. */
 html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-body { font-family: "Inter", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #fff; }
 body[data-orientation="h"] #stage { position: relative; width: 1920px; height: 1080px; }
 body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1920px; }
 
-.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transition: opacity 320ms ease, transform 320ms ease; }
-.bug.hidden { opacity: 0; transform: translateY(-16px); pointer-events: none; }
+.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 320ms ease, transform 320ms ease; }
+.bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
+body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; transform: scale(var(--bug-scale, 1)); }
+body[data-orientation="h"] .bug.hidden { transform: scale(var(--bug-scale, 1)) translateY(-14px); }
+body[data-orientation="v"] .bug { left: 50%; top: var(--bug-top, 400px); max-width: var(--bug-max-width, 800px); transform: translateX(-50%) scale(var(--bug-scale, 1)); transform-origin: top center; }
+body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(--bug-scale, 1)) translateY(-14px); }
 
-/* Horizontal: anchored top-left. Vertical: centred, symmetrical growth. */
-body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; }
-body[data-orientation="v"] .bug { left: 50%; transform: translateX(-50%); top: var(--bug-top, 400px); max-width: var(--bug-max-width, 800px); }
-body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) translateY(-16px); }
-
-.row { display: flex; align-items: stretch; }
-.row.main { position: relative; }
-.row.shootout, .row.scorers { display: none; }
-.bug.has-shootout .row.shootout { display: flex; }
-.bug.show-scorers .row.scorers { display: flex; }
-
-.team { display: flex; align-items: center; gap: 10px; }
-.crest { display: inline-block; width: 44px; height: 44px; background-size: contain; background-repeat: no-repeat; background-position: center; }
+/* The main block is a grid. Every element has a named area; themes set grid-template-areas and hide what they do not use. */
+.main { display: grid; grid-template-areas: "comp home hs sep as away clock added"; grid-auto-columns: max-content; align-items: stretch; }
+.comp { grid-area: comp; } .team.home { grid-area: home; } .score.home { grid-area: hs; } .sep { grid-area: sep; }
+.score.away { grid-area: as; } .team.away { grid-area: away; } .clock { grid-area: clock; } .added { grid-area: added; }
+.comp, .team, .score, .sep, .clock, .added { display: flex; align-items: center; justify-content: center; }
+.comp:empty, .comp.unused, .sep.unused, .team .name.unused, .team .crest.unused, .team .code.unused { display: none; }
+.team { gap: 10px; }
+.crest { display: inline-block; width: 44px; height: 44px; background-size: contain; background-repeat: no-repeat; background-position: center; flex: none; }
 .crest.monogram { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800; font-size: 18px; }
 .added { display: none; }
-.bug.has-added .added { display: flex; align-items: center; }
+.bug.has-added .added { display: flex; }
 .clock .state { display: none; }
-.clock.stopped .main { display: none; }
+.clock.stopped .time { display: none; }
 .clock.stopped .state { display: inline; }
+.score .digit { font-variant-numeric: tabular-nums; }
+.team .code, .team .name, .score .digit, .clock .time, .clock .state, .added .plus, .added .counter, .comp .label { line-height: 1; display: inline-block; }
 
+.shootout, .scorers { display: none; }
+.bug.has-shootout .shootout { display: flex; align-items: center; }
+.bug.show-scorers .scorers { display: flex; }
 .kicks { display: flex; gap: 8px; }
 .kick { width: 18px; height: 18px; border-radius: 50%; background: var(--kick-pending, #8a8f98); }
 .kick.scored { background: var(--kick-scored, #22c55e); }
 .kick.missed { background: var(--kick-missed, #ef4444); }
-
+.tally { display: flex; gap: 10px; font-weight: 800; }
 .scorers .list { display: flex; flex-direction: column; }
 .scorers .entry { white-space: nowrap; }
 
-/* Goal flash: one animation per goal, applied to the scoring side's score box. */
-@keyframes goal-flash { 0% { transform: scale(1); filter: brightness(1); } 20% { transform: scale(1.25); filter: brightness(1.8); } 60% { transform: scale(1.05); } 100% { transform: scale(1); filter: brightness(1); } }
-.score.goal { animation: goal-flash 900ms ease-out; }
+@keyframes goal-flash { 0% { transform: scale(1); } 25% { transform: scale(1.3); } 100% { transform: scale(1); } }
+.score.goal .digit { display: inline-block; animation: goal-flash 700ms cubic-bezier(.2,.9,.3,1.4); }

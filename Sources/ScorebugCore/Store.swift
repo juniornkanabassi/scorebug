@@ -54,7 +54,7 @@ public final class Store: @unchecked Sendable {
 
     public func loadLibrary() throws -> Library {
         if let lib = try load("library.json", as: Library.self, schemaOf: { $0.schema }) { return lib }
-        let seeded = SeedLibrary.make()
+        let seeded = SeedLibrary.load(from: Store.locateSeedFile()) ?? SeedLibrary.make()
         try saveLibrary(seeded)
         return seeded
     }
@@ -70,6 +70,44 @@ public final class Store: @unchecked Sendable {
     }
     public func saveSettings(_ settings: Settings) throws { try save(settings, to: "settings.json") }
 
+    /// Finds the bundled seed-library.json: the app bundle, or the source tree during development.
+    public static func locateSeedFile() -> URL? {
+        let fm = FileManager.default
+        if let res = Bundle.main.resourceURL?.appendingPathComponent("seed-library.json"), fm.fileExists(atPath: res.path) { return res }
+        let dev = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Resources/seed-library.json")
+        return fm.fileExists(atPath: dev.path) ? dev : nil
+    }
+
+    /// Normalises a club or file name for matching: lowercase, no accents, letters and digits only.
+    public static func matchKey(_ s: String) -> String {
+        let folded = (s.applyingTransform(StringTransform("Any-Latin; Latin-ASCII"), reverse: false) ?? s).lowercased()
+        return folded.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }.map(String.init).joined()
+    }
+
+    /// Scans folders (recursively, one level of subfolders) for images and assigns them to clubs without a crest,
+    /// matching the club's crestSource file name first, then its normalised name or short name. Returns the number imported.
+    @discardableResult
+    public func importCrests(from folder: URL, into library: inout Library) -> Int {
+        let fm = FileManager.default
+        guard let e = fm.enumerator(at: folder, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles]) else { return 0 }
+        var files: [String: URL] = [:]   // matchKey of basename -> url
+        var byName: [String: URL] = [:]  // exact file name -> url
+        for case let url as URL in e where ["png", "svg", "jpg", "jpeg", "webp"].contains(url.pathExtension.lowercased()) {
+            byName[url.lastPathComponent] = url
+            files[Store.matchKey(url.deletingPathExtension().lastPathComponent)] = url
+        }
+        var count = 0
+        for i in library.clubs.indices where library.clubs[i].crestFile == nil {
+            let club = library.clubs[i]
+            let candidate = club.crestSource.flatMap { byName[$0] } ?? files[Store.matchKey(club.name)] ?? files[Store.matchKey(club.shortName)]
+            guard let source = candidate, let name = try? importCrest(from: source, for: club.id) else { continue }
+            library.clubs[i].crestFile = name
+            count += 1
+        }
+        return count
+    }
+
     /// Copies an image into crests/ under the club id and returns the stored file name.
     public func importCrest(from source: URL, for clubId: UUID) throws -> String {
         let ext = source.pathExtension.isEmpty ? "png" : source.pathExtension.lowercased()
@@ -81,8 +119,25 @@ public final class Store: @unchecked Sendable {
     }
 }
 
-/// Starter library so the app is usable before any fixture is fetched. Codes per competition are Junior's to correct in Library.
+/// Starter library so the app is usable before any fixture is fetched. The full seed is Resources/seed-library.json; this Swift fallback is small.
 public enum SeedLibrary {
+    private struct SeedClub: Decodable {
+        var name: String; var shortName: String; var defaultCode: String; var codes: [String: String]?
+        var primaryColour: String; var secondaryColour: String?; var textColour: String?
+        var competitionIds: [String]?; var crestSource: String?; var sourceIds: [String: String]?
+    }
+    private struct SeedFile: Decodable { var schema: Int; var competitions: [Competition]; var clubs: [SeedClub] }
+
+    public static func load(from url: URL?) -> Library? {
+        guard let url, let data = try? Data(contentsOf: url), let seed = try? JSONDecoder().decode(SeedFile.self, from: data) else { return nil }
+        let clubs = seed.clubs.map { c in
+            Club(name: c.name, shortName: c.shortName, defaultCode: c.defaultCode, codes: c.codes ?? [:], primaryColour: c.primaryColour,
+                 secondaryColour: c.secondaryColour ?? "#FFFFFF", textColour: c.textColour ?? "#FFFFFF", crestSource: c.crestSource,
+                 sourceIds: c.sourceIds ?? [:], competitionIds: c.competitionIds ?? [])
+        }
+        return Library(competitions: seed.competitions, clubs: clubs)
+    }
+
     public static func make() -> Library {
         let competitions = [
             Competition(id: "ligue1", name: "Ligue 1", shortName: "L1", themeId: "ligue1", sourceIds: ["footballData": "FL1", "espn": "fra.1"]),

@@ -16,6 +16,7 @@ public struct ThemeConfig: Codable, Sendable, Equatable {
     public var scorersEverySeconds: Int?
     public var scorersForSeconds: Int?
     public var verified: Bool?
+    public var family: String?
 }
 
 /// Resolves overlay files. Order: user override folder (if enabled), then the bundled Overlays folder.

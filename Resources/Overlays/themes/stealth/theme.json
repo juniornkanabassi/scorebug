@@ -1,0 +1,20 @@
+{
+  "id": "stealth",
+  "name": "Stealth (Uno)",
+  "clockStyle": "runOn",
+  "verified": false,
+  "geometry": {
+    "h": {
+      "left": 58,
+      "top": 53,
+      "scale": 1
+    },
+    "v": {
+      "top": 400,
+      "maxWidth": 800,
+      "scale": 1.15
+    }
+  },
+  "scorersEverySeconds": 90,
+  "scorersForSeconds": 8
+}

@@ -83,7 +83,7 @@ let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebu
 do {
     let store = try Store(directory: tmp)
     let lib = try store.loadLibrary()
-    check(lib.clubs.contains { $0.shortName == "PSG" } && lib.competitions.count == 6, "seed library is written on first run")
+    check(lib.clubs.contains { $0.shortName == "PSG" } && lib.competitions.count >= 6, "seed library is written on first run")
     check(lib.clubs.first { $0.shortName == "Marseille" }?.code(for: "champions-league") == "MAR", "club code follows the competition")
     check(lib.clubs.first { $0.shortName == "Marseille" }?.code(for: "ligue1") == "OM", "club code falls back to the default")
     var state = try store.loadState()
@@ -103,6 +103,30 @@ if let bundled = OverlayResolver.locateBundledOverlays(explicit: nil) {
     check(r.file(for: "shell.html") != nil, "resolver finds the shell")
     check(r.themeConfig(id: "ligue1")?.clockStyle != nil, "ligue1 theme config loads")
 } else { failures += 1; print("FAIL overlays folder not found") }
+
+// Seed file, theme override, crest matching
+if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
+    check(seed.clubs.count > 100 && seed.competitions.count == 10, "seed-library.json loads with clubs, nations and competitions")
+    check(seed.clubs.first { $0.shortName == "Marseille" }?.code(for: "champions-league") == "MAR", "seed keeps per-competition codes")
+} else { failures += 1; print("FAIL seed-library.json not found") }
+check(Store.matchKey("AS Saint-Étienne") == "assaintetienne" && Store.matchKey("FK Bodø/Glimt") == "fkbodoglimt", "match key folds accents and punctuation")
+var themed = MatchEngine.apply(.setTheme("stealth"), to: Match(slot: 1), now: at(0))
+check(themed.themeId == "stealth", "theme override is stored")
+themed = MatchEngine.apply(.setTheme(""), to: themed, now: at(0))
+check(themed.themeId == nil, "empty theme override clears it")
+check((try? CommandRequest(command: "setTheme", themeId: "la-liga").toCommand()) == .setTheme("la-liga"), "setTheme request decodes")
+let crestTmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-crests-\(UUID().uuidString)")
+do {
+    let folder = crestTmp.appendingPathComponent("logos"); try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: folder.appendingPathComponent("PSG.png"))
+    try Data([0x89, 0x50, 0x4E, 0x47]).write(to: folder.appendingPathComponent("Olympique de Marseille.png"))
+    let store = try Store(directory: crestTmp.appendingPathComponent("data"))
+    var lib = try store.loadLibrary()
+    let n = store.importCrests(from: folder, into: &lib)
+    check(n == 2, "crest import matches by crestSource file name (\(n))")
+    check(lib.clubs.first { $0.shortName == "PSG" }?.crestFile?.hasSuffix(".png") == true, "imported crest is recorded on the club")
+    try FileManager.default.removeItem(at: crestTmp)
+} catch { failures += 1; print("FAIL crest import: \(error)") }
 
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)

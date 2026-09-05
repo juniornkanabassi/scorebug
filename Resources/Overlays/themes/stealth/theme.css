@@ -1,0 +1,20 @@
+/* Stealth: the Uno Overlays bug Junior streams with today. Crest, code and score on each club's colour, clock on black. */
+body[data-theme="stealth"] .bug { --h: 58px; --kick-pending: #4b5563; font-weight: 700; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.5)); }
+body[data-theme="stealth"] .main { grid-template-areas: "home hs away as clock added"; height: var(--h); border-radius: 4px; overflow: hidden; }
+body[data-theme="stealth"] .comp, body[data-theme="stealth"] .sep, body[data-theme="stealth"] .team .name { display: none; }
+body[data-theme="stealth"] .team { padding: 0 14px 0 10px; gap: 10px; font-size: calc(var(--h) * 0.5); letter-spacing: 0.01em; }
+body[data-theme="stealth"] .team.home { background: var(--home-primary); color: var(--home-text); }
+body[data-theme="stealth"] .team.away { background: var(--away-primary); color: var(--away-text); }
+body[data-theme="stealth"] .crest { width: calc(var(--h) * 0.7); height: calc(var(--h) * 0.7); }
+body[data-theme="stealth"] .crest.monogram { font-size: calc(var(--h) * 0.24); background: rgba(255,255,255,0.15) !important; }
+body[data-theme="stealth"] .score { min-width: calc(var(--h) * 0.72); font-size: calc(var(--h) * 0.52); }
+body[data-theme="stealth"] .score.home { background: var(--home-primary); color: var(--home-text); filter: brightness(0.82); }
+body[data-theme="stealth"] .score.away { background: var(--away-primary); color: var(--away-text); filter: brightness(0.82); }
+body[data-theme="stealth"] .clock { background: #000; padding: 0 16px; min-width: calc(var(--h) * 1.9); font-size: calc(var(--h) * 0.5); font-variant-numeric: tabular-nums; }
+body[data-theme="stealth"] .added { background: #000; color: #fbbf24; padding: 0 14px 0 0; gap: 10px; font-size: calc(var(--h) * 0.42); }
+body[data-theme="stealth"] .added .counter { color: #9ca3af; font-size: calc(var(--h) * 0.34); }
+body[data-theme="stealth"] .added .counter:empty { display: none; }
+body[data-theme="stealth"] .shootout { margin-top: 4px; gap: 16px; padding: 6px 14px; background: #000; border-radius: 4px; font-size: calc(var(--h) * 0.42); }
+body[data-theme="stealth"] .scorers { margin-top: 4px; gap: 20px; padding: 6px 14px; background: rgba(0,0,0,0.85); border-radius: 4px; font-size: calc(var(--h) * 0.32); font-weight: 600; }
+body[data-theme="stealth"] .scorers .list.away { text-align: right; }
+body[data-orientation="v"][data-theme="stealth"] .shootout, body[data-orientation="v"][data-theme="stealth"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }

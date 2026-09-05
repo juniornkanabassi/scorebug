@@ -180,12 +180,14 @@ public struct Match: Codable, Sendable, Equatable {
     public var visible: Bool
     public var lastGoal: LastGoal?
     public var revision: Int
+    /// Optional theme override; nil means the competition's theme.
+    public var themeId: String?
 
     public init(slot: Int, competitionId: String = "ligue1", home: TeamEntry = .placeholderHome, away: TeamEntry = .placeholderAway) {
         self.slot = slot; self.competitionId = competitionId; self.home = home; self.away = away
         self.kickoff = nil; self.phase = .preMatch; self.clock = Clock(); self.addedMinutes = nil
         self.homeScore = 0; self.awayScore = 0; self.goals = []; self.shootout = nil
-        self.visible = true; self.lastGoal = nil; self.revision = 0
+        self.visible = true; self.lastGoal = nil; self.revision = 0; self.themeId = nil
     }
 
     public func score(_ side: Side) -> Int { side == .home ? homeScore : awayScore }
@@ -204,13 +206,15 @@ public struct Club: Codable, Sendable, Identifiable, Equatable {
     public var secondaryColour: String
     public var textColour: String
     public var crestFile: String?
+    /// File name to look for when importing a crest folder, for example "PSG.png".
+    public var crestSource: String?
     public var sourceIds: [String: String]
     public var competitionIds: [String]
 
-    public init(id: UUID = UUID(), name: String, shortName: String, defaultCode: String, codes: [String: String] = [:], primaryColour: String, secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, sourceIds: [String: String] = [:], competitionIds: [String] = []) {
+    public init(id: UUID = UUID(), name: String, shortName: String, defaultCode: String, codes: [String: String] = [:], primaryColour: String, secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, crestSource: String? = nil, sourceIds: [String: String] = [:], competitionIds: [String] = []) {
         self.id = id; self.name = name; self.shortName = shortName; self.defaultCode = defaultCode; self.codes = codes
         self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour
-        self.crestFile = crestFile; self.sourceIds = sourceIds; self.competitionIds = competitionIds
+        self.crestFile = crestFile; self.crestSource = crestSource; self.sourceIds = sourceIds; self.competitionIds = competitionIds
     }
 
     public func code(for competitionId: String) -> String { codes[competitionId] ?? defaultCode }
@@ -257,6 +261,8 @@ public struct Settings: Codable, Sendable, Equatable {
     public var port: Int
     public var dataSourceOrder: [String]
     public var themeOverridesEnabled: Bool
+    /// Folder scanned for crest images by club name. Optional since schema 1.
+    public var crestFolder: String?
     public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true) {
         self.schema = schema; self.port = port; self.dataSourceOrder = dataSourceOrder; self.themeOverridesEnabled = themeOverridesEnabled
     }
