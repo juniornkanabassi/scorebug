@@ -1,12 +1,15 @@
-/* UEFA Champions League 2024-27 world feed. Second pass, verified against the 4K PSG v Inter frames (ref/up/ucl4k-steady.png,
-   ucl4k-goal.png). Royal-blue gradient square with the starball, white clock plate with regular-weight navy tabular digits
+/* UEFA Champions League 2024-27 world feed. Third pass, verified against the 4K PSG v Inter frames (ref/up/ucl4k-steady.png,
+   ucl4k-goal.png). Royal-blue gradient square with the starball, white clock plate with medium-weight navy tabular digits
    (no right hairline), a small gap, then one continuous navy-gradient bar (bright top line, lighter upper band into a darker
-   base, no seam between the code and score cells): bold-but-not-black home code, thin drawn brackets (not glyphs), light
-   scores either side of a subtle tick, bold away code, coloured tab at the right edge in the away club's colour. Goal, ~1.4s:
-   the codes and scores fade out, a royal-blue sweep darkens the bar from the left, condensed italic GOAL scales up from 60%
-   while drifting left and is clipped by the bar, diagonal white stripes (25 deg off vertical) slice through from the right
-   over the closing ~400ms, and the score returns while the last stripe is still leaving. Europa and Conference recolour it
-   (not filmed yet, kept as recolours until footage arrives). */
+   base, no seam between the code and score cells): bold-but-not-black home code, thin drawn brackets sitting well back
+   (not glyphs), regular-weight scores either side of a subtle tick, bold away code, coloured tab at the right edge in the
+   away club's colour. The bar's gradient and topline are painted once, on a pseudo-element anchored to the home-code cell
+   and cropped by .main's own overflow:hidden at the bar's true right edge, so no per-cell edge is ever antialiased against
+   its neighbour regardless of how wide the score digits render. Goal, ~1.4s: the codes and scores fade out, a royal-blue
+   sweep darkens the bar from the left, tall condensed italic GOAL scales from 60% to 160% of the bar height while drifting
+   left and is clipped by the bar, diagonal white stripes (25 deg off vertical) slice through from the right over the
+   closing ~400ms, and the score returns while the last stripe is still leaving. Europa and Conference recolour it (not
+   filmed yet, kept as recolours until footage arrives). */
 body[data-family="uefa"] .bug { --h: 53.33px;
   --uefa-navy: #1D2AA0; --uefa-navy-2: #0C1262; --uefa-blue: #1B2ACF; --uefa-light: #FFFFFF; --uefa-dark: #1B2A5C;
   --uefa-sq-a: #2B3FE6; --uefa-sq-b: #1526C8; --uefa-topline: #2F45FF; --uefa-bracket: #3050FF; --uefa-tick: rgba(60,90,255,0.75);
@@ -24,24 +27,32 @@ body[data-family="uefa"] .comp .mark { width: calc(var(--h) * 0.78); height: cal
 body[data-family="uefa"] .comp .mark::before { content: "★ ★\A★ ★ ★\A★ ★"; white-space: pre; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--uefa-sq-b); font-family: Arial, sans-serif; font-size: calc(var(--h) * 0.236); line-height: 0.9; letter-spacing: -0.08em; transform: rotate(15deg); }
 /* Clock plate: fixed width, regular-weight navy tabular digits, no hairline (the reference has none). Added-time plate
    shares the same face at a smaller size. */
-body[data-family="uefa"] .clock { width: calc(var(--h) * 2.76); background: var(--uefa-light); color: var(--uefa-digit-navy); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 500; font-size: calc(var(--h) * 0.72); font-variant-numeric: tabular-nums; letter-spacing: 0.05em; }
+body[data-family="uefa"] .clock { width: calc(var(--h) * 2.76); background: var(--uefa-light); color: var(--uefa-digit-navy); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: calc(var(--h) * 0.72); font-variant-numeric: tabular-nums; letter-spacing: 0.03em; }
 body[data-family="uefa"] .added { padding: 0 calc(var(--h) * 0.14); background: var(--uefa-light); color: var(--uefa-digit-navy); font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 500; gap: calc(var(--h) * 0.1); font-size: calc(var(--h) * 0.55); font-variant-numeric: tabular-nums; letter-spacing: 0.05em; border-left: 1px solid rgba(0,0,0,0.15); }
 body[data-family="uefa"] .added .counter { font-size: calc(var(--h) * 0.42); color: var(--uefa-digit-navy); opacity: 0.7; }
 body[data-family="uefa"] .added .counter:empty { display: none; }
-/* One continuous bar: every cell shares the same gradient and top line, so nothing reads as a seam between them. */
-body[data-family="uefa"] .team, body[data-family="uefa"] .score { color: #fff; background: linear-gradient(180deg, var(--uefa-navy) 0 35%, var(--uefa-navy-2) 100%); border-top: 1px solid var(--uefa-topline); box-sizing: border-box; position: relative; }
+body[data-family="uefa"] .team, body[data-family="uefa"] .score { color: #fff; box-sizing: border-box; position: relative; }
+/* One continuous bar surface: the gradient and top line are painted once, on ::before of the home-code cell (the
+   first of the four bar cells), stretched far past the away-code cell. .main's own overflow:hidden (declared
+   above, on the grid that sizes to its content) crops the pseudo at the bar's true right edge no matter how wide
+   the score digits render, so no per-cell edge is ever antialiased against its neighbour. The other three cells
+   keep transparent backgrounds; their own text and pseudo-elements (brackets, tick, tab) still paint on top of
+   this because DOM order puts them after the home-code cell. */
+body[data-family="uefa"] .team.home::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--h) * 8);
+  background: linear-gradient(180deg, var(--uefa-navy) 0 35%, var(--uefa-navy-2) 100%); border-top: 1px solid var(--uefa-topline);
+  box-sizing: border-box; z-index: -1; pointer-events: none; }
 body[data-family="uefa"] .team { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: calc(var(--h) * 0.7); letter-spacing: 0; }
-body[data-family="uefa"] .score { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 300; font-size: calc(var(--h) * 0.8); letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: visible; }
+body[data-family="uefa"] .score { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: calc(var(--h) * 0.85); letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: visible; }
 /* Bar layout, left to right, in units of --h: .75 pad, home code, .5, bracket, .27, home score, .33, tick, .33, away score,
    .2, bracket, .6, away code, .35, colour tab .09. The brackets are drawn boxes (an elliptical border on the outer curved
    side), not glyphs, so they read as the wide, thin arcs in the reference instead of straight cell dividers. */
 body[data-family="uefa"] .team.home { margin-left: calc(var(--h) * 0.13); padding-left: calc(var(--h) * 0.75); padding-right: 0; }
 body[data-family="uefa"] .score.home { padding-left: calc(var(--h) * 1.1); padding-right: calc(var(--h) * 0.33); }
-body[data-family="uefa"] .score.home::before { content: ""; position: absolute; left: calc(var(--h) * 0.5); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.33); height: calc(var(--h) * 0.95); border-right: 2.5px solid var(--uefa-bracket); border-radius: 0 100% 100% 0 / 0 50% 50% 0; opacity: 0.9; pointer-events: none; }
+body[data-family="uefa"] .score.home::before { content: ""; position: absolute; left: calc(var(--h) * 0.5); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.33); height: calc(var(--h) * 0.95); border-right: 2px solid var(--uefa-bracket); border-radius: 0 100% 100% 0 / 0 50% 50% 0; opacity: 0.75; pointer-events: none; }
 body[data-family="uefa"] .score.home::after { content: ""; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 2px; height: calc(var(--h) * 0.24); background: var(--uefa-tick); }
 body[data-family="uefa"] .score.away { padding-left: calc(var(--h) * 0.33); padding-right: calc(var(--h) * 0.2); }
 body[data-family="uefa"] .team.away { padding-left: calc(var(--h) * 1.13); padding-right: calc(var(--h) * 0.44); }
-body[data-family="uefa"] .team.away::before { content: ""; position: absolute; left: calc(var(--h) * 0.2); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.33); height: calc(var(--h) * 0.95); border-left: 2.5px solid var(--uefa-bracket); border-radius: 100% 0 0 100% / 50% 0 0 50%; opacity: 0.9; pointer-events: none; }
+body[data-family="uefa"] .team.away::before { content: ""; position: absolute; left: calc(var(--h) * 0.2); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.33); height: calc(var(--h) * 0.95); border-left: 2px solid var(--uefa-bracket); border-radius: 100% 0 0 100% / 50% 0 0 50%; opacity: 0.75; pointer-events: none; }
 body[data-family="uefa"] .team.away::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--h) * 0.09); background: var(--away-secondary); }
 /* GOAL in two layers over the navy bar only, revealed once the codes/scores fade (see uefa-text below). ::before carries
    the sweep-darkened bar and the condensed italic GOAL word (pure white for its whole life, grown with font-size so the
@@ -58,11 +69,11 @@ body[data-family="uefa"] .bug.goal .main::before { opacity: 1; animation: uefa-g
 body[data-family="uefa"] .bug.goal .main::after { opacity: 1; animation: uefa-goal-stripes 1.4s linear forwards; }
 body[data-family="uefa"] .bug.goal .team, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.4s linear forwards; }
 @keyframes uefa-goal-word {
-  0%   { opacity: 0; background-position: 100% 0; font-size: calc(var(--h) * 0.57); padding-right: 0; }
+  0%   { opacity: 0; background-position: 100% 0; font-size: calc(var(--h) * 0.6); padding-right: 0; }
   6%   { opacity: 1; }
   18%  { background-position: 100% 0; }
   45%  { background-position: 0 0; }
-  80%  { font-size: calc(var(--h) * 1.425); padding-right: calc(var(--h) * 1.0); background-position: 0 0; }
+  80%  { font-size: calc(var(--h) * 1.6); padding-right: calc(var(--h) * 1.0); background-position: 0 0; }
   92%  { opacity: 1; }
   100% { opacity: 0; }
 }
