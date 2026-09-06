@@ -20,10 +20,11 @@
    set automatically with no manual injection needed -- see findings.md Round 5, "Club motifs / activation gap"
    for the full before/after. */
 @import url("clubs/ars.css"); @import url("clubs/avl.css"); @import url("clubs/bha.css"); @import url("clubs/bou.css");
-@import url("clubs/bre.css"); @import url("clubs/bur.css"); @import url("clubs/che.css"); @import url("clubs/cry.css");
-@import url("clubs/eve.css"); @import url("clubs/ful.css"); @import url("clubs/lee.css"); @import url("clubs/liv.css");
-@import url("clubs/mci.css"); @import url("clubs/mun.css"); @import url("clubs/new.css"); @import url("clubs/nfo.css");
-@import url("clubs/sun.css"); @import url("clubs/tot.css"); @import url("clubs/whu.css"); @import url("clubs/wol.css");
+@import url("clubs/bre.css"); @import url("clubs/bur.css"); @import url("clubs/che.css"); @import url("clubs/coventry-city.css");
+@import url("clubs/cry.css"); @import url("clubs/eve.css"); @import url("clubs/ful.css"); @import url("clubs/hull-city.css");
+@import url("clubs/ipswich-town.css"); @import url("clubs/lee.css"); @import url("clubs/liv.css"); @import url("clubs/mci.css");
+@import url("clubs/mun.css"); @import url("clubs/new.css"); @import url("clubs/nfo.css"); @import url("clubs/sun.css");
+@import url("clubs/tot.css"); @import url("clubs/whu.css"); @import url("clubs/wol.css");
 /* Shared motif contract every clubs/*.css file relies on: one small icon (--h*0.95 square), anchored just to the
    goal-scoring side of the crest cut (46%/54% of the bar's own width, not a fixed h-multiple, so it tracks the
    crest regardless of how wide the codes/scorer name make the bar), riding above the GOAL sweep (z-index 4 --
