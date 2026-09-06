@@ -23,7 +23,7 @@ body[data-family="uefa"] .comp::after {
   content: ""; position: absolute; top: 0; height: 100%;
   left: calc(var(--h) * 4.55); width: calc(var(--h) * 3);
   background-repeat: no-repeat; background-position: center; background-size: contain;
-  opacity: 0; pointer-events: none; z-index: 3;
+  opacity: 0; pointer-events: none; z-index: 2;
 }
 /* Same 1.2s duration as theme.css's uefa-goal-band/-word, so the motif's own timeline lines up with them. */
 body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.2s linear forwards; }

@@ -51,8 +51,12 @@
 
 /* UEFA Champions League 2024-27 world feed, ratios and colours measured directly off real TNT-relay
    broadcast frames (agent-r4/frames/ucl), not the AE tutorial. Row, in H (=bar height): starball
-   0.98H, clock 2.77H, home tab 0.47H, navy plate 7.15H (home code, chevron, home score, tick, away
-   score, chevron, away code, away tab), gap 0.4H, aggregate chip. Total about 14.6H. */
+   0.98H, clock 2.77H, home tab 0.47H, navy plate 7.75H (home code, chevron, home score, tick, away
+   score, chevron, away code, away tab), gap 0.4H, aggregate chip ~1.95H. Total about 13.85H. The
+   7.75H navy-plate figure is the actual rendered width of team.home through team.away (measured via
+   getBoundingClientRect against this fixture, RMA v INT), not the earlier 7.15H estimate: that
+   estimate undershot by about 0.6H, so the shared gradient pseudo below (team.home::before) stopped
+   short of team.away's own tab, leaving it rendering as a detached square past a transparent gap. */
 body[data-family="uefa"] .bug { --h: 53.33px;
   --uefa-ink: #F3F9F5; --uefa-clock-digit: #0C0C14; --uefa-chip-digit: #0B0A58;
   --uefa-sq: #002DDB; --uefa-plate-a: #0100AB; --uefa-plate-b: #000250;
@@ -97,7 +101,7 @@ body[data-family="uefa"] .team, body[data-family="uefa"] .score { color: #fff; b
 /* One continuous plate: the horizontal gradient is painted once, on team.home's own ::before,
    stretched past the away code and its tab; .main's overflow:hidden crops it at the true right
    edge regardless of how wide the score digits render, so no per-cell seam ever shows. */
-body[data-family="uefa"] .team.home::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--h) * 7.15);
+body[data-family="uefa"] .team.home::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--h) * 7.75);
   background: linear-gradient(90deg, var(--uefa-plate-a) 0%, var(--uefa-plate-b) 50%, var(--uefa-plate-a) 100%);
   box-sizing: border-box; z-index: -1; pointer-events: none; }
 /* Weight 600, not 700: cap height matches the reference at 600; 700 reads visibly bolder in stem width. */
@@ -134,7 +138,12 @@ body[data-family="uefa"] .team.away { padding-left: calc(var(--h) * 0.42); paddi
    navy plate -- ::before is a flat two-tone band in the scoring club's own colours, wiped in and
    then away by clip-path; ::after is the white GOAL word, revealed by opacity and stretched out by
    transform. No colour or font-size in either keyframe set (transform/opacity/clip-path only). */
-body[data-family="uefa"] .main::before, body[data-family="uefa"] .main::after { left: calc(var(--h) * 4.22); width: calc(var(--h) * 6.68); right: auto; z-index: 1; }
+body[data-family="uefa"] .main::before, body[data-family="uefa"] .main::after { left: calc(var(--h) * 4.22); width: calc(var(--h) * 6.81); right: auto; z-index: 1; }
+/* The word must win over a club motif that happens to cross its own footprint (Inter's Biscione is the
+   clearest case: a coiling line that reads as noise once it crosses "GOAL" at equal weight) -- stack
+   band(1) < motif(2, _shared.css) < word here, so the letters stay legible and the motif still shows
+   in the gaps around them, rather than the two fighting for the same pixels. */
+body[data-family="uefa"] .main::after { z-index: 3; }
 body[data-family="uefa"] .bug.goal-home { --goal-secondary: var(--home-secondary); }
 body[data-family="uefa"] .bug.goal-away { --goal-secondary: var(--away-secondary); }
 body[data-family="uefa"] .main::before { background: linear-gradient(180deg, var(--goal-primary, var(--uefa-plate-b)) 0 50%, var(--goal-secondary, var(--uefa-plate-a)) 50% 100%); }
