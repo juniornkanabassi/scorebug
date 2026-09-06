@@ -5,3 +5,6 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="fulham"] .main:
 }
 /* Secondary is too light for white digits -- read them in the club's own primary instead. */
 body[data-theme="premier-league"] .bug[data-home-club="fulham"] { --pl-centre-text: var(--home-primary); }
+/* Primary is white, invisible on the away plate's own near-white fill -- read it in the club's own
+   secondary (black) instead when Fulham is away (contact sheet caught this: Motif icons legible check). */
+body[data-theme="premier-league"] .bug[data-away-club="fulham"] { --pl-away-text: var(--away-secondary); }

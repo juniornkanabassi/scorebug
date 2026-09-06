@@ -5,3 +5,6 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="leeds-united"] 
 }
 /* Secondary is a medium blue -- white digits read weak on it, so use the club's own primary instead. */
 body[data-theme="premier-league"] .bug[data-home-club="leeds-united"] { --pl-centre-text: var(--home-primary); }
+/* Primary is white ("Whites"), invisible on the away plate's own near-white fill -- read it in the
+   club's own blue secondary instead when Leeds are away (contact sheet caught this). */
+body[data-theme="premier-league"] .bug[data-away-club="leeds-united"] { --pl-away-text: var(--away-secondary); }

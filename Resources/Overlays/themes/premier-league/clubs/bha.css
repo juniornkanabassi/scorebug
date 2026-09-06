@@ -13,3 +13,7 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="brighton-hove-a
 }
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="brighton-hove-albion"] .main::after { animation-name: pl-wipe-clip, pl-fill-opacity-flash; }
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="brighton-hove-albion"] .main::after { animation-name: pl-wipe-clip-away, pl-fill-opacity-flash; }
+/* Flash clubs also need the badge layer itself on the flash timing -- without this the gull badge
+   never dissolves and blocks the GOAL word for most of the hold instead of a brief reveal. */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="brighton-hove-albion"] .main::before { animation-name: pl-wipe-clip, pl-motif-flash; }
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="brighton-hove-albion"] .main::before { animation-name: pl-wipe-clip-away, pl-motif-flash; }
