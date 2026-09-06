@@ -314,14 +314,18 @@ public struct Settings: Codable, Sendable, Equatable {
     /// theme's `geometry.v.top`. Optional in Codable so settings.json files saved before this field decode fine;
     /// defaults to 100 when absent. Schema unchanged.
     public var portraitTop: Int
+    /// Backdrop shown behind the bug in the app's own preview panes only (never OBS): `nil` (none), `"pitch"`
+    /// (drawn stadium green, no asset), or an absolute path to a still or a muted looping video. Optional
+    /// since schema 1.
+    public var previewBackdrop: String?
 
-    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true, crestFolder: String? = nil, portraitTop: Int = 100) {
+    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true, crestFolder: String? = nil, portraitTop: Int = 100, previewBackdrop: String? = nil) {
         self.schema = schema; self.port = port; self.dataSourceOrder = dataSourceOrder; self.themeOverridesEnabled = themeOverridesEnabled
-        self.crestFolder = crestFolder; self.portraitTop = portraitTop
+        self.crestFolder = crestFolder; self.portraitTop = portraitTop; self.previewBackdrop = previewBackdrop
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schema, port, dataSourceOrder, themeOverridesEnabled, crestFolder, portraitTop
+        case schema, port, dataSourceOrder, themeOverridesEnabled, crestFolder, portraitTop, previewBackdrop
     }
 
     public init(from decoder: Decoder) throws {
@@ -332,13 +336,16 @@ public struct Settings: Codable, Sendable, Equatable {
         themeOverridesEnabled = try c.decode(Bool.self, forKey: .themeOverridesEnabled)
         crestFolder = try c.decodeIfPresent(String.self, forKey: .crestFolder)
         portraitTop = try c.decodeIfPresent(Int.self, forKey: .portraitTop) ?? 100
+        previewBackdrop = try c.decodeIfPresent(String.self, forKey: .previewBackdrop)
     }
 }
 
-/// Overlay-wide settings, distinct from per-match state.
+/// Overlay-wide settings, distinct from per-match state. `previewBackdrop` rides here too so overlay.js can
+/// read it from the same broadcast state; it only acts on it when the page was opened with `?preview=1`.
 public struct OverlaySettings: Codable, Sendable, Equatable {
     public var portraitTop: Int
-    public init(portraitTop: Int) { self.portraitTop = portraitTop }
+    public var previewBackdrop: String?
+    public init(portraitTop: Int, previewBackdrop: String? = nil) { self.portraitTop = portraitTop; self.previewBackdrop = previewBackdrop }
 }
 
 /// What the overlay pages and the Stream Deck receive. One message, full state.

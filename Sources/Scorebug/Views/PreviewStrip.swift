@@ -1,4 +1,5 @@
-// WebKit view of an overlay page from the local server, scaled to fit. Used by PreviewStage.
+// WebKit view of an overlay page from the local server, scaled to fit. Used by PreviewStage (SlotView.swift),
+// which loads the URL with `?preview=1` so overlay.js knows it may show the preview backdrop.
 import SwiftUI
 import WebKit
 

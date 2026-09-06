@@ -40,6 +40,28 @@ enum CrestImage {
         return circular
     }
 
+    /// Aspect-preserving thumbnail for `CrestView`'s `fitted` mode. `thumbnail(file:size:)` above stretches
+    /// every source to an exact square, which is what made two crests with different padding baked into
+    /// their PNGs (one file's badge tight to the edge, another's sitting in a wider margin) read at different
+    /// visual sizes: the padding survived the stretch unchanged, but a non-square source was distorted to fit
+    /// the square, throwing its apparent scale further off. This keeps the source's own aspect ratio, so
+    /// `CrestView` can fit it into a common box without adding a second, silent distortion on top.
+    static func fitted(file: String, size: CGFloat) -> NSImage? {
+        let key = "\(file)@fit\(Int(size))"
+        if let cached = cache.object(forKey: key as NSString) { return cached }
+        guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: size * 2,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        let img = NSImage(cgImage: cg, size: NSSize(width: CGFloat(cg.width) / 2, height: CGFloat(cg.height) / 2))
+        cache.setObject(img, forKey: key as NSString)
+        keysByFile[file, default: []].insert(key)
+        return img
+    }
+
     static func invalidate(file: String) {
         for key in keysByFile.removeValue(forKey: file) ?? [] { cache.removeObject(forKey: key as NSString) }
     }
@@ -153,9 +175,15 @@ struct CompetitionMark: View {
 struct CrestView: View {
     let team: TeamEntry
     var size: CGFloat = 24
+    /// True for the match card and the club pickers: the crest is scaled to fit an inner box (60/72 of the
+    /// frame) instead of being stretched to fill it, so two crests whose source PNGs carry different padding
+    /// still read at the same visual size (Junior's Real Madrid v Inter Milan screenshot).
+    var fitted: Bool = false
     var body: some View {
         Group {
-            if let f = team.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
+            if fitted, let f = team.crestFile, let img = CrestImage.fitted(file: f, size: size) {
+                Image(nsImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: size * 60 / 72, height: size * 60 / 72)
+            } else if let f = team.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
                 Image(nsImage: img)
             } else {
                 Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: size * 0.36, weight: .bold)).foregroundStyle(Color(hex: team.textColour)))

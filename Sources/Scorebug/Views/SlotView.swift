@@ -107,14 +107,14 @@ struct MatchCardSection: View, Equatable {
                 Divider().padding(.vertical, 8)
                 teamColumn(.away, team: away, score: awayScore)
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 8)
         }
     }
 
     private func teamColumn(_ side: Side, team: TeamEntry, score: Int) -> some View {
         VStack(spacing: 12) {
             Text(side == .home ? "HOME" : "AWAY").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2)
-            CrestView(team: team, size: 72)
+            CrestView(team: team, size: 72, fitted: true)
             ClubPickerButton(side: side, slot: slot).equatable()
             // A placeholder reads "Home" or "Away" in full; a chosen club shows its broadcast code.
             Text(team.clubId == nil ? team.name : team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
@@ -135,7 +135,7 @@ struct MatchCardSection: View, Equatable {
 
     private var centreColumn: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 // On a small light plate: a dark broadcast mark (the Premier League lion, drawn
                 // dark-on-transparent) would otherwise disappear against this dark card.
                 if let c = competition { CompetitionMark(competition: c, size: 30, plate: true) }
@@ -612,12 +612,14 @@ struct ClubPickerButton: View, Equatable {
             isOpen = true
         } label: {
             HStack(spacing: 8) {
-                CrestView(team: team, size: 22)
+                CrestView(team: team, size: 22, fitted: true)
                 Text(team.name).scaledFont(.callout).lineLimit(1)
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.down").scaledFont(.caption2).foregroundStyle(.secondary)
             }
-            .frame(maxWidth: 220)
+            // Fixed, not maxWidth: a short name (e.g. "Inter") must not leave this button narrower than the
+            // other side's, which is what threw the two pickers out of alignment (Junior's screenshot).
+            .frame(width: 220)
         }
         .buttonStyle(.bordered)
         .lazyPopover(isPresented: $isOpen) {
@@ -675,7 +677,7 @@ struct ClubPickerButton: View, Equatable {
         let entry = club.entry(for: match.competitionId)
         return Button { pick(club) } label: {
             HStack(spacing: 8) {
-                CrestView(team: entry, size: 20)
+                CrestView(team: entry, size: 20, fitted: true)
                 Text(entry.name).scaledFont(.body)
                 Spacer()
                 Text(entry.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
@@ -717,9 +719,11 @@ struct PreviewStage: View {
             let hW = stageH * 16 / 9, vW = stageH * 9 / 16
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
-                OverlayWebView(url: URL(string: "\(baseURL)/overlay/h/\(slot)")!, scale: hW / 1920, size: CGSize(width: 1920, height: 1080))
+                // `?preview=1` is the only difference from what OBS loads: it is what tells overlay.js this
+                // page may show the preview backdrop, which OBS's own browser source (no query) never sees.
+                OverlayWebView(url: URL(string: "\(baseURL)/overlay/h/\(slot)?preview=1")!, scale: hW / 1920, size: CGSize(width: 1920, height: 1080))
                     .frame(width: hW, height: stageH).background(.black).clipShape(RoundedRectangle(cornerRadius: 6))
-                OverlayWebView(url: URL(string: "\(baseURL)/overlay/v/\(slot)")!, scale: vW / 1080, size: CGSize(width: 1080, height: 1920))
+                OverlayWebView(url: URL(string: "\(baseURL)/overlay/v/\(slot)?preview=1")!, scale: vW / 1080, size: CGSize(width: 1080, height: 1920))
                     .frame(width: vW, height: stageH).background(.black).clipShape(RoundedRectangle(cornerRadius: 6))
                 Spacer(minLength: 0)
             }.padding(8)

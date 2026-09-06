@@ -205,7 +205,7 @@ final class AppModel: ObservableObject {
             m.away.squad = nil
             return m
         }
-        return StateSnapshot(serverTime: Date(), matches: matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop))
+        return StateSnapshot(serverTime: Date(), matches: matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop, previewBackdrop: settings.previewBackdrop))
     }
 
     func snapshotData() -> Data {

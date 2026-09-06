@@ -5,6 +5,18 @@ import ScorebugCore
 struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @State private var pickingFolder = false
+    @State private var pickingBackdrop = false
+
+    private enum BackdropMode: Hashable { case none, pitch, file }
+    /// Read straight from settings rather than a separate `@State`, so cancelling the file importer (which
+    /// leaves `previewBackdrop` untouched) snaps the picker back to whatever was actually chosen before.
+    private var backdropMode: BackdropMode {
+        switch model.settings.previewBackdrop {
+        case nil: return .none
+        case "pitch": return .pitch
+        default: return .file
+        }
+    }
 
     var body: some View {
         Form {
@@ -26,6 +38,33 @@ struct SettingsView: View {
             Section("Overlays") {
                 Stepper("Portrait bug top \(String(model.settings.portraitTop)) px", value: $model.settings.portraitTop, in: 0...800, step: 10).scaledFont(.body).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
                 Text("Top edge of the primary bug on the 1080 x 1920 canvas. The secondary bug keeps its distance below it. TikTok draws its own controls in the top 250 px.").scaledFont(.caption).foregroundStyle(.secondary)
+            }
+            Section("Preview backdrop") {
+                Picker("Preview backdrop", selection: Binding(
+                    get: { backdropMode },
+                    set: { mode in
+                        switch mode {
+                        case .none: model.settings.previewBackdrop = nil; model.saveSettings()
+                        case .pitch: model.settings.previewBackdrop = "pitch"; model.saveSettings()
+                        case .file: pickingBackdrop = true
+                        }
+                    }
+                )) {
+                    Text("None").tag(BackdropMode.none)
+                    Text("Pitch").tag(BackdropMode.pitch)
+                    Text("Choose file…").tag(BackdropMode.file)
+                }.scaledFont(.body).labelsHidden()
+                if backdropMode == .file, let path = model.settings.previewBackdrop {
+                    Text(URL(fileURLWithPath: path).lastPathComponent).scaledFont(.body).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                }
+                Text("Shown behind the bug in this window's preview only, so club colours can be judged against a real picture; OBS never sees it.").scaledFont(.caption).foregroundStyle(.secondary)
+            }
+            .fileImporter(isPresented: $pickingBackdrop, allowedContentTypes: [.image, .movie]) { result in
+                if case .success(let url) = result {
+                    let ok = url.startAccessingSecurityScopedResource(); defer { if ok { url.stopAccessingSecurityScopedResource() } }
+                    model.settings.previewBackdrop = url.path
+                    model.saveSettings()
+                }
             }
             Section("Crests") {
                 LabeledContent("Logo folder") {

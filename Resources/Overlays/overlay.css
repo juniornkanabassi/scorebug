@@ -26,6 +26,22 @@ body { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; -we
 body[data-orientation="h"] #stage { position: relative; width: 1920px; height: 1080px; }
 body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1920px; }
 
+/* Preview-only: overlay.js adds #backdrop before #stage when the page is opened with ?preview=1 (the app's
+   own preview panes), so club colours can be judged against a real picture. OBS's browser source never
+   carries that query, so it never gets this element and the canvas stays fully transparent either way. */
+#backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: transparent; }
+#backdrop img, #backdrop video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#backdrop.pitch { background: linear-gradient(160deg, #1f6b2f 0%, #2c8a3c 100%); }
+/* Faint mown-grass stripes, alternating bands at an angle, and a bordered centre circle: both drawn, no image asset. */
+#backdrop.pitch::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(100deg, rgba(255,255,255,.06) 0, rgba(255,255,255,.06) 8vmin, transparent 8vmin, transparent 16vmin);
+}
+#backdrop.pitch::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 26vmin; height: 26vmin;
+  border: 3px solid rgba(255,255,255,.32); border-radius: 50%; transform: translate(-50%, -50%);
+}
+
 .bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 380ms cubic-bezier(.2,.8,.2,1), transform 480ms cubic-bezier(.2,.9,.25,1.15); }
 .bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
 /* A take-off (building-out) ends with .hidden added while .building-out is still on, so the fully collapsed

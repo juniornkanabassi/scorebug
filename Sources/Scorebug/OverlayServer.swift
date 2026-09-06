@@ -100,6 +100,23 @@ final class OverlayServer: @unchecked Sendable {
             return serve(crests.appendingPathComponent(name))
         })
 
+        await server.appendRoute("GET /preview/backdrop", handler: { [weak self] request in
+            guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
+            let path = await MainActor.run { model.settings.previewBackdrop }
+            guard let path, path != "pitch", let data = FileManager.default.contents(atPath: path) else {
+                return HTTPResponse(statusCode: .notFound)
+            }
+            let mime = backdropMIME(for: path)
+            // A single byte range is enough for WebKit's <video> to seek and buffer a local muted loop.
+            if let rangeHeader = request.headers[.range], let range = singleByteRange(rangeHeader, count: data.count) {
+                return HTTPResponse(statusCode: .partialContent, headers: [
+                    .contentType: mime, .acceptRanges: "bytes",
+                    .contentRange: "bytes \(range.lowerBound)-\(range.upperBound)/\(data.count)",
+                ], body: Data(data[range]))
+            }
+            return HTTPResponse(statusCode: .ok, headers: [.contentType: mime, .acceptRanges: "bytes", .cacheControl: "no-store"], body: data)
+        })
+
         await server.appendRoute("GET /api/state", handler: { [weak self] _ in
             let data = await self?.stateJSON() ?? Data("{}".utf8)
             return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8", .cacheControl: "no-store"], body: data)
@@ -138,4 +155,30 @@ final class OverlayServer: @unchecked Sendable {
     }
 
     func stop() async { await server?.stop(); task?.cancel() }
+}
+
+/// MIME for a preview backdrop file. Not the shared `MIME.type(for:)` (owned by another file): that one has
+/// no video cases, since nothing else served here is ever a video.
+private func backdropMIME(for path: String) -> String {
+    switch (path as NSString).pathExtension.lowercased() {
+    case "mp4", "m4v": return "video/mp4"
+    case "mov": return "video/quicktime"
+    case "webm": return "video/webm"
+    case "png": return "image/png"
+    case "jpg", "jpeg": return "image/jpeg"
+    case "heic": return "image/heic"
+    default: return "application/octet-stream"
+    }
+}
+
+/// Parses a single `Range: bytes=<start>-<end>` header (the only form WebKit sends for a local file), clamped
+/// to the data's bounds. Multi-range and suffix ("-500") forms are not needed for a short local loop; either
+/// falls back to serving the whole file (returning nil here).
+private func singleByteRange(_ header: String, count: Int) -> ClosedRange<Int>? {
+    guard header.hasPrefix("bytes="), !header.contains(",") else { return nil }
+    let parts = header.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
+    guard parts.count == 2, let start = Int(parts[0]) else { return nil }
+    let end = Int(parts[1]).map { min($0, count - 1) } ?? count - 1
+    guard start <= end, start < count else { return nil }
+    return start...end
 }

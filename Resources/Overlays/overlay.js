@@ -29,6 +29,24 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   let state = null, match = null, theme = null, themeId = null;
   let renderedRevision = -1, lastGoalKey = null, skewMs = 0;
 
+  // Preview backdrop: only the app's own preview panes load with ?preview=1, so OBS's browser source (no
+  // query) never creates #backdrop and its canvas stays exactly as before.
+  const isPreview = new URLSearchParams(location.search).get("preview") === "1";
+  let backdrop = null, backdropPath;
+  function applyBackdrop(path) {
+    if (!isPreview || path === backdropPath) return;
+    backdropPath = path;
+    if (!backdrop) { backdrop = document.createElement("div"); backdrop.id = "backdrop"; document.getElementById("stage").before(backdrop); }
+    backdrop.innerHTML = ""; backdrop.className = "";
+    if (!path) return;
+    if (path === "pitch") { backdrop.className = "pitch"; return; }
+    const isVideo = ["mp4", "mov", "webm", "m4v"].includes(path.split(".").pop().toLowerCase());
+    const media = document.createElement(isVideo ? "video" : "img");
+    if (isVideo) { media.autoplay = true; media.muted = true; media.loop = true; media.playsInline = true; }
+    media.src = "/preview/backdrop";
+    backdrop.appendChild(media);
+  }
+
   // Build-in/build-out: themes animate their own children under .bug.building-in / .bug.building-out (see overlay.css).
   // null means "never seen a state yet" so the very first appearance still plays the build-in once, per the page starting hidden.
   const BUILD_MS = 820; // covers every theme's 0.5-0.8s choreography with a small buffer before the marker class is dropped
@@ -205,6 +223,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   requestAnimationFrame(frame);
   function accept(snapshot) {
     state = snapshot; skewMs = snapshot.serverTime - Date.now();
+    applyBackdrop(snapshot.overlay && snapshot.overlay.previewBackdrop);
     const m = snapshot.matches.find((x) => x.slot === slot);
     if (!m) return;
     match = m;
