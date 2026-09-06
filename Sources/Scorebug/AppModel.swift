@@ -46,7 +46,7 @@ final class AppModel: ObservableObject {
     private var server: OverlayServer?
 
     var port: Int { options.port ?? settings.port }
-    var baseURL: String { "http://localhost:\(port)" }
+    var baseURL: String { "http://127.0.0.1:\(port)" }
 
     init(options: LaunchOptions) {
         self.options = options

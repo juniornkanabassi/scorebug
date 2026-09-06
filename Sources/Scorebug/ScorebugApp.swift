@@ -52,6 +52,8 @@ struct ScorebugApp: App {
                 Button("Bigger Text") { model.zoom(1) }.keyboardShortcut("=", modifiers: .command)
                 Button("Smaller Text") { model.zoom(-1) }.keyboardShortcut("-", modifiers: .command)
                 Button("Actual Size") { model.zoomLevel = 0 }.keyboardShortcut("0", modifiers: .command)
+                Divider()
+                Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
         }
 

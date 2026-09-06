@@ -7,35 +7,42 @@ struct OverlayWebView: NSViewRepresentable {
     let scale: CGFloat
     let size: CGSize
 
-    /// The web view keeps the exact canvas size OBS gives the page (1920x1080 or 1080x1920) and a scroll view
-    /// magnifies it to fit the stage. `pageZoom` used to scale the content while the page laid out at the stage's
-    /// own size, so portrait bugs rendered with a different viewport than in OBS and the preview lied.
-    func makeNSView(context: Context) -> NSScrollView {
+    /// The web view's own magnification scales the page while it keeps laying out at the OBS canvas size
+    /// (WebKit's layout viewport is the frame divided by the magnification), so the preview is the exact
+    /// page OBS renders, just smaller. An NSScrollView magnifying a full-size web view did the same job but
+    /// went black at launch on some runs (6 Sep); this keeps WebKit's own visible-rect bookkeeping intact.
+    func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
-        let web = WKWebView(frame: CGRect(origin: .zero, size: size), configuration: config)
+        let web = WKWebView(frame: CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale)), configuration: config)
         web.setValue(false, forKey: "drawsBackground")
+        web.allowsMagnification = true
         web.navigationDelegate = context.coordinator
         web.load(URLRequest(url: url))
-        let scroll = NSScrollView()
-        scroll.drawsBackground = false
-        scroll.hasVerticalScroller = false; scroll.hasHorizontalScroller = false
-        scroll.verticalScrollElasticity = .none; scroll.horizontalScrollElasticity = .none
-        scroll.allowsMagnification = true
-        // NSScrollView clamps magnification to 0.25 by default, which is above the portrait pane's 1080-to-pane
-        // scale, so the portrait preview rendered 1.6x too big and clipped (Junior, 6 Sep).
-        scroll.minMagnification = 0.02
-        scroll.documentView = web
-        scroll.magnification = scale
-        return scroll
+        web.setMagnification(scale, centeredAt: .zero)
+        context.coordinator.watch(web)
+        return web
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    /// A blank preview is worse than a late one: the first load can race the embedded server at launch
-    /// (provisional navigation fails, the view stays black), and WebKit blanks a view whose content process
-    /// was terminated under memory pressure. Both are retried here (Junior saw both panes black, 6 Sep).
+    /// A blank preview is worse than a late one: the first load can race the embedded server at launch, and
+    /// WebKit blanks a view whose content process was terminated under memory pressure. Both are retried.
+    static let reloadRequested = Notification.Name("scorebug.reloadPreviews")
+
     final class Coordinator: NSObject, WKNavigationDelegate {
+        private var observers: [Any] = []
+        /// WebKit stops painting a view whose window is occluded or on another Space, and on this Mac the view
+        /// stayed blank after the window came back (6 Sep, both panes black). Reloading when the window becomes
+        /// visible again, or on View > Reload Previews, brings the page back; nothing is lost, state is the server's.
+        func watch(_ web: WKWebView) {
+            observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: nil, queue: .main) { [weak web] note in
+                guard let web, let win = note.object as? NSWindow, win === web.window, win.occlusionState.contains(.visible) else { return }
+                web.reload()
+            })
+            observers.append(NotificationCenter.default.addObserver(forName: OverlayWebView.reloadRequested, object: nil, queue: .main) { [weak web] _ in web?.reload() })
+        }
+        deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
         private func retry(_ web: WKWebView) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak web] in
                 guard let web else { return }
@@ -47,11 +54,8 @@ struct OverlayWebView: NSViewRepresentable {
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     }
 
-    func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let web = scroll.documentView as? WKWebView else { return }
-        if web.frame.size != size { web.frame = CGRect(origin: .zero, size: size) }
-        if abs(scroll.magnification - scale) > 0.0001 { scroll.magnification = scale }
-        scroll.contentView.scroll(to: .zero)
+    func updateNSView(_ web: WKWebView, context: Context) {
+        if abs(web.magnification - scale) > 0.0001 { web.setMagnification(scale, centeredAt: .zero) }
         if web.url != url { web.load(URLRequest(url: url)) }
     }
 }
