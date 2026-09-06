@@ -10,9 +10,9 @@
 @font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-700.woff2) format("woff2"); font-weight: 700; }
 @font-face { font-family: "Barlow"; src: url(/assets/fonts/Barlow-800.woff2) format("woff2"); font-weight: 800; }
 /* Archivo-800.woff2 is misleadingly named: fontTools confirms it is already a true variable file (fvar, wght
-   100-900, verified 5 September 2026, round 6) rather than a static 800-weight face, so unlike Inter/Montserrat
-   below it needs no separate "-var" sibling and no split ranges -- one @font-face already covers every weight a
-   theme asks for (ligue1 uses 900). Do not add an "Archivo-var.woff2"; it would be byte-identical to this file. */
+   100-900) rather than a static 800-weight face, so unlike Inter/Montserrat below it needs no separate "-var"
+   sibling and no split ranges -- one @font-face already covers every weight a theme asks for (ligue1 uses 900).
+   Do not add an "Archivo-var.woff2"; it would be byte-identical to this file. */
 @font-face { font-family: "Archivo"; src: url(/assets/fonts/Archivo-800.woff2) format("woff2"); font-weight: 100 900; }
 @font-face { font-family: "Oswald"; src: url(/assets/fonts/Oswald-700.woff2) format("woff2"); font-weight: 200 700; }
 @font-face { font-family: "Inter"; src: url(/assets/fonts/Inter-800.woff2) format("woff2"); font-weight: 800; }
@@ -28,6 +28,9 @@ body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1
 
 .bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 380ms cubic-bezier(.2,.8,.2,1), transform 480ms cubic-bezier(.2,.9,.25,1.15); }
 .bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
+/* A take-off (building-out) ends with .hidden added while .building-out is still on, so the fully collapsed
+   pieces snap invisible instead of a reassembled bar fading in over 380ms. */
+.bug.building-out.hidden { transition: none; }
 body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; transform: scale(var(--bug-scale, 1)); }
 body[data-orientation="h"] .bug.hidden { transform: scale(var(--bug-scale, 1)) translateY(-14px); }
 /* Slot 2 mirrors slot 1 in landscape: same inset from the right edge as slot 1 has from the left, same top, contents unchanged. */
@@ -38,12 +41,11 @@ body[data-orientation="h"][data-slot="2"] .bug { left: auto; right: var(--bug-le
    an overflowing child just spills past it, still centred (align-items:center centres the overflow symmetrically,
    so this was never why a bug read off-centre). What it DOES break: .bug also carries this theme's filter
    (drop-shadow), which makes .bug a compositing stacking context; once a max-width-capped .bug holds a child wider
-   than that cap, Chrome was found (2026-09-05, portrait QA) to clip a negative z-index descendant -- the uefa
-   themes' one-piece navy bar background, painted as team.home's own ::before, z-index:-1, deliberately wider than
-   any single cell so it reaches every cell without a seam -- to roughly .bug's capped box instead of the child's
-   true overflow width, so everything past the point the cap ends renders with no background at all (ghostly pale
-   text on nothing). Confirmed by disabling max-width live in the inspector: the bar redrew whole immediately.
-   So width containment is the theme's job now: each theme's geometry.v.scale is tuned (see each theme.json) so
+   than that cap, Chrome clips a negative z-index descendant -- the uefa themes' one-piece navy bar background,
+   painted as team.home's own ::before, z-index:-1, deliberately wider than any single cell so it reaches every
+   cell without a seam -- to roughly .bug's capped box instead of the child's true overflow width, so everything
+   past the point the cap ends renders with no background at all (ghostly pale text on nothing).
+   So width containment is the theme's job instead: each theme's geometry.v.scale is tuned (see each theme.json) so
    its own worst-case portrait content -- added time showing, the widest state measured -- already renders at or
    under 800px, with no CSS clamp fighting an overflowing child to enforce it. --bug-max-width/g.maxWidth stay in
    theme.json as the documented budget those scales are tuned against, just not wired into this rule any more. */
@@ -51,7 +53,7 @@ body[data-orientation="v"] .bug { left: 50%; top: var(--bug-top, 400px); transfo
 body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(--bug-scale, 1)) translateY(-14px); }
 
 /* The main block is a grid. Every element has a named area; themes set grid-template-areas and hide what they do not use. */
-.main { position: relative; display: grid; grid-template-areas: "comp home hs sep as away clock added"; grid-auto-columns: max-content; align-items: stretch; }
+.main { position: relative; display: grid; grid-template-areas: "comp home hs sep as away clock added agg"; grid-auto-columns: max-content; align-items: stretch; }
 .comp { grid-area: comp; } .team.home { grid-area: home; } .score.home { grid-area: hs; } .sep { grid-area: sep; }
 .score.away { grid-area: as; } .team.away { grid-area: away; } .clock { grid-area: clock; } .added { grid-area: added; }
 .comp, .team, .score, .sep, .clock, .added { display: flex; align-items: center; justify-content: center; }
@@ -65,6 +67,8 @@ body[data-orientation="v"] .bug.hidden { transform: translateX(-50%) scale(var(-
 .bug.has-comp-logo .comp .mark { background-color: transparent !important; clip-path: none !important; transform: none !important; }
 .added { display: none; }
 .bug.has-added .added { display: flex; }
+.agg { grid-area: agg; display: none; }
+.bug.has-agg .agg { display: flex; }
 .clock .state { display: none; }
 .clock.stopped .time { display: none; }
 .clock.stopped .state { display: inline; }

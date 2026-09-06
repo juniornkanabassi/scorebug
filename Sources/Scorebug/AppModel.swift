@@ -142,18 +142,11 @@ final class AppModel: ObservableObject {
     }
 
     func snapshot() -> StateSnapshot {
-        StateSnapshot(serverTime: Date(), matches: state.matches, competitions: library.competitions)
+        StateSnapshot(serverTime: Date(), matches: state.matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop))
     }
 
     func snapshotData() -> Data {
-        guard let base = try? JSONCoding.encoder().encode(snapshot()),
-              var obj = (try? JSONSerialization.jsonObject(with: base)) as? [String: Any] else {
-            return Data("{}".utf8)
-        }
-        // Overlay-wide settings, distinct from per-match state. portraitTop overrides every theme's
-        // geometry.v.top for the primary portrait slot; overlay.js derives the secondary slot's top from it.
-        obj["overlay"] = ["portraitTop": settings.portraitTop]
-        return (try? JSONSerialization.data(withJSONObject: obj, options: [.sortedKeys])) ?? base
+        (try? JSONCoding.encoder().encode(snapshot())) ?? Data("{}".utf8)
     }
 
     private func broadcast() {

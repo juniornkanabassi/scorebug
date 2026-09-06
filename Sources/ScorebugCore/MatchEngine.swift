@@ -3,7 +3,8 @@ import Foundation
 
 public enum Command: Sendable, Equatable {
     case goal(Side, Int)
-    case setScorer(UUID, String?)
+    /// `ownGoal`/`penalty` nil leaves that `Goal` field as it was; only a non-nil value overwrites it.
+    case setScorer(UUID, String?, ownGoal: Bool?, penalty: Bool?)
     case startPeriod(Period)
     case endPeriod
     /// One-way start: a running clock stays running. `playPause` is the toggle for a single key or button.
@@ -22,6 +23,11 @@ public enum Command: Sendable, Equatable {
     case setCompetition(String)
     case setKickoff(Date?)
     case setTheme(String?)
+    /// First-leg score of a two-legged tie; the overlay adds the live score to get the aggregate shown.
+    case setAggregate(home: Int, away: Int)
+    case clearAggregate
+    case setShowScorers(Bool)
+    case toggleShowScorers
     /// Manual clock correction, for when play was pressed late and the bug needs to line up with the broadcast.
     ///
     /// `seconds` is the elapsed time **within the current period** — the same period-local quantity
@@ -44,11 +50,13 @@ public enum Command: Sendable, Equatable {
 ///
 /// Commands: goal, setScorer, startPeriod, endPeriod, play, pause, playPause, setAddedMinutes,
 /// adjustAddedMinutes, setVisible, toggleVisible, startShootout, recordKick, undoKick, setTeam, swapTeams,
-/// setCompetition, setTheme, reset, and the manual clock corrections below.
+/// setCompetition, setTheme, setAggregate, clearAggregate, setShowScorers, toggleScorers, reset, and the
+/// manual clock corrections below.
 ///
 ///   {"command":"setClock","seconds":754}        -> Command.setClock(seconds: 754)
 ///   {"command":"adjustClock","delta":-5}         -> Command.adjustClock(deltaSeconds: -5)
 ///   {"command":"adjustClock","deltaSeconds":-5}  -> same, "deltaSeconds" is accepted as an alias of "delta"
+///   {"command":"setAggregate","home":2,"away":1} -> Command.setAggregate(home: 2, away: 1)
 ///
 /// See `Command.setClock` and `Command.adjustClock` for what `seconds` and the delta mean against the
 /// current period's base.
@@ -62,17 +70,24 @@ public struct CommandRequest: Codable, Sendable {
     public var visible: Bool?
     public var goalId: String?
     public var scorer: String?
+    public var ownGoal: Bool?
+    public var penalty: Bool?
     public var competitionId: String?
     public var team: TeamEntry?
     public var themeId: String?
     public var seconds: Int?
     /// Alias of `delta` for "adjustClock", since a bare "delta" reads ambiguously next to "seconds".
     public var deltaSeconds: Int?
+    /// "setAggregate" only: first-leg goals for this match's home and away side.
+    public var home: Int?
+    public var away: Int?
+    public var showScorers: Bool?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil) {
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
-        self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.competitionId = competitionId; self.team = team; self.themeId = themeId
-        self.seconds = seconds; self.deltaSeconds = deltaSeconds
+        self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
+        self.competitionId = competitionId; self.team = team; self.themeId = themeId
+        self.seconds = seconds; self.deltaSeconds = deltaSeconds; self.home = home; self.away = away; self.showScorers = showScorers
     }
 
     public func toCommand() throws -> Command {
@@ -84,7 +99,7 @@ public struct CommandRequest: Codable, Sendable {
         case "goal": return .goal(try sideValue(), delta ?? 1)
         case "setScorer":
             guard let g = goalId, let id = UUID(uuidString: g) else { throw EngineError.badRequest("goalId required") }
-            return .setScorer(id, scorer)
+            return .setScorer(id, scorer, ownGoal: ownGoal, penalty: penalty)
         case "startPeriod":
             guard let p = period, let v = Period(rawValue: p) else { throw EngineError.badRequest("period must be firstHalf, secondHalf, extraFirst or extraSecond") }
             return .startPeriod(v)
@@ -109,6 +124,12 @@ public struct CommandRequest: Codable, Sendable {
             guard let c = competitionId else { throw EngineError.badRequest("competitionId required") }
             return .setCompetition(c)
         case "setTheme": return .setTheme(themeId)
+        case "setAggregate":
+            guard let h = home, let a = away else { throw EngineError.badRequest("home and away required") }
+            return .setAggregate(home: h, away: a)
+        case "clearAggregate": return .clearAggregate
+        case "setShowScorers": return .setShowScorers(showScorers ?? true)
+        case "toggleScorers": return .toggleShowScorers
         case "setClock":
             guard let s = seconds else { throw EngineError.badRequest("seconds required") }
             return .setClock(seconds: s)
@@ -141,12 +162,14 @@ public enum MatchEngine {
                 setScore(&m, side, max(0, m.score(side) - 1))
                 m.lastGoal = nil
             }
-        case .setScorer(let id, let scorer):
+        case .setScorer(let id, let scorer, let ownGoal, let penalty):
             guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
             let trimmed = scorer?.trimmingCharacters(in: .whitespacesAndNewlines)
             m.goals[idx].scorer = (trimmed?.isEmpty ?? true) ? nil : trimmed
+            if let ownGoal { m.goals[idx].ownGoal = ownGoal }
+            if let penalty { m.goals[idx].penalty = penalty }
         case .startPeriod(let period):
-            // Re-pressing the live period's pill must not zero a running clock (review, 6 Sep).
+            // Re-pressing the live period's pill must not zero a running clock.
             guard m.currentPeriod != period else { return m }
             m.phase = period.phase
             m.clock = Clock(periodBaseSeconds: period.baseSeconds, periodStart: now, accumulated: 0, running: true)
@@ -199,6 +222,10 @@ public enum MatchEngine {
                 s.kicks = s.kicks.map { var k = $0; k.side = k.side.other; return k }
                 m.shootout = s
             }
+            if var agg = m.aggregate {
+                swap(&agg.firstLegHome, &agg.firstLegAway)
+                m.aggregate = agg
+            }
             m.lastGoal = nil
         case .setCompetition(let id):
             m.competitionId = id
@@ -206,6 +233,14 @@ public enum MatchEngine {
             m.kickoff = date
         case .setTheme(let id):
             m.themeId = (id?.isEmpty ?? true) ? nil : id
+        case .setAggregate(let home, let away):
+            m.aggregate = Aggregate(firstLegHome: home, firstLegAway: away)
+        case .clearAggregate:
+            m.aggregate = nil
+        case .setShowScorers(let v):
+            m.showScorers = v
+        case .toggleShowScorers:
+            m.showScorers.toggle()
         case .setClock(let seconds):
             guard m.currentPeriod != nil else { return m }
             setLocalElapsed(&m.clock, to: TimeInterval(max(0, seconds)), now: now)
@@ -220,6 +255,7 @@ public enum MatchEngine {
             fresh.visible = m.visible
             fresh.themeId = m.themeId
             fresh.revision = m.revision
+            fresh.aggregate = m.aggregate
             m = fresh
         }
         m.revision += 1

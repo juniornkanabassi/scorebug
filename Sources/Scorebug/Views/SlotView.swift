@@ -439,7 +439,7 @@ struct ScorerButton: View {
     }
 
     private func pick(_ name: String) {
-        model.apply(.setScorer(goal.id, name), slot: slot)
+        model.apply(.setScorer(goal.id, name, ownGoal: nil, penalty: nil), slot: slot)
         openGoalId = nil
     }
 }

@@ -14,6 +14,8 @@ public struct ClockDisplay: Equatable, Sendable {
     public var addedCounter: String?
     public var state: String?
     public var running: Bool
+    /// True once a live period's elapsed time exceeds its own period end, announced added time or not.
+    public var overtime: Bool
 }
 
 public enum ClockEngine {
@@ -26,16 +28,17 @@ public enum ClockEngine {
         let elapsed = Int(match.clock.elapsed(at: now))
         guard let period = match.currentPeriod else {
             let shown = match.phase == .preMatch ? "00:00" : format(min(elapsed, lastPeriodEnd(for: match.phase)))
-            return ClockDisplay(main: shown, added: nil, addedCounter: nil, state: match.phase.stateLabel, running: false)
+            return ClockDisplay(main: shown, added: nil, addedCounter: nil, state: match.phase.stateLabel, running: false, overtime: false)
         }
         let added = match.addedMinutes.map { "+\($0)" }
+        let overtime = elapsed > period.endSeconds
         switch style {
         case .runOn:
-            return ClockDisplay(main: format(elapsed), added: added, addedCounter: nil, state: nil, running: match.clock.running)
+            return ClockDisplay(main: format(elapsed), added: added, addedCounter: nil, state: nil, running: match.clock.running, overtime: overtime)
         case .freezeAndCount:
             let main = format(min(elapsed, period.endSeconds))
-            let counter = (added != nil && elapsed > period.endSeconds) ? format(elapsed - period.endSeconds) : nil
-            return ClockDisplay(main: main, added: added, addedCounter: counter, state: nil, running: match.clock.running)
+            let counter = (added != nil && overtime) ? format(elapsed - period.endSeconds) : nil
+            return ClockDisplay(main: main, added: added, addedCounter: counter, state: nil, running: match.clock.running, overtime: overtime)
         }
     }
 

@@ -166,6 +166,13 @@ public struct LastGoal: Codable, Sendable, Equatable {
     public var goalId: UUID
 }
 
+/// First-leg score of a two-legged tie; the overlay adds the live score to get the running aggregate.
+public struct Aggregate: Codable, Sendable, Equatable {
+    public var firstLegHome: Int
+    public var firstLegAway: Int
+    public init(firstLegHome: Int, firstLegAway: Int) { self.firstLegHome = firstLegHome; self.firstLegAway = firstLegAway }
+}
+
 public struct Match: Codable, Sendable, Equatable {
     public var slot: Int
     public var competitionId: String
@@ -184,12 +191,44 @@ public struct Match: Codable, Sendable, Equatable {
     public var revision: Int
     /// Optional theme override; nil means the competition's theme.
     public var themeId: String?
+    /// Nil unless this match is one leg of a two-legged tie. Optional since schema 1.
+    public var aggregate: Aggregate?
+    /// Manual scorer strap visibility. Optional in decoding (old state.json files default to false).
+    public var showScorers: Bool
 
     public init(slot: Int, competitionId: String = "ligue1", home: TeamEntry = .placeholderHome, away: TeamEntry = .placeholderAway) {
         self.slot = slot; self.competitionId = competitionId; self.home = home; self.away = away
         self.kickoff = nil; self.phase = .preMatch; self.clock = Clock(); self.addedMinutes = nil
         self.homeScore = 0; self.awayScore = 0; self.goals = []; self.shootout = nil
         self.visible = true; self.lastGoal = nil; self.revision = 0; self.themeId = nil
+        self.aggregate = nil; self.showScorers = false
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case slot, competitionId, home, away, kickoff, phase, clock, addedMinutes, homeScore, awayScore
+        case goals, shootout, visible, lastGoal, revision, themeId, aggregate, showScorers
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        slot = try c.decode(Int.self, forKey: .slot)
+        competitionId = try c.decode(String.self, forKey: .competitionId)
+        home = try c.decode(TeamEntry.self, forKey: .home)
+        away = try c.decode(TeamEntry.self, forKey: .away)
+        kickoff = try c.decodeIfPresent(Date.self, forKey: .kickoff)
+        phase = try c.decode(Phase.self, forKey: .phase)
+        clock = try c.decode(Clock.self, forKey: .clock)
+        addedMinutes = try c.decodeIfPresent(Int.self, forKey: .addedMinutes)
+        homeScore = try c.decode(Int.self, forKey: .homeScore)
+        awayScore = try c.decode(Int.self, forKey: .awayScore)
+        goals = try c.decode([Goal].self, forKey: .goals)
+        shootout = try c.decodeIfPresent(Shootout.self, forKey: .shootout)
+        visible = try c.decode(Bool.self, forKey: .visible)
+        lastGoal = try c.decodeIfPresent(LastGoal.self, forKey: .lastGoal)
+        revision = try c.decode(Int.self, forKey: .revision)
+        themeId = try c.decodeIfPresent(String.self, forKey: .themeId)
+        aggregate = try c.decodeIfPresent(Aggregate.self, forKey: .aggregate)
+        showScorers = try c.decodeIfPresent(Bool.self, forKey: .showScorers) ?? false
     }
 
     public func score(_ side: Side) -> Int { side == .home ? homeScore : awayScore }
@@ -296,14 +335,21 @@ public struct Settings: Codable, Sendable, Equatable {
     }
 }
 
+/// Overlay-wide settings, distinct from per-match state.
+public struct OverlaySettings: Codable, Sendable, Equatable {
+    public var portraitTop: Int
+    public init(portraitTop: Int) { self.portraitTop = portraitTop }
+}
+
 /// What the overlay pages and the Stream Deck receive. One message, full state.
 public struct StateSnapshot: Codable, Sendable {
     public var schema: Int
     public var serverTime: Date
     public var matches: [Match]
     public var competitions: [Competition]
-    public init(serverTime: Date, matches: [Match], competitions: [Competition]) {
-        self.schema = currentSchema; self.serverTime = serverTime; self.matches = matches; self.competitions = competitions
+    public var overlay: OverlaySettings
+    public init(serverTime: Date, matches: [Match], competitions: [Competition], overlay: OverlaySettings) {
+        self.schema = currentSchema; self.serverTime = serverTime; self.matches = matches; self.competitions = competitions; self.overlay = overlay
     }
 }
 

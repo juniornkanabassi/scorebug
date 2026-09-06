@@ -19,6 +19,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     homeDigit: q(".score.home .digit"), awayDigit: q(".score.away .digit"),
     clock: q(".clock"), clockMain: q(".clock .time"), clockState: q(".clock .state"),
     addedPlus: q(".added .plus"), addedCounter: q(".added .counter"),
+    aggHome: q(".agg .home"), aggAway: q(".agg .away"),
     kicksHome: q(".kicks.home"), kicksAway: q(".kicks.away"),
     tallyHome: q(".tally .home"), tallyAway: q(".tally .away"),
     scorersHome: q(".scorers .list.home"), scorersAway: q(".scorers .list.away"),
@@ -37,17 +38,21 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     const isFirstEver = visibleState === null;
     visibleState = visible;
     if (buildTimer) { clearTimeout(buildTimer); buildTimer = null; }
-    bug.classList.remove("building-in", "building-out");
     if (visible) {
-      bug.classList.remove("hidden");
+      // A show always clears building-out too, so a show pressed mid take-off restarts clean.
+      bug.classList.remove("hidden", "building-out");
       void bug.offsetWidth; // restart animations even if building-in was already mid-flight
       bug.classList.add("building-in");
       buildTimer = setTimeout(() => { bug.classList.remove("building-in"); buildTimer = null; }, BUILD_MS);
     } else if (isFirstEver) {
       bug.classList.add("hidden"); // never shown yet: nothing to take apart, just stay off
     } else {
+      // building-out stays on until the next setVisible (not cleared here): .hidden lands on top of it so
+      // .bug.building-out.hidden's transition:none snaps the collapsed pieces off instead of fading the
+      // reassembled bar back in.
+      bug.classList.remove("building-in");
       bug.classList.add("building-out");
-      buildTimer = setTimeout(() => { bug.classList.remove("building-out"); bug.classList.add("hidden"); buildTimer = null; }, BUILD_MS);
+      buildTimer = setTimeout(() => { bug.classList.add("hidden"); buildTimer = null; }, BUILD_MS);
     }
   }
 
@@ -63,12 +68,14 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     if (clock.running && clock.periodStart) t += Math.max(0, now() - clock.periodStart / 1000);
     return t;
   }
+  const EXTRA_TIME_PHASES = new Set(["extraFirst", "extraBreak", "extraSecond", "extraFullTime"]);
   function clockDisplay(m, style) {
     const e = elapsed(m.clock), p = PERIOD[m.phase];
-    if (!p) return { main: m.phase === "preMatch" ? "00:00" : fmt(Math.min(e, LAST_END[m.phase] || 0)), added: null, counter: null, state: STATE_LABEL[m.phase] || null };
+    if (!p) return { main: m.phase === "preMatch" ? "00:00" : fmt(Math.min(e, LAST_END[m.phase] || 0)), added: null, counter: null, state: STATE_LABEL[m.phase] || null, overtime: false };
     const added = m.addedMinutes ? "+" + m.addedMinutes : null;
-    if (style === "runOn") return { main: fmt(e), added, counter: null, state: null };
-    return { main: fmt(Math.min(e, p[1])), added, counter: added && e > p[1] ? fmt(e - p[1]) : null, state: null };
+    const overtime = e > p[1];
+    if (style === "runOn") return { main: fmt(e), added, counter: null, state: null, overtime };
+    return { main: fmt(Math.min(e, p[1])), added, counter: added && overtime ? fmt(e - p[1]) : null, state: null, overtime };
   }
   const competitionFor = (m) => (state.competitions || []).find((c) => c.id === m.competitionId);
 
@@ -137,6 +144,11 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     }
     setVisible(!!m.visible);
     bug.classList.toggle("has-added", !!m.addedMinutes && !!PERIOD[m.phase]);
+    bug.classList.toggle("has-agg", !!m.aggregate);
+    if (m.aggregate) {
+      el.aggHome.textContent = m.homeScore + m.aggregate.firstLegHome;
+      el.aggAway.textContent = m.awayScore + m.aggregate.firstLegAway;
+    }
     bug.dataset.phase = m.phase;
     const s = m.shootout;
     bug.classList.toggle("has-shootout", m.phase === "shootout" && !!s);
@@ -169,13 +181,8 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   function renderScorers(node, goals) {
     node.innerHTML = "";
     const byName = new Map();
-    goals.forEach((g) => { const n = g.scorer || "Goal"; const l = g.minuteLabel + (g.penalty ? " pen" : "") + (g.ownGoal ? " og" : ""); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(l); });
+    goals.forEach((g) => { const n = g.scorer || "Goal"; const l = g.minuteLabel + (g.penalty ? " (pen)" : "") + (g.ownGoal ? " (og)" : ""); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(l); });
     byName.forEach((mins, name) => { const e = document.createElement("div"); e.className = "entry"; e.textContent = name + " " + mins.join(", "); node.appendChild(e); });
-  }
-  function scorersVisible(m) {
-    if (!m.goals.length || m.phase === "preMatch") return false;
-    const every = (theme && theme.scorersEverySeconds) || 90, dur = (theme && theme.scorersForSeconds) || 8;
-    return now() % every < dur;
   }
   let demoForceScorers = false; // set by ?demo=scorers, for layout QA screenshots
   function frame() {
@@ -187,7 +194,10 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       if (el.addedPlus.textContent !== (d.added || "")) el.addedPlus.textContent = d.added || "";
       if (el.addedCounter.textContent !== (d.counter || "")) el.addedCounter.textContent = d.counter || "";
       bug.classList.toggle("has-counter", !!d.counter);
-      bug.classList.toggle("show-scorers", demoForceScorers || scorersVisible(match));
+      el.clock.classList.toggle("overtime", !!d.overtime);
+      bug.classList.toggle("overtime", !!d.overtime);
+      bug.classList.toggle("extra-time", EXTRA_TIME_PHASES.has(match.phase));
+      bug.classList.toggle("show-scorers", demoForceScorers || !!match.showScorers);
     }
     requestAnimationFrame(frame);
   }
@@ -201,6 +211,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   }
   // Debug hook for screenshots and QA: /overlay/h/1?demo=goal:home:1200 fires a goal animation on first render and freezes it at 1200 ms.
   // /overlay/*/1?demo=show:600 replays the build-in from scratch and freezes it at 600 ms.
+  // /overlay/*/1?demo=hide:300 starts from visible, plays the build-out and freezes it at 300 ms.
   // /overlay/*/1?demo=scorers forces the scorers strap on (class show-scorers) for layout QA.
   const demo = new URLSearchParams(location.search).get("demo");
   if (demo) {
@@ -225,6 +236,12 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
         void bug.offsetWidth;
         bug.classList.add("building-in");
         visibleState = true;
+      } else if (kind === "hide") {
+        at = p1;
+        if (buildTimer) { clearTimeout(buildTimer); buildTimer = null; }
+        bug.classList.remove("hidden", "building-in");
+        bug.classList.add("building-out");
+        visibleState = false;
       } else if (kind === "scorers") {
         demoForceScorers = true;
         bug.classList.add("show-scorers");

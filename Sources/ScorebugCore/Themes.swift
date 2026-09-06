@@ -13,8 +13,6 @@ public struct ThemeConfig: Codable, Sendable, Equatable {
     public var name: String?
     public var clockStyle: ClockStyle
     public var geometry: [String: ThemeGeometry]
-    public var scorersEverySeconds: Int?
-    public var scorersForSeconds: Int?
     public var verified: Bool?
     public var family: String?
 }
