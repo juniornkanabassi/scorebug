@@ -1,51 +1,5 @@
-/* Everton ("Toffees"), code EVE -- rebuilt against clubframes/strip_eve.png (frames 050-090): GOAL
-   pops in FIRST (fully formed, solid white, ~600ms) and only then does Prince Rupert's Tower grow
-   upward from the baseline into the A slot (clubframes/eve_zoom.png: pointed roof, small window,
-   coursed brick lines), reaching full height by ~1.3s and holding. Own delayed-grow keyframe (scaleY
-   from a bottom transform-origin) instead of the shared pl-motif-hold's flat fade, to carry that.
-   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field --
-   overlay.js sets these live (commit b7e60ce). Position measured live off the actual rendered
-   .main::after GOAL text (Montserrat 800, font-size 0.94H, letter-spacing 0.06em, padding-right/left
-   0.76H): canvas Range measurement of a "GOAL" span at the same font gave G 0-0.780H, O 0.780-1.622H
-   (centre 1.201H, width 0.842H), A 1.622-2.417H (centre 2.020H, width 0.795H), L 2.417-3.047H -- see
-   ars-che/notes.md sibling analysis in $SCRATCH/clubframes/strip_eve.png for the frame-by-frame
-   source. Icon sits on .main::before (z-index 4, above the ::after GOAL text at z-index 3) so it can
-   fully occlude just its own letter's cell without a separate box trick.
-   */
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="everton"] .main::before,
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="everton"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2065%20105%22%3E%3Cpolygon%20points%3D%2232.5%2C4%2054%2C38%2011%2C38%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%2238%22%20width%3D%2233%22%20height%3D%2263%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2227%22%20y%3D%2252%22%20width%3D%2211%22%20height%3D%2214%22%20fill%3D%22%23003399%22%2F%3E%3Cg%20stroke%3D%22%23003399%22%20stroke-width%3D%222.4%22%3E%3Cline%20x1%3D%2216%22%20y1%3D%2248%22%20x2%3D%2249%22%20y2%3D%2248%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2258%22%20x2%3D%2249%22%20y2%3D%2258%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2270%22%20x2%3D%2249%22%20y2%3D%2270%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2282%22%20x2%3D%2249%22%20y2%3D%2282%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2292%22%20x2%3D%2249%22%20y2%3D%2292%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  width: calc(var(--h) * 0.65); height: calc(var(--h) * 1.05);
-  background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
-}
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="everton"] .main::before {
-  left: auto; right: calc(var(--h) * 1.462); transform-origin: bottom center;
-  animation-name: pl-motif-eve-home;
-}
-/* Away goal: GOAL lands at the far LEFT (pl-wipe-away, padding-left calc(var(--h)*0.76)) so the
-   letter-centre distances mirror off .main's LEFT edge instead of its right edge; icon itself is
-   NOT flipped (a ball/flower/tower reads the same either way -- only its anchor edge changes). */
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="everton"] .main::before {
-  right: auto; left: calc(var(--h) * 2.455); transform: translateY(-50%); transform-origin: bottom center;
-  animation-name: pl-motif-eve-away;
-}
-@keyframes pl-motif-eve-home {
-  0% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  8.5% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  12.8% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  20% { opacity: 1; transform: translateY(-50%) scaleY(0.35); }
-  28% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  72.3% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  80.9% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-  100% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-}
-@keyframes pl-motif-eve-away {
-  0% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  8.5% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  12.8% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  20% { opacity: 1; transform: translateY(-50%) scaleY(0.35); }
-  28% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  72.3% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  80.9% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-  100% { opacity: 0; transform: translateY(-50%) scaleY(1); }
+/* Everton ("Toffees"), code EVE -- Prince Rupert's Tower replaces the A */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="everton"] .main::after,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="everton"] .main::after {
+  --pl-goal-word: "GO" url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2032%22%20width%3D%2220%22%20height%3D%2232%22%3E%3Crect%20x%3D%222%22%20y%3D%2210%22%20width%3D%2216%22%20height%3D%2222%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%224%22%20width%3D%224%22%20height%3D%226%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%224%22%20width%3D%224%22%20height%3D%226%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%224%22%20width%3D%224%22%20height%3D%226%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2210%22%20width%3D%2220%22%20height%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%2218%22%20width%3D%224%22%20height%3D%228%22%20fill%3D%22%23003399%22%2F%3E%3C%2Fsvg%3E") "L";
 }

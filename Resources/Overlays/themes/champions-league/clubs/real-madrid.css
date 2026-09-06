@@ -12,9 +12,7 @@
    left to flip, so the away file reuses the identical drawing, per the brief's "keep it simple" option.
    Slug "real-madrid" matches seed-library.json's club name, lowercased and hyphenated -- see
    Research/UCL goal motifs.md.
-   QA pass (6 September 2026): the chant originally ran nearly edge to edge of the shared canvas (x 46-306
-   of 400) and was captured almost entirely hidden under "GOAL" at hold -- redrawn at a smaller font size
-   (24 instead of 34) and left-aligned (crown + text now span roughly x 14-198), clearing the GOAL word's
-   footprint the same way the icon motifs do. */
+   Set at a small font size and left-aligned (crown + text span roughly x 14-198 of the shared canvas),
+   clearing the GOAL word's own footprint at hold the same way the icon motifs do. */
 body[data-family="uefa"] .bug[data-home-club="real-madrid"] { --motif-home: url("real-madrid.svg"); }
 body[data-family="uefa"] .bug[data-away-club="real-madrid"] { --motif-away: url("real-madrid-away.svg"); }

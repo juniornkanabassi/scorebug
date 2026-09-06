@@ -1,0 +1,8 @@
+/* Slavia Prague -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). Slavia are Prague's own side, so this motif reaches for the city's
+   own bridge tower over the Vltava rather than a crest substitute (the club's real badge already carries a
+   red star), the same way Paris Saint-Germain's motif is the Eiffel Tower rather than a badge. Never the
+   club's actual crest. Slug "slavia-prague" matches seed-library.json's club name, lowercased and hyphenated
+   -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="slavia-prague"] { --motif-home: url("slavia-prague.svg"); }
+body[data-family="uefa"] .bug[data-away-club="slavia-prague"] { --motif-away: url("slavia-prague-away.svg"); }

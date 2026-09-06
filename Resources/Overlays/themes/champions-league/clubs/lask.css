@@ -1,0 +1,8 @@
+/* LASK -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). LASK play in Linz, Austria, on the Danube, so this motif reaches for
+   the city's own landmark bridge over the river rather than a crest substitute: an arched span with cable
+   lines and the river running beneath it, the same way Club Brugge's motif is a canal boat rather than a
+   badge. Never the club's actual crest. Slug "lask" matches seed-library.json's club name, lowercased --
+   see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="lask"] { --motif-home: url("lask.svg"); }
+body[data-family="uefa"] .bug[data-away-club="lask"] { --motif-away: url("lask-away.svg"); }

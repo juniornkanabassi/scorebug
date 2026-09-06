@@ -1,0 +1,8 @@
+/* Fenerbahce -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). "Kanarya", the Canary -- Fenerbahce's own long-standing nickname
+   for the yellow-and-navy strip -- drawn here as a small bird in flight with wings spread wide, standing in
+   for that shared identity the same way Arsenal's cannon stands in for the Gunners. Never the club's actual
+   crest. Slug "fenerbahce" matches seed-library.json's club name, lowercased and hyphenated with the
+   cedilla stripped (Fenerbahce -> fenerbahce) -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="fenerbahce"] { --motif-home: url("fenerbahce.svg"); }
+body[data-family="uefa"] .bug[data-away-club="fenerbahce"] { --motif-away: url("fenerbahce-away.svg"); }

@@ -1,319 +1,200 @@
-/* Round 5: per-club goal motifs, dissected frame by frame from the Premier League's own official portrait clip
-   "Premier League Goal ANIMATIONS" (~/Downloads/Scorebug/Premier League Goal ANIMATIONS 🎨.mp4) -- see
-   Research/PL goal motifs.md for the full 20-club breakdown (object, colours, timing) this drove. One file per
-   club under clubs/, @import'd here (must precede every other rule per the CSS spec, hence sitting above even
-   this theme's own top comment block's rules). Every file follows the same contract, defined once below right
-   after the imports: the motif rides the existing .main::before layer (unused elsewhere in this theme --
-   .main::after is already spoken for by the GOAL wordmark/sweep) as a small icon anchored just past the crest
-   cut, NOT as a literal replacement of one letter inside "GOAL" -- the shared overlay.html has no per-glyph
-   spans to hook (that DOM is not owned by this theme), so letter-swaps like Bournemouth's cherry-for-O or
-   Everton's tower-for-A are approximated as a same-side watermark instead of true glyph substitution.
-   These files were written expecting overlay.js to expose which club is scoring, since at the start of this
-   round it did not; while this round was in progress, that change landed anyway (commit b7e60ce, "Expose each
-   side's club as a data attribute for per-club goal motifs" -- not made by this round, but reviewed and built
-   against once seen). It sets `bug.dataset.homeClub`/`awayClub` to a SLUG of the club's "name" field (its own
-   `slug()` helper: NFKD-normalised, accents stripped, lowercased, non-alphanumeric runs collapsed to one dash --
-   "AFC Bournemouth" -> "afc-bournemouth"), not the 3-letter `code` this round had originally guessed and
-   described as the needed change. Every selector below is keyed on `[data-home-club]`/`[data-away-club]`
-   accordingly. Verified live (not just over CDP) by loading the running test instance's own Arsenal v Chelsea
-   match and reading `document.getElementById('bug').dataset` back: `{homeClub: "arsenal", awayClub: "chelsea"}`,
-   set automatically with no manual injection needed -- see findings.md Round 5, "Club motifs / activation gap"
-   for the full before/after. */
+/* Premier League world-feed bug. Per-club goal motifs live in clubs/*.css, imported below.
+   @import must precede every other rule (@font-face included) or the CSS spec drops it. */
 @import url("clubs/ars.css"); @import url("clubs/avl.css"); @import url("clubs/bha.css"); @import url("clubs/bou.css");
 @import url("clubs/bre.css"); @import url("clubs/bur.css"); @import url("clubs/che.css"); @import url("clubs/coventry-city.css");
 @import url("clubs/cry.css"); @import url("clubs/eve.css"); @import url("clubs/ful.css"); @import url("clubs/hull-city.css");
 @import url("clubs/ipswich-town.css"); @import url("clubs/lee.css"); @import url("clubs/liv.css"); @import url("clubs/mci.css");
 @import url("clubs/mun.css"); @import url("clubs/new.css"); @import url("clubs/nfo.css"); @import url("clubs/sun.css");
 @import url("clubs/tot.css"); @import url("clubs/whu.css"); @import url("clubs/wol.css");
-/* Shared motif contract every clubs/*.css file relies on: one small icon (--h*0.95 square), anchored just to the
-   goal-scoring side of the crest cut (46%/54% of the bar's own width, not a fixed h-multiple, so it tracks the
-   crest regardless of how wide the codes/scorer name make the bar), riding above the GOAL sweep (z-index 4 --
-   .main::after, the sweep+text, is 3) since the sweep's own background is opaque and would otherwise hide
-   anything painted *under* it on ::before. Two hold shapes: pl-motif-hold (fades in with the sweep, stays for
-   its full hold, fades out with it -- most clubs, whose clip showed the icon persist inside "GOAL") and
-   pl-motif-flash (a brief early reveal that dissolves well before the sweep's own hold ends -- Arsenal,
-   Brighton, Burnley and Sunderland, whose clip showed a bigger badge-style icon or pattern that appears then
-   fades rather than sitting inside the wordmark the whole time); each club file picks one via animation-name.
-   Round 8 retiming: the shared goal animation grew from 4s to 4.7s (see the round-8 note by the GOAL rules
-   below) to match the broadcast pack's own timeline (measurements.md §5) in real milliseconds rather than a
-   compressed proportion of it -- every percentage below is ms/4700, not ms/4000. The old flat "9%/86%" pair
-   is gone: reveal now lands at 12.8% (600ms, when the club crest/GOAL are fully popped in, not just first
-   visible) and the hold ends at 72.3% (3400ms), fading out through 80.9% (3800ms, when the reference reads
-   fully resolved) instead of holding flat to 100%. */
-body[data-theme="premier-league"] .main::before {
-  content: ""; position: absolute; top: 50%; width: calc(var(--h) * 0.72); height: calc(var(--h) * 0.72);
-  transform: translateY(-50%); background-repeat: no-repeat; background-position: center; background-size: contain;
-  z-index: 4; pointer-events: none; opacity: 0;
-}
-body[data-theme="premier-league"] .bug.goal-home .main::before { left: 46%; }
-body[data-theme="premier-league"] .bug.goal-away .main::before { left: 54%; transform: translateY(-50%) scaleX(-1); }
-/* Sizing/position history (round 5): the official clip's own per-club icon truly REPLACES the "O" in
-   "GOAL" -- it sits where a letter would, not in open space -- so chasing a fully clear gap between the
-   crest and the icon (tried 46/54, 44/56, then dead-centre 50/50, all at 0.95H) was solving the wrong
-   problem: on a real 3-letter-code bar the crest (96% of the bar's own height, roughly as wide as tall for
-   a round badge) and a 0.95H icon simply do not both fit with daylight between them. Landed on a smaller
-   0.72H icon back at a modest 46%/54% offset from centre instead: some visual closeness to the crest is
-   expected and matches the source's own tight "icon-in-the-wordmark" integration; verified across all 20
-   clubs' home renders (shots/r5/all-clubs-home-contact.png) and a MUN away spot-check
-   (shots/r5/clubs/mun-away-try*.png) that this reads as a legible icon beside the crest rather than a
-   collision. */
-body[data-theme="premier-league"] .bug.goal .main::before { animation: pl-motif-hold 4.7s cubic-bezier(.25,.8,.2,1) forwards; }
-@keyframes pl-motif-hold { 0% { opacity: 0; } 8.5% { opacity: 0; } 12.8% { opacity: 1; } 72.3% { opacity: 1; } 80.9% { opacity: 0; } 100% { opacity: 0; } }
-@keyframes pl-motif-flash { 0% { opacity: 0; } 8.5% { opacity: 0; } 12.8% { opacity: 1; } 37% { opacity: 1; } 57% { opacity: 0; } 100% { opacity: 0; } }
+@font-face { font-family: "Premier Sans"; src: url(/assets/fonts/user/PremierSans-Bold.woff2) format("woff2"); font-weight: 800; }
 
-/* Premier League Productions world feed, 2024-25 onward. Verified against Optus Sport frames in the After Effects tutorial,
-   Junior's reference (CRY 0 / 0 ARS), the Figma recreation and the Footy Headlines 2026-27 goal composite.
-   Club plate with the code and a chevron edge, white digits on a dark centre, the lion roundel between them, purple clock plate
-   hanging under the centre. Goal: the club colour sweeps the bar with the crest at the cut and GOAL on the right.
-   Round 8 (6 Sep, pixel-exact pass against the frame-by-frame broadcast/AE/Figma pack in
-   .../scratchpad/plref/measurements.md, threshold-scanned the same way that file describes): every ratio below is
-   now read off H=130px on that pack's own 1920-canvas crop, not the round-4 SCR-20260904-qprh.png still. Five
-   findings drove real changes:
-   1. On-canvas scale was wrong, not any ratio: --h (46px) times the OLD theme.json h.scale (1.5) rendered H=69px,
-      barely half the reference's ~130px. Every var(--h)*ratio below was already correct AS A RATIO (bar width
-      came out 8.12H against a target 8.46H even at the wrong absolute size) -- the fix belongs in theme.json's
-      geometry.h.scale (now ~2.83), not in rewriting every calc() here. Portrait's geometry.v.scale is a SEPARATE
-      knob tuned to its own 800px maxWidth budget, not a copy of h's scale (see theme.json's own comment).
-   2. Font: round 5's own comment (still below) says Research/Theme fonts.md recommended keeping Montserrat.
-      That file's own Premier League section (dated 5 Sep, filed as "recommendation... not applied here") reasons
-      from a single broadcast still with no cap-height target; this round has one (0.59H) from a lettering-panel
-      screenshot in the source pack (zoom_charpanel.png: weight "Heavy", tracking -21/1000 ~= -2%) plus 118 goal-
-      sequence frames -- fresh, more specific evidence for the same open question the fonts file itself flagged as
-      unresolved for this theme. Montserrat is a geometric-humanist face, not condensed, and the fonts pass never
-      actually pixel-checked a condensed alternative against it. Switched to Barlow Condensed 700 (already
-      bundled, no new font file needed -- fonts/Barlow-Condensed-700.woff2 was sitting unused by this theme) and
-      measured its own cap-height ratio directly (isolated render, "A"/"0" at 400px: 280px/288px, i.e. ~0.70/0.72
-      of font-size) to solve font-size = target-cap-height / that ratio for each role below, rather than guessing.
-      Tracking flipped from the old +0.02em/+0.04em (looser than book weight -- backwards vs. the panel's -21) to
-      -0.02em throughout.
-   3. Corner radius was one number (0.08H) shared by the bar, clock plate and GOAL plate, and -- worse -- the
-      home/away team-block border-radius shorthand rounded BOTH the outer top corner AND the outer bottom corner
-      (`calc(var(--h)*0.08) 0 0 calc(var(--h)*0.08)` rounds top-left and bottom-left both), where the reference's
-      own corner zoom crops (zoom_corner_tl/tr.png vs zoom_corner_bl.png) show top corners rounded (~0.12H) and
-      bottom corners perfectly square. Fixed to top-only radius on the team blocks and the GOAL plate (shared
-      --r-top custom property below), and split the clock plate onto its own smaller radius (--r-clock, ~0.055H --
-      measurements.md reads the clock plate's corner as visibly tighter than the bar's, not the same value).
-   4. Roundel was 1.17H against a measured 1.02H (the reference's roundel reads flush with the bar top/bottom
-      more than it visibly overlaps past them); chevron throw was 0.32H against a measured ~0.46H (a shallower
-      cut than the reference's -- at 0.46H the throw/height ratio also lands the chevron's own angle from
-      vertical at atan(0.46/1) ~= 25 deg, matching the separately-measured ~24.5-26 deg without a second knob).
-      Clock plate was 0.6H tall / 2.47H wide against a measured 0.78H tall / 2.76H wide -- closer to square than
-      the old proportions had it.
-   5. No drop shadow anywhere in the reference (measurements.md §4: sampled the pixel column under the FUL block,
-      a single antialiased edge then flat background, no falloff; the AE layer stack's only effect is a Basic-3D
-      rotation on the badge, not a shadow). Removed the .bug filter:drop-shadow, the roundel's box-shadow, and the
-      club-motif layer's filter:drop-shadow (all three were the theme's only shadows).
-   Also added: the away-side fixed red accent sliver (measurements.md notes it stays the same red regardless of
-   the away club's own colour -- Fulham's white/black block still shows a red sliver at the chevron seam) as
-   .score.away::after, sized/skewed to the same 0.46H throw as the team-block chevron so it reads as one
-   continuation rather than a second shape; see that rule's own comment for why it can't just be a second
-   clip-path layer on .team.away itself. Round 5's own figures below (score/sep transparency, digit overflow,
-   the goal-motif system) were re-checked against the new pack and held up -- not re-derived here. */
+/* Base unit --h is a fixed pixel value; every geometry ratio below is calc(var(--h) * n). The outer
+   .bug carries the orientation's own transform:scale (theme.json geometry.*.scale), which magnifies
+   this whole box uniformly, so H itself never has to vary here. Real Premier League Productions world
+   feed (Research/Real broadcast frames 2026-27.md) measures the bar at 36px on a 1920 canvas at a
+   camera-relative crop -- Junior's own broadcast size is H about 69px on the 1920 canvas, so
+   46 * 1.5 = 69 (theme.json geometry.h.scale). No drop shadow anywhere in the reference. */
 body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-green: #00FF85; --pl-pink: #E90052; --pl-dark: #0E0E1A;
+  --pl-centre-text: #fff;
   --kick-pending: #5b3a5e; --kick-scored: #00FF85; --kick-missed: #E90052; --r-top: calc(var(--h) * 0.12); --r-clock: calc(var(--h) * 0.055);
-  font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
-/* Correction round (6 Sep): Chelsea's own goal motif (clubs/che.css) enters at a steep rotate(38deg) --
-   a wide box rotated that far has a screen-space bounding height far taller than the bar itself (checked
-   live: the gold slash painted well above the bar into the transparent canvas at ms=300). clip-path on the
-   SAME rotated element can't fix this (it clips in the element's own pre-rotation local box, then that
-   already-clipped result rotates too -- confirmed by testing), so the clip has to live on the never-rotated
-   .main instead. Sized to still allow the two things that legitimately paint past .main's own edge: the
-   score digits (0.115H over the top, none of the other three sides) and the roundel (1.02H disc vs 1.00H
-   bar, ~0.01H over top/bottom). Everything else a per-club motif file does (Arsenal's cannon already
-   self-clips to its own box, per its own comment) stays comfortably inside this. */
-body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 0.72);
-  /* bottom allowance covers the clock plate (0.78H, top:100%) and the portrait +N chip beside it, which the
-     first cut of this clip hid to a hairline (final rehearsal, 6 Sep). */
-  clip-path: inset(calc(var(--h) * -0.13) calc(var(--h) * -0.02) calc(var(--h) * -0.95) calc(var(--h) * -0.02)); }
+  font-family: "Premier Sans", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
+body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 1.95);
+  /* Bottom allowance covers the clock plate (0.78H), the stoppage strip stacked under it (1.1H) and the portrait +N strip's own gap. */
+  clip-path: inset(calc(var(--h) * -0.65) calc(var(--h) * -0.02) calc(var(--h) * -2.15) calc(var(--h) * -0.02)); }
 body[data-theme="premier-league"] .comp, body[data-theme="premier-league"] .team .name, body[data-theme="premier-league"] .team .crest { display: none; }
-/* Correction round (6 Sep): lead review rejected round 8's Barlow Condensed pick -- the reference
-   (plref/ref_steady.png) is wide/heavy, not condensed (digit width 0.81H at cap height 1.07H). Switched
-   back to the bundled Montserrat, weight 800 (the variable file, Montserrat-var.woff2, already covers
-   100-899 -- see overlay.css). Measured Montserrat 800's own isolated glyph ratios live (canvas
-   measureText against the actual loaded font file): cap letters ("A"/"M") land at exactly 0.700 of
-   font-size, so 0.59H target / 0.700 = 0.843H font-size -- 0.84H (unchanged from round 8's own number,
-   which happened to solve for the same 0.70 ratio) already hits it within 0.4%. */
 body[data-theme="premier-league"] .team { padding: 0 calc(var(--h) * 0.3); font-size: calc(var(--h) * 0.84); }
-/* Same weight as the body face (800) now that Montserrat, not Barlow Condensed, is the family; tracking
-   stays -0.02em (matches the -21/1000 tutorial panel reading, ~-2%). */
 body[data-theme="premier-league"] .team .code { font-weight: 800; letter-spacing: -0.02em; }
-/* Chevron cut, round 8 rework: measurements.md actually reads a SINGLE straight diagonal edge per block (home
-   code block's own right edge measured 299px wide at the top, 357px at the bottom -- one continuous slant, not
-   a point-and-return notch), not the V-shaped arrowhead the clip-path below used through round 7 (a 5-point
-   polygon that cuts inward to a point at 50% height then opens back to full width at both top AND bottom -- so
-   sampling its width anywhere near the top/bottom edges was reading the UNCLIPPED full box, and only a scan
-   through the exact vertical centre saw the true (much narrower) cut, which is how this shape's width kept
-   under-measuring against the 2.3-2.75H target despite the throw itself being right). Replaced with a plain
-   4-point trapezoid: home cuts its own top-right corner in by the 0.46H throw and keeps the bottom-right
-   corner square (matching top < bottom); away mirrors it, cutting the bottom-left corner in and keeping the
-   top-left square (matching top > bottom) -- both diagonals now lean the same direction across the whole bar,
-   which is the actual "chevron" rhythm the reference reads as, not two mirrored arrowheads. */
-/* Correction round (6 Sep): outer 0.3H / inner 0.55H padding, down from round 8's 0.35H/0.95H -- that
-   padding was sized to compensate for Barlow Condensed's narrow advance width ("ARS" only filled ~1.12H
-   at the same cap height); Montserrat's own glyphs are wider (measured "ARS"/"CHE" ink ~1.77-1.80H at
-   0.84H font-size), so the old padding pushed the block width to ~3.08H, past the reference's 2.3-2.75H
-   range. 0.55H on the cut side still clears the 0.46H chevron throw with margin (checked live, no glyph
-   collision with the diagonal). */
+/* Chevron: one straight diagonal edge per plate, not a V-notch -- home cuts its own top-right corner,
+   away cuts its own bottom-left, both leaning the same way across the bar. */
 body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: var(--r-top) 0 0 0; padding-right: calc(var(--h) * 0.55);
   clip-path: polygon(0 0, calc(100% - var(--h) * 0.46) 0, 100% 100%, 0 100%); margin-right: calc(var(--h) * -0.08); }
 body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 var(--r-top) 0 0; padding-left: calc(var(--h) * 0.55);
   clip-path: polygon(0 0, 100% 0, 100% 100%, calc(var(--h) * 0.46) 100%); margin-left: calc(var(--h) * -0.08); }
-/* Fixed red accent sliver, away side only (measurements.md: this stays red regardless of the away club's own
-   colour). Can't live as a second clip-path layer ON .team.away itself -- clip-path clips an element AND every
-   descendant/pseudo-element it paints as one unit, so a ::before inside the already-notched .team.away would be
-   clipped to the exact same notch and never show in the gap the notch itself creates. Instead this is
-   .score.away's own ::after (unclipped, .score keeps overflow:visible from round 4 below), a right triangle
-   matching the EXACT area .team.away's own trapezoid clip now excludes (top-left corner, bottom-right corner,
-   bottom-left corner, at the same 0.46H throw), positioned so its left edge lands under .team.away's actual
-   rendered left edge (grid boundary minus the 0.08H negative margin .team.away itself carries, one rule up) --
-   then painted first in source order, so .team.away's own opaque fill sits on top and hides it everywhere
-   except that excluded triangle, where the red shows through. */
+/* Centre band (both score cells, the roundel column) is one continuous fill in the HOME club's own
+   secondary colour, per the official clip and the real world-feed frame (Burnley's sky-blue centre,
+   Research/Real broadcast frames 2026-27.md section 1(a)) -- never black. Digits default to white;
+   a club whose secondary is too light for that (Fulham, Leeds, Tottenham, Newcastle) overrides
+   --pl-centre-text to its own primary colour in clubs/*.css. Each team block's own chevron cut leaves
+   a triangular notch its own clip-path can't fill from inside; .score.home::before and .score.away::after
+   fill that notch with the same centre colour, which is what reads as the clip's light chevron sliver
+   right at the seam. */
 body[data-theme="premier-league"] .score.away { position: relative; }
 body[data-theme="premier-league"] .score.away::after {
   content: ""; position: absolute; top: 0; left: 100%; width: calc(var(--h) * 0.46); height: 100%;
-  transform: translateX(calc(var(--h) * -0.08)); background: #c90a30; clip-path: polygon(0 0, 100% 100%, 0 100%); pointer-events: none;
+  transform: translateX(calc(var(--h) * -0.08)); background: var(--home-secondary); clip-path: polygon(0 0, 100% 100%, 0 100%); pointer-events: none;
 }
-/* Score digits: 1.07H cap height (allowed to overrun the bar top/bottom -- see overflow:visible below), solved
-   the same way as the code (1.07/0.72 Barlow-Condensed digit ratio = 1.49H font-size). A small upward nudge
-   (translateY, round 8) reproduces the reference's own asymmetry: measurements.md's digit bbox sits 15px above
-   the bar top but only 5px short of the bar bottom at H=130 -- centred glyph-to-box vertical middle is offset
-   ~0.077H above the box's own middle, not flush-centred, likely just how this style of condensed figure sits in
-   its own em-box. Round 5: the After Effects recreation (Junior's reference of authority for look/motion, 5 Sep
-   23:05) contradicts round 4's own broadcast-still reading here -- see the round-5 note further down after the
-   GOAL rules for the full pixel evidence -- so the score cells and the centre strip are transparent, not
-   filled with the team's primary colour: the code block's chevron cut reveals background behind it, and
-   the digits float directly on that same background, on both sides, matching the video rather than the
-   still. */
-/* Round 8: min-width bumped 0.92H -> 1.15H, and .sep's own grid-cell width bumped 1.02H -> 1.47H below (roundel
-   graphic itself stays 1.02H, just gains gutter around it) -- with the code blocks already hitting their own
-   2.3-2.75H/2.05-2.52H targets, the whole bar was still only 7.52H against 8.46H: comparing digit-width
-   (0.81H) + roundel-diameter (1.02H) alone to the reference's own total leaves ~1H of gap/breathing room
-   between elements unaccounted for that these two boxes' own min-width/width were swallowing instead of
-   reserving. */
-body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.15); height: var(--h); color: #fff; font-size: calc(var(--h) * 1.47); font-weight: 800; font-variant-numeric: tabular-nums; overflow: visible; background: #000; }
+body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.15); height: var(--h); color: var(--pl-centre-text); font-size: calc(var(--h) * 1.47); font-weight: 800; font-variant-numeric: tabular-nums; overflow: visible; background: var(--home-secondary); }
 body[data-theme="premier-league"] .score.home { padding-left: calc(var(--h) * 0.02); position: relative; }
 body[data-theme="premier-league"] .score.away { padding-right: calc(var(--h) * 0.02); }
-/* Correction round (6 Sep): centre band was transparent, leaving the broadcast background showing through
-   between the two chevron tips (reference: opaque black there, part of one continuous bar shape -- see
-   plref/measurements.md, pixel medians (0,0,0) in that gap vs (38,0,0) beside the bar). .score/.sep already
-   tile edge-to-edge across the hs/sep/as grid columns (no `gap` on .main in overlay.css), so painting them
-   black (was transparent) makes that whole middle strip one continuous fill. The two team blocks' own
-   diagonal chevron cut removes a triangle from EACH block's own box that isn't covered by that middle strip
-   (mostly sits inside team.home/team.away's own box, clip-path clips pseudo-elements too so a filler can't
-   live inside the clipped element itself -- same reasoning as .score.away::after below, which already does
-   this for the fixed red accent on the away side). Home has no such accent in the reference, so its own
-   notch is just black, filled here the same way, mirrored. */
 body[data-theme="premier-league"] .score.home::before {
   content: ""; position: absolute; top: 0; right: 100%; width: calc(var(--h) * 0.46); height: 100%;
-  transform: translateX(calc(var(--h) * 0.08)); background: #000; clip-path: polygon(0 0, 100% 0, 100% 100%); pointer-events: none;
+  transform: translateX(calc(var(--h) * 0.08)); background: var(--home-secondary); clip-path: polygon(0 0, 100% 0, 100% 100%); pointer-events: none;
 }
 body[data-theme="premier-league"] .score .digit { display: inline-block; transform: translateY(calc(var(--h) * -0.05)); }
-/* the lion roundel: white disc overlapping the bar, purple mark inside (official mark used when imported).
-   Round 8: diameter 1.02H (was 1.17H -- see the round-8 note above). Round 5: .sep's background dropped to
-   transparent (was a hard-split home/away gradient) -- see the round-5 note below; the disc itself (.sep span)
-   still paints its own white circle regardless. */
-body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.47); background: #000; position: relative; z-index: 2; overflow: visible; }
-body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.02); height: calc(var(--h) * 1.02); transform: translate(-50%, -50%);
-  border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none); }
+/* Roundel: the crown-and-lion mark on a white disc, about 1.6H tall so it overlaps the bar top and
+   bottom (measured against ref/pl/steady_1.0.png); official mark shows when the user has imported one. */
+body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.6); background: var(--home-secondary); position: relative; z-index: 2; overflow: visible; }
+body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.55); height: calc(var(--h) * 1.55); transform: translate(-50%, -50%);
+  border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none); transition: opacity 200ms ease; }
 body[data-theme="premier-league"] .bug:not(.has-comp-logo) .sep span::after { content: ""; position: absolute; inset: 18%; background: var(--pl-purple);
   clip-path: polygon(50% 0, 62% 22%, 84% 10%, 78% 36%, 100% 46%, 84% 60%, 88% 100%, 62% 86%, 50% 100%, 38% 86%, 12% 100%, 16% 60%, 0 46%, 22% 36%, 16% 10%, 38% 22%); }
-/* Clock plate: 0.78H tall, 2.76H wide (padding 0.14H each side over a 2.48H content min-width), flush under the
-   bar, on its own smaller --r-clock radius (round 8 -- see the round-8 note above; was 0.6H/2.47H/--r-top-shared).
-   Digit font-size: the isolated-render 0.72 digit ratio (see the round-8 note above) under-predicted here --
-   `font-variant-numeric: tabular-nums` picks a taller tabular figure than the proportional "0" that test
-   measured, so 0.97H actually rendered at ~0.785H cap height in situ (checked live, not just predicted).
-   Recalibrated empirically against the live render instead: 0.87H hits the 0.70H target cap height. */
+
+/* Clock plate, flush under the bar. The clock keeps counting through stoppage time (clockStyle
+   "runOn") and never changes colour -- no red anywhere, per the real world-feed frame (Burnley's
+   clock plate stays the same plum throughout 90:00-103:38, Research/Real broadcast frames
+   2026-27.md section 1(b)); the stoppage announcement is the separate gradient row below instead. */
 body[data-theme="premier-league"] .clock { grid-area: sep; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; z-index: 1;
   height: calc(var(--h) * 0.78); padding: 0 calc(var(--h) * 0.14); min-width: calc(var(--h) * 2.48); background: var(--pl-purple); border-radius: var(--r-clock); font-size: calc(var(--h) * 0.98); font-weight: 800; font-variant-numeric: tabular-nums; }
 body[data-theme="premier-league"] .clock.stopped { color: var(--pl-green); }
-body[data-theme="premier-league"] .added { height: var(--h); margin-left: 8px; padding: 0 14px; background: var(--pl-purple); border-radius: 8px; gap: 8px; font-size: calc(var(--h) * 0.54); }
-body[data-theme="premier-league"] .added .counter { color: var(--pl-green); font-size: calc(var(--h) * 0.38); }
-body[data-theme="premier-league"] .added .counter:empty { display: none; }
-/* Round 5, portrait follow-up (b): in portrait .added used to sit in .main's own grid row (grid-area
-   "added", last column) -- a real column that only exists once a match has added time, so the row's own
-   total width (and therefore the whole centred .bug's width, since translateX(-50%) centres on .bug's own
-   box) grew whenever added time appeared, visibly shifting the bar itself left of centre. Grid track
-   sizing only counts IN-FLOW items; taking .added out of flow with position:absolute (same trick .clock
-   already uses one line up) makes its column collapse to 0 width whether or not has-added is set, so the
-   bar's own footprint -- and therefore its painted centre -- never changes. Moved here into the clock-plate
-   row instead: same purple, same height as .clock, sitting immediately to its right. The offset uses the
-   clock plate's own measured width (round 8: 2.48H min-width content-box + 0.14H padding each side = 2.76H
-   total, matching the clock's own round-8 measured 2.76H -- was 2.47H) so the two plates read as one row
-   without a wrapper element (out of scope: overlay.html/overlay.js are not owned by this theme). Verified
-   with measure3.py: painted bar-only footprint (team.home through team.away, .added excluded) centres at
-   x=540 both with ?demo=show and with a live addedMinutes value set via /api/match -- see findings.md
-   Round 5 "Portrait +N chip" table; re-verified this round after the clock plate's own width changed. */
-body[data-orientation="v"][data-theme="premier-league"] .added {
-  /* grid-area: sep, like .clock: an absolutely positioned grid child takes its own grid area as containing
-     block, so with grid-area "added" (the collapsed last column) left:50% was the bar's RIGHT edge and the
-     chip floated 280px off the bug (match-day rehearsal, 6 Sep). Same area as the clock = bar centre. */
-  grid-area: sep; position: absolute; top: 100%; left: 50%; z-index: 1;
-  height: calc(var(--h) * 0.78); margin-left: 0;
-  /* left edge = clock plate right edge + 0.12H gap (no -50%: that put the chip centre there and overlapped the clock). */
-  transform: translateX(calc((var(--h) * 2.76) / 2 + var(--h) * 0.12));
+/* Extra time: a small "ET" tag on the clock plate while it is actually running (HT/FT/AET already
+   show as the clock's own stopped-state label, so this only fires for the two live extra periods). */
+body[data-theme="premier-league"] .bug.extra-time .clock.running::after {
+  content: "ET"; position: absolute; top: calc(var(--h) * -0.36); right: calc(var(--h) * 0.1);
+  font-size: calc(var(--h) * 0.34); font-weight: 800; color: var(--pl-green); letter-spacing: 0.04em;
 }
-/* GOAL: club colour sweeps from the plate across the whole bar; crest sits at the cut; GOAL to the right.
-   Round 8: font-size 0.95H (was 0.89H) -- not directly pixel-measured (measurements.md §3: occluded by the fire
-   texture in every clean frame), kept at the same ~0.636x-of-the-score-digit ratio round 3/4 established, just
-   carried forward onto the new 1.49H score size. Corner radius switched from the old shared 0.08H to --r-top
-   (top-only, matching the bar itself -- see the round-8 note above), and the plate's own border-radius shorthand
-   plus every pl-wipe/pl-wipe-away clip-path `round` value updated to match (top-left/top-right rounded, bottom
-   square, via --r-top twice + "0 0"). */
-body[data-theme="premier-league"] .main::after { content: "GOAL"; z-index: 3; display: flex; align-items: center; justify-content: flex-end; padding-right: calc(var(--h) * 0.76); box-sizing: border-box;
-  background: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); border-radius: var(--r-top) var(--r-top) 0 0; font-size: calc(var(--h) * 0.94); font-weight: 800; letter-spacing: 0.06em;
-  background-image: var(--goal-crest, none); background-repeat: no-repeat; background-size: auto 96%; background-position: 38% center; clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); }
-body[data-theme="premier-league"] .bug.goal .main::after { opacity: 1; animation: pl-wipe 4.7s cubic-bezier(.25,.8,.2,1) forwards; }
-body[data-theme="premier-league"] .sep span { transition: opacity 200ms ease; }
-/* Round 8: roundel fade delayed from 150ms to 400ms so it stays visible (glowing, per measurements.md §5)
-   through the initial blue flash and only gives way once the club crest has actually popped in (400-600ms),
-   not while the bar is still mid-wipe. */
+/* Stoppage strip: a third row directly under the clock plate, same width, a fixed orange-red to
+   magenta to purple gradient (never club-coloured, never red-only -- the real feed's own "+7'" chip,
+   Research/Real broadcast frames 2026-27.md section 1(b)). Docked the same way the clock itself is
+   docked (out of grid flow, centred under .main), so both plates read as one column in either
+   orientation, portrait included. */
+body[data-theme="premier-league"] .added {
+  grid-area: sep; position: absolute; top: calc(100% + var(--h) * 0.84); left: 50%; transform: translateX(-50%); z-index: 1;
+  height: calc(var(--h) * 1.1); min-width: calc(var(--h) * 2.48); padding: 0 calc(var(--h) * 0.14); margin-left: 0; gap: 0;
+  background: linear-gradient(90deg, #FD5018, #E00C9F, #8B3CE0); border-radius: var(--r-clock);
+  font-size: calc(var(--h) * 0.6); font-weight: 800; color: #fff;
+}
+body[data-theme="premier-league"] .added .plus::after { content: "'"; }
+body[data-theme="premier-league"] .added .counter { display: none; }
+
+/* GOAL: two stacked layers on .main, both driven by opacity/clip-path only (shared rule: no other
+   property in a keyframe). The scoring club's own code plate stays exactly where it is throughout --
+   only the centre and the far plate change (Research/Real broadcast frames 2026-27.md section 1(c)) --
+   so both layers are placed on a grid-column span that excludes the scoring side's own plate column
+   instead of covering the whole .main. .main::before is a flat wipe that reads blue while
+   goal.main::after is still transparent, matching the AE reference's own "flash blue, then club
+   colour arrives" sequence; .main::after carries the actual word (content: var(--pl-goal-word),
+   per-club overrides in clubs/*.css) plus the crest at the cut, opaque once revealed so it fully
+   occludes the blue underneath -- no background-color keyframe needed on either layer. The far end
+   (where the conceding side's plate used to read) tapers to a point instead of the plate's own
+   corner: "the far plate is replaced by a chevron tail", baked into the clip-path polygons below
+   rather than an extra property, so the keyframes still touch only clip-path. Columns per
+   .main's own grid-template-areas ("home hs sep as away added"): home=1, hs=2, sep=3, as=4, away=5,
+   added=6 (added is always 0-width here, .added being pulled out to grid-area sep). Home goal spans
+   2/6 (hs, sep, as, away -- excludes home); away goal mirrors at 1/5 (home, hs, sep, as -- excludes away). */
+body[data-theme="premier-league"] .main::before {
+  content: ""; position: absolute; inset: 0; z-index: 3; background: #4b9bff; border-radius: 0; grid-column: 2 / 6;
+}
+body[data-theme="premier-league"] .main::after { content: var(--pl-goal-word, "GOAL"); z-index: 4; display: flex; align-items: center; justify-content: flex-start; padding-left: calc(var(--h) * 1.5); box-sizing: border-box; grid-column: 2 / 6; white-space: nowrap;
+  background: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); border-radius: 0; font-size: calc(var(--h) * 0.94); font-weight: 800; letter-spacing: 0.06em;
+  background-image: var(--goal-crest, none); background-repeat: no-repeat; background-size: auto 90%; background-position: calc(var(--h) * 0.3) center; }
+body[data-theme="premier-league"] .bug.goal .main::before,
+body[data-theme="premier-league"] .bug.goal .main::after { opacity: 1; animation-duration: 4.7s; animation-timing-function: cubic-bezier(.16,.9,.2,1); animation-fill-mode: forwards; }
+body[data-theme="premier-league"] .bug.goal .main::before { animation-name: pl-wipe-clip; }
+body[data-theme="premier-league"] .bug.goal .main::after { animation-name: pl-wipe-clip, pl-fill-opacity; }
 body[data-theme="premier-league"] .bug.goal .sep span { opacity: 0; transition-delay: 400ms; }
-/* Round 8 retiming (4s -> 4.7s, ms/4700 throughout -- see the round-8 note by the imports above): the AE
-   recreation (measurements.md §5) is a two-colour sequence, not the old single-colour sweep -- an immediate
-   flash to a fixed blue (#4b9bff) that holds while the roundel glows, THEN the club colour arrives under the
-   crest/GOAL pop-in, holds, then flashes back to the same blue before the reveal resolves. clip-path stays a
-   single wipe-in-then-out (the bar's own shape never changes, only what's painted on it), background-color now
-   carries the blue/club-colour/blue sequence as extra keyframe stops on the same rule. */
-@keyframes pl-wipe {
-  0%    { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
-  3.4%  { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
-  8.5%  { background-color: #4b9bff; color: transparent; background-image: none; }
-  12.8% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
-  72.3% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
-  74%   { background-color: #4b9bff; color: transparent; background-image: none; }
-  78.3% { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
-  80.9% { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
-  100%  { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
+/* The far plate's own background would otherwise peek through the tail's tapered corners (the wedge
+   narrows to a point, so it never covers the plate's full rectangle right at the true edge); crossfade
+   the far plate out exactly as the wedge opens and back in exactly as it closes, on the same timeline,
+   so nothing ever peeks and nothing ever flashes to blank. */
+body[data-theme="premier-league"] .bug.goal-home .team.away, body[data-theme="premier-league"] .bug.goal-home .score.away,
+body[data-theme="premier-league"] .bug.goal-away .team.home, body[data-theme="premier-league"] .bug.goal-away .score.home {
+  animation: pl-hide-far 4.7s cubic-bezier(.16,.9,.2,1) forwards;
 }
-body[data-theme="premier-league"] .bug.goal .main::after { animation-timing-function: cubic-bezier(.16,.9,.2,1); }
-/* Away goal: the footyheadlines composite and the MUN/FUL broadcast reference both show the scoring
-   club's OWN plate staying put on its own side while the rest of the bar is consumed -- so for an
-   away goal the sweep has to originate at the away plate (right) and travel left, with "GOAL"
-   landing at the far LEFT edge instead of the right. Mirrors pl-wipe/its text alignment; overlay.js
-   already adds "goal-away" alongside "goal", so no shared-file change was needed for this. */
-body[data-theme="premier-league"] .bug.goal-away .main::after { justify-content: flex-start; padding-left: calc(var(--h) * 0.76); padding-right: 0; background-position: 62% center; }
-body[data-theme="premier-league"] .bug.goal-away .main::after { animation-name: pl-wipe-away; }
-@keyframes pl-wipe-away {
-  0%    { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
-  3.4%  { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
-  8.5%  { background-color: #4b9bff; color: transparent; background-image: none; }
-  12.8% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
-  72.3% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
-  74%   { background-color: #4b9bff; color: transparent; background-image: none; }
-  78.3% { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
-  80.9% { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
-  100%  { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
+@keyframes pl-hide-far {
+  0%    { opacity: 1; }
+  3.4%  { opacity: 0; }
+  78.3% { opacity: 0; }
+  80.9% { opacity: 1; }
+  100%  { opacity: 1; }
 }
-body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; padding: 6px 14px; background: var(--pl-purple); border-radius: 8px; font-size: calc(var(--h) * 0.48); }
-body[data-theme="premier-league"] .scorers { margin-top: 6px; gap: 20px; padding: 6px 14px; background: rgba(55,0,60,0.94); border-radius: 8px; font-size: calc(var(--h) * 0.38); font-weight: 600; }
+/* Tail zone is the last 18% of the box width (home goal) -- a flat rectangle up to that point, then
+   a chevron point at the true far edge. Entrance collapses to a sliver at the cut (x:0, near side);
+   exit collapses to a sliver at the tail point (x:100%, far side), same wipe direction F built. */
+@keyframes pl-wipe-clip {
+  0%    { clip-path: polygon(0 0, 0 0, 0 50%, 0 100%, 0 100%); }
+  3.4%  { clip-path: polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%); }
+  78.3% { clip-path: polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%); }
+  80.9% { clip-path: polygon(100% 0, 100% 0, 100% 50%, 100% 100%, 100% 100%); }
+  100%  { clip-path: polygon(100% 0, 100% 0, 100% 50%, 100% 100%, 100% 100%); }
+}
+@keyframes pl-fill-opacity {
+  0%    { opacity: 0; }
+  8.5%  { opacity: 0; }
+  12.8% { opacity: 1; }
+  72.3% { opacity: 1; }
+  74%   { opacity: 0; }
+  100%  { opacity: 0; }
+}
+/* Flash clubs (Arsenal, Brighton, Burnley, Sunderland): the clip shows a bigger badge that dissolves
+   away to plain GOAL, rather than an icon that holds inside the word -- clubs/*.css swaps in a badge
+   on .main::before (pl-motif-flash, held longer) and delays .main::after's own reveal to match
+   (pl-fill-opacity-flash), so the badge is what's on screen until it dissolves, not the word. */
+@keyframes pl-motif-flash {
+  0% { opacity: 0; } 8.5% { opacity: 0; } 12.8% { opacity: 1; } 27% { opacity: 1; } 38% { opacity: 0; } 100% { opacity: 0; }
+}
+@keyframes pl-fill-opacity-flash {
+  0%    { opacity: 0; }
+  38%   { opacity: 0; }
+  50%   { opacity: 1; }
+  72.3% { opacity: 1; }
+  74%   { opacity: 0; }
+  100%  { opacity: 0; }
+}
+/* Away goal: the scoring club's own plate stays put on the right, the sweep originates from the away
+   cut and travels left, the crest sits just inside that cut and "GOAL" reads to its left; the tail
+   point lands at the far (home-side) edge instead. Mirrors home goal onto grid-column 1/5 (home, hs,
+   sep, as -- excludes away). */
+body[data-theme="premier-league"] .bug.goal-away .main::before,
+body[data-theme="premier-league"] .bug.goal-away .main::after { grid-column: 1 / 5; }
+body[data-theme="premier-league"] .bug.goal-away .main::after { justify-content: flex-end; padding-left: 0; padding-right: calc(var(--h) * 1.5); background-position: right calc(var(--h) * 0.3) center; }
+body[data-theme="premier-league"] .bug.goal-away .main::before,
+body[data-theme="premier-league"] .bug.goal-away .main::after { animation-name: pl-wipe-clip-away; }
+body[data-theme="premier-league"] .bug.goal-away .main::after { animation-name: pl-wipe-clip-away, pl-fill-opacity; }
+/* Tail zone is the first 18% of the box width (the far/home-side edge); entrance collapses to a
+   sliver at the away cut (x:100%, near side), exit collapses to the tail point (x:0%, far side). */
+@keyframes pl-wipe-clip-away {
+  0%    { clip-path: polygon(100% 0, 100% 0, 100% 50%, 100% 100%, 100% 100%); }
+  3.4%  { clip-path: polygon(0 50%, 18% 0, 100% 0, 100% 100%, 18% 100%); }
+  78.3% { clip-path: polygon(0 50%, 18% 0, 100% 0, 100% 100%, 18% 100%); }
+  80.9% { clip-path: polygon(0 0, 0 0, 0 50%, 0 100%, 0 100%); }
+  100%  { clip-path: polygon(0 0, 0 0, 0 50%, 0 100%, 0 100%); }
+}
+
+/* Aggregate is a knockout-tie feature; the league never uses it. */
+body[data-theme="premier-league"] .agg { display: none !important; }
+
+body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; padding: 6px 14px; background: var(--pl-purple); border-radius: var(--r-clock); font-size: calc(var(--h) * 0.48); }
+/* Scorer strap: purple, same family/radius as the clock plate underneath it; clip-path reveal keeps
+   it to transform/opacity/clip-path only, never a layout property, so it never leaves a stray frame. */
+body[data-theme="premier-league"] .scorers { display: flex; margin-top: 6px; gap: 20px; padding: 6px 14px; background: var(--pl-purple); border-radius: var(--r-clock); font-size: calc(var(--h) * 0.38); font-weight: 600;
+  clip-path: inset(0 0 100% 0); opacity: 0; transition: clip-path 320ms cubic-bezier(.25,.8,.2,1), opacity 260ms ease; }
+body[data-theme="premier-league"] .bug.show-scorers .scorers { clip-path: inset(0 0 0 0); opacity: 1; }
 body[data-theme="premier-league"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }
-/* Portrait only: at the 1.95x portrait scale, 6px of vertical padding and 6px of top margin read as under 12px and under 8px
-   once the whole bug is scaled up. Bump both here so the rows below the main block sit off the plate and keep clear of the
-   text's own edges; landscape (the rule above) is untouched. */
+/* Portrait's ~1.95x scale otherwise reads under-padded next to the plate above it. */
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { margin-top: 4.1px; padding-top: 6.5px; padding-bottom: 6.5px; }
 
-/* BUILD, ~0.7s: the purple clock plate drops from under the bar first, then the two plates wipe outward from the roundel. */
+/* BUILD: clock plate drops in first, then the two plates wipe outward from the roundel. */
 body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home { transform-origin: right center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-in .team.away, body[data-theme="premier-league"] .bug.building-in .score.away { transform-origin: left center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-in .clock { animation: pl-build-clock 0.7s cubic-bezier(.34,1.56,.64,1) both; will-change: transform, opacity; }
@@ -321,10 +202,16 @@ body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="
 body[data-theme="premier-league"] .bug.building-in .team.away, body[data-theme="premier-league"] .bug.building-in .score.away {
   animation: pl-build-wipe 0.42s cubic-bezier(.16,.9,.2,1.1) both; animation-delay: 0.28s; }
 body[data-theme="premier-league"] .bug.building-in .sep span { animation: pl-build-pop 0.35s cubic-bezier(.34,1.56,.64,1) both; animation-delay: 0.32s; will-change: transform, opacity; }
+/* .sep and .added paint a solid black/purple fill that isn't covered by any wipe or pop above --
+   without their own fade they are the pieces left on screen after a take-off. */
+body[data-theme="premier-league"] .bug.building-in .sep, body[data-theme="premier-league"] .bug.building-in .added { animation: pl-build-fade 0.3s ease both; animation-delay: 0.3s; will-change: opacity; }
+@keyframes pl-build-fade { from { opacity: 0; } to { opacity: 1; } }
+/* A strap showing when take-off starts must not survive it, even though show-scorers is otherwise independent of building-out. */
+body[data-theme="premier-league"] .bug.building-out .scorers, body[data-theme="premier-league"] .bug.building-out .shootout { opacity: 0 !important; transition: opacity 200ms ease; }
 @keyframes pl-build-clock { from { transform: translateX(-50%) translateY(-100%); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
 @keyframes pl-build-wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes pl-build-pop { from { transform: translate(-50%,-50%) scale(0); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
-/* Take-off: the same sequence in reverse, plates first, clock last. */
+/* Take-off: the bar wipes into the roundel first, then the clock plate rises away. */
 body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home { transform-origin: right center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme="premier-league"] .bug.building-out .score.away { transform-origin: left center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home,
@@ -332,3 +219,4 @@ body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme=
   animation: pl-build-wipe 0.36s cubic-bezier(.4,0,.2,1) reverse both; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-out .sep span { animation: pl-build-pop 0.3s cubic-bezier(.4,0,.2,1) reverse both; will-change: transform, opacity; }
 body[data-theme="premier-league"] .bug.building-out .clock { animation: pl-build-clock 0.4s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.24s; will-change: transform, opacity; }
+body[data-theme="premier-league"] .bug.building-out .sep, body[data-theme="premier-league"] .bug.building-out .added { animation: pl-build-fade 0.3s ease reverse both; will-change: opacity; }

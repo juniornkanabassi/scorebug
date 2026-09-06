@@ -1,42 +1,36 @@
-/* Champions League club goal motifs -- shared plumbing (brief 7, 5 September 2026).
+/* Champions League club goal motifs -- shared plumbing.
    Every per-club file in this folder sets exactly one custom property pair (--motif-home / --motif-away,
    each a background-image pointing at that club's own SVG) and nothing else; this file owns the one shared
    canvas both draw into, so no two club files fight over layout.
 
-   Canvas: .comp::after, not .score.away or .main's own pseudo-elements. Three things ruled those out during
-   build/QA (agent-ucl/capture.py, headless CDP screenshots):
-     - .main::before/::after are already the base bar's GOAL word and stripe-wipe layers (theme.css, kept as
-       committed, not part of this club section) -- already spoken for.
+   Canvas: .comp::after, not .score.away or .main's own pseudo-elements. Two things ruled those out (found by
+   capturing real frames, not by trusting computed style, which read back correctly even when the pixel
+   didn't):
      - .score.home/.score.away themselves are what the base rule fades out for the goal reveal
        (".bug.goal .team, .bug.goal .score { animation: uefa-text ... }", theme.css) -- opacity applies to
        an element AND everything painted as part of it, pseudo-elements included, so a motif living on
        .score.away::before/::after was invisible for the entire 8%-89% hold of that fade regardless of its
-       own opacity. First attempt at this, caught by capturing a real frame instead of trusting computed
-       style alone (computed opacity read back as 1; the rendered pixel was still blank).
-     - .comp is never targeted by that fade (only .team/.score are), so a motif on .comp::after keeps its
-       own opacity throughout .bug.goal. .comp itself has no `position`, so its ::after (position:absolute)
-       still resolves its containing block to .main (the nearest positioned ancestor, same as .main::before
-       does) -- meaning the same left/width formula the base bar already uses for the GOAL word
-       (calc(h*3.89), widening to calc(h*4.89) once .has-added pushes the word over) lands the motif over
-       the same stretch of bar regardless of where .comp itself sits, per the brief ("the bar sweep exists;
-       the motif layer sits over it") -- and because .comp is a real descendant of .main, .main's own
-       overflow:hidden still clips it at the bar's true (score-digit-width-dependent) right edge, exactly
-       like the base bar surface.
+       own opacity.
+     - .main::before/::after are already the base bar's GOAL word and stripe-wipe layers (theme.css) --
+       already spoken for.
+   .comp is never targeted by that fade, so a motif on .comp::after keeps its own opacity throughout
+   .bug.goal. .comp itself has no `position`, so its ::after (position:absolute) resolves its containing
+   block to .main (the nearest positioned ancestor, same as .main::before does) -- meaning the same
+   left/width formula the base bar uses for the GOAL word lands the motif over the same stretch of bar
+   regardless of where .comp itself sits, and because .comp is a real descendant of .main, .main's own
+   overflow:hidden still clips it at the bar's true (score-digit-width-dependent) right edge.
    One pseudo-element covers both sides: .bug.goal-home and .bug.goal-away are mutually exclusive, so the
    home/away gate is which custom property resolves (--motif-home vs --motif-away), not which pseudo fires.
-   Both ride the existing goal-<side> class overlay.js already sets -- no JS change needed for this part.
+   Both ride the existing goal-<side> class overlay.js already sets.
 
-   What overlay.js is still missing: a way to know WHICH club is scoring, so the right club's rule can match.
-   Every per-club file is gated on .bug[data-home-club="<slug>"] / .bug[data-away-club="<slug>"], attributes
-   overlay.js does not currently set (renderStatic() sets --home-crest/--home-primary/--home-text per side in
-   a loop, but never a stable per-club identifier). See "Research/UCL goal motifs.md" and the agent report
-   for the exact two-line addition needed. Until that lands, QA sets bug.dataset.homeClub/awayClub by hand
-   (agent-ucl/capture.py) -- nothing here depends on overlay.js being touched first, the selectors just wait
-   for the attribute to exist. */
+   Contract for every per-club file (E2's new ones follow the same shape): exactly two declarations,
+   `.bug[data-home-club="<slug>"] { --motif-home: url("<slug>.svg"); }` and the away equivalent pointing at
+   `<slug>-away.svg`, the slug being the club's seed-library.json name lowercased and hyphenated (overlay.js
+   sets data-home-club/data-away-club from that same name). Nothing else -- this file owns the shared canvas,
+   position, timing and z-index for all of them. */
 
-/* left/width rescaled 0.8x (6 September 2026 UEFA-accuracy pass) to match theme.css's own bar-layout rescale --
-   the score cell got narrower so the GOAL word (and this motif layer riding the same formula) moved and shrank
-   with it. Same numbers as theme.css's .main::before/::after left. */
+/* Same left/width formula as theme.css's .main::before/::after (a different element, but the two track the
+   same bar-relative geometry, including the .has-added shift, so the motif lands over the same span). */
 body[data-family="uefa"] .comp::after {
   content: ""; position: absolute; top: 0; height: 100%;
   left: calc(var(--h) * 3.11); width: calc(var(--h) * 3.29);
@@ -44,14 +38,11 @@ body[data-family="uefa"] .comp::after {
   opacity: 0; pointer-events: none; z-index: 3;
 }
 body[data-family="uefa"] .bug.has-added .comp::after { left: calc(var(--h) * 3.91); width: calc(var(--h) * 2.49); }
-/* Duration matched to theme.css's uefa-goal-word-home/away retime (1.4s -> 1.05s, measurements.md source B:
-   ~1.0-1.04s trigger-to-settle is the intended broadcast timing, not source A's slowed-down 1.6-1.8s recreation). */
+/* Same 1.05s duration as theme.css's uefa-goal-word-home/away, so the motif's own timeline lines up with it. */
 body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.05s linear forwards; }
 body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.05s linear forwards; }
-/* Correction pass, 6 September 2026: motif reveal moved from 22% (231ms) to 62% (651ms) -- compare_goal_away.png
-   showed the motif fully visible by 160-400ms, well before the wipe had even revealed the "GOAL" cue (theme.css's
-   uefa-goal-word-home/away now turns that on at 55%/577ms). The reference order is wipe colour alone, then GOAL,
-   then the motif on top of it; this keeps the motif's own hold/fade shape but starts it just after the word does. */
+/* Reveal at 62% (651ms), just after the GOAL word's own reveal cue (55%/577ms in theme.css): the reference
+   order is wipe colour, then GOAL, then the motif on top of it. */
 @keyframes ucl-motif-in {
   0%   { opacity: 0; transform: scale(0.82); }
   50%  { opacity: 0; }

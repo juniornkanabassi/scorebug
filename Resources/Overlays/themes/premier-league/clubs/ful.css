@@ -1,51 +1,7 @@
-/* Fulham ("Cottagers"), code FUL -- rebuilt against clubframes/strip_ful.png (frames 050-090):
-   same delayed-entrance pattern as Everton -- GOAL pops in first, then Craven Cottage's pitched-roof
-   pavilion truss (grey, visible roof bracing -- clubframes/ful_zoom.png) grows in at the A slot, low
-   and wide rather than tall, sitting on the baseline. Not "between GO and L" as the round-5 comment
-   guessed at the whole-gap level -- it is specifically the A replacement, same as Everton's tower.
-   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field --
-   overlay.js sets these live (commit b7e60ce). Position measured live off the actual rendered
-   .main::after GOAL text (Montserrat 800, font-size 0.94H, letter-spacing 0.06em, padding-right/left
-   0.76H): canvas Range measurement of a "GOAL" span at the same font gave G 0-0.780H, O 0.780-1.622H
-   (centre 1.201H, width 0.842H), A 1.622-2.417H (centre 2.020H, width 0.795H), L 2.417-3.047H -- see
-   ars-che/notes.md sibling analysis in $SCRATCH/clubframes/strip_ful.png for the frame-by-frame
-   source. Icon sits on .main::before (z-index 4, above the ::after GOAL text at z-index 3) so it can
-   fully occlude just its own letter's cell without a separate box trick.
-   */
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="fulham"] .main::before,
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="fulham"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%2058%22%3E%3Cpolygon%20points%3D%2250%2C4%2094%2C50%2088%2C50%2050%2C16%2012%2C50%206%2C50%22%20fill%3D%22%238a8a8a%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2250%22%20width%3D%2288%22%20height%3D%228%22%20fill%3D%22%238a8a8a%22%2F%3E%3Cg%20stroke%3D%22%238a8a8a%22%20stroke-width%3D%225%22%3E%3Cline%20x1%3D%2226%22%20y1%3D%2250%22%20x2%3D%2226%22%20y2%3D%2234%22%2F%3E%3Cline%20x1%3D%2242%22%20y1%3D%2250%22%20x2%3D%2242%22%20y2%3D%2224%22%2F%3E%3Cline%20x1%3D%2258%22%20y1%3D%2250%22%20x2%3D%2258%22%20y2%3D%2224%22%2F%3E%3Cline%20x1%3D%2274%22%20y1%3D%2250%22%20x2%3D%2274%22%20y2%3D%2234%22%2F%3E%3Cline%20x1%3D%2226%22%20y1%3D%2234%22%20x2%3D%2250%22%20y2%3D%2216%22%2F%3E%3Cline%20x1%3D%2274%22%20y1%3D%2234%22%20x2%3D%2250%22%20y2%3D%2216%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  width: calc(var(--h) * 0.95); height: calc(var(--h) * 0.55);
-  background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
+/* Fulham ("Cottagers"), code FUL -- the Craven Cottage pavilion sits between GO and L */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="fulham"] .main::after,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="fulham"] .main::after {
+  --pl-goal-word: "GO" url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2024%22%20width%3D%2234%22%20height%3D%2224%22%3E%3Cpolygon%20points%3D%2217%2C0%2032%2C11%202%2C11%22%20fill%3D%22%23000%22%2F%3E%3Crect%20x%3D%226%22%20y%3D%2211%22%20width%3D%2222%22%20height%3D%2213%22%20fill%3D%22%23000%22%2F%3E%3Crect%20x%3D%2214%22%20y%3D%2215%22%20width%3D%226%22%20height%3D%229%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%223%22%20width%3D%223%22%20height%3D%227%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E") "L";
 }
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="fulham"] .main::before {
-  left: auto; right: calc(var(--h) * 1.312); transform-origin: bottom center;
-  animation-name: pl-motif-ful-home;
-}
-/* Away goal: GOAL lands at the far LEFT (pl-wipe-away, padding-left calc(var(--h)*0.76)) so the
-   letter-centre distances mirror off .main's LEFT edge instead of its right edge; icon itself is
-   NOT flipped (a ball/flower/tower reads the same either way -- only its anchor edge changes). */
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="fulham"] .main::before {
-  right: auto; left: calc(var(--h) * 2.305); transform: translateY(-50%); transform-origin: bottom center;
-  animation-name: pl-motif-ful-away;
-}
-@keyframes pl-motif-ful-home {
-  0% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  8.5% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  12.8% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  20% { opacity: 1; transform: translateY(-50%) scaleY(0.35); }
-  28% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  72.3% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  80.9% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-  100% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-}
-@keyframes pl-motif-ful-away {
-  0% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  8.5% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  12.8% { opacity: 0; transform: translateY(-50%) scaleY(0); }
-  20% { opacity: 1; transform: translateY(-50%) scaleY(0.35); }
-  28% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  72.3% { opacity: 1; transform: translateY(-50%) scaleY(1); }
-  80.9% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-  100% { opacity: 0; transform: translateY(-50%) scaleY(1); }
-}
+/* Secondary is too light for white digits -- read them in the club's own primary instead. */
+body[data-theme="premier-league"] .bug[data-home-club="fulham"] { --pl-centre-text: var(--home-primary); }

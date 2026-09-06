@@ -1,47 +1,5 @@
-/* Brentford ("Bees"), code BRE -- rebuilt against the official "Premier League Goal ANIMATIONS"
-   clip's own group-1 tile (clubframes/strip_bre.png, frames 050-090): the O-in-GOAL replacement is
-   NOT a bee -- zoomed to clubframes/bre_zoom.png and it is a stylised yellow flower/cog with a dark
-   brown centre, appears fast (near-instantly, before the surrounding GOAL letters finish their own
-   dust-particle build-in) and holds fixed at the O position through the rest of the hold.
-   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field --
-   overlay.js sets these live (commit b7e60ce). Position measured live off the actual rendered
-   .main::after GOAL text (Montserrat 800, font-size 0.94H, letter-spacing 0.06em, padding-right/left
-   0.76H): canvas Range measurement of a "GOAL" span at the same font gave G 0-0.780H, O 0.780-1.622H
-   (centre 1.201H, width 0.842H), A 1.622-2.417H (centre 2.020H, width 0.795H), L 2.417-3.047H -- see
-   ars-che/notes.md sibling analysis in $SCRATCH/clubframes/strip_bre.png for the frame-by-frame
-   source. Icon sits on .main::before (z-index 4, above the ::after GOAL text at z-index 3) so it can
-   fully occlude just its own letter's cell without a separate box trick.
-   */
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="brentford"] .main::before,
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="brentford"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23FFC72C%22%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2222%22%20rx%3D%2216%22%20ry%3D%2220%22%2F%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2278%22%20rx%3D%2216%22%20ry%3D%2220%22%2F%3E%3Cellipse%20cx%3D%2222%22%20cy%3D%2250%22%20rx%3D%2220%22%20ry%3D%2216%22%2F%3E%3Cellipse%20cx%3D%2278%22%20cy%3D%2250%22%20rx%3D%2220%22%20ry%3D%2216%22%2F%3E%3Cellipse%20cx%3D%2230%22%20cy%3D%2230%22%20rx%3D%2217%22%20ry%3D%2214%22%20transform%3D%22rotate%2845%2030%2030%29%22%2F%3E%3Cellipse%20cx%3D%2270%22%20cy%3D%2230%22%20rx%3D%2217%22%20ry%3D%2214%22%20transform%3D%22rotate%28-45%2070%2030%29%22%2F%3E%3Cellipse%20cx%3D%2230%22%20cy%3D%2270%22%20rx%3D%2217%22%20ry%3D%2214%22%20transform%3D%22rotate%28-45%2030%2070%29%22%2F%3E%3Cellipse%20cx%3D%2270%22%20cy%3D%2270%22%20rx%3D%2217%22%20ry%3D%2214%22%20transform%3D%22rotate%2845%2070%2070%29%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2217%22%20fill%3D%22%233B2712%22%2F%3E%3C%2Fsvg%3E");
-  width: calc(var(--h) * 0.85); height: calc(var(--h) * 0.85);
-  background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
-}
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="brentford"] .main::before {
-  left: auto; right: calc(var(--h) * 2.181); 
-  animation-name: pl-motif-bre-home;
-}
-/* Away goal: GOAL lands at the far LEFT (pl-wipe-away, padding-left calc(var(--h)*0.76)) so the
-   letter-centre distances mirror off .main's LEFT edge instead of its right edge; icon itself is
-   NOT flipped (a ball/flower/tower reads the same either way -- only its anchor edge changes). */
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="brentford"] .main::before {
-  right: auto; left: calc(var(--h) * 1.536); transform: translateY(-50%); 
-  animation-name: pl-motif-bre-away;
-}
-@keyframes pl-motif-bre-home {
-  0% { opacity: 0; transform: translateY(-50%) scale(0.6); }
-  8.5% { opacity: 0; transform: translateY(-50%) scale(0.6); }
-  12.8% { opacity: 1; transform: translateY(-50%) scale(1); }
-  72.3% { opacity: 1; transform: translateY(-50%) scale(1); }
-  80.9% { opacity: 0; transform: translateY(-50%) scale(1); }
-  100% { opacity: 0; transform: translateY(-50%) scale(1); }
-}
-@keyframes pl-motif-bre-away {
-  0% { opacity: 0; transform: translateY(-50%) scale(0.6); }
-  8.5% { opacity: 0; transform: translateY(-50%) scale(0.6); }
-  12.8% { opacity: 1; transform: translateY(-50%) scale(1); }
-  72.3% { opacity: 1; transform: translateY(-50%) scale(1); }
-  80.9% { opacity: 0; transform: translateY(-50%) scale(1); }
-  100% { opacity: 0; transform: translateY(-50%) scale(1); }
+/* Brentford ("Bees"), code BRE -- a bee replaces the O */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="brentford"] .main::after,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="brentford"] .main::after {
+  --pl-goal-word: "G" url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2034%2026%22%20width%3D%2234%22%20height%3D%2226%22%3E%3Cellipse%20cx%3D%2219%22%20cy%3D%2213%22%20rx%3D%228%22%20ry%3D%228.4%22%20fill%3D%22%23111%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%227.5%22%20width%3D%2214%22%20height%3D%223.4%22%20fill%3D%22%23FFC20E%22%2F%3E%3Crect%20x%3D%2211.4%22%20y%3D%2213.3%22%20width%3D%2215.2%22%20height%3D%223.4%22%20fill%3D%22%23FFC20E%22%2F%3E%3Ccircle%20cx%3D%2226%22%20cy%3D%2213%22%20r%3D%222.6%22%20fill%3D%22%23111%22%2F%3E%3Cpath%20d%3D%22M9%206%20C3%203%20-1%207%202%2012%20C5%2016%2010%2012%209%206%20Z%22%20fill%3D%22%23fff%22%20opacity%3D%220.85%22%2F%3E%3Cpath%20d%3D%22M9%2020%20C3%2023%20-1%2019%202%2014%20C5%2010%2010%2014%209%2020%20Z%22%20fill%3D%22%23fff%22%20opacity%3D%220.85%22%2F%3E%3C%2Fsvg%3E") "AL";
 }

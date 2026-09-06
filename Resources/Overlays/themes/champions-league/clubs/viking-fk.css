@@ -1,0 +1,7 @@
+/* Viking FK -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). The club's own name is the motif: a Viking longship under sail, dragon
+   head curling up at the prow, standing in for that shared identity the same way Villarreal's motif is a
+   yellow submarine for their own nickname. Never the club's actual crest. Slug "viking-fk" matches
+   seed-library.json's club name, lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="viking-fk"] { --motif-home: url("viking-fk.svg"); }
+body[data-family="uefa"] .bug[data-away-club="viking-fk"] { --motif-away: url("viking-fk-away.svg"); }

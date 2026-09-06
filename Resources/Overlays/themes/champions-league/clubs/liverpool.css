@@ -10,9 +10,7 @@
    both files (flipping text glyphs makes them read backwards), only the two flame icons are mirrored
    in place. Slug "liverpool" matches seed-library.json's club name, lowercased and hyphenated -- see
    Research/UCL goal motifs.md.
-   QA pass (6 September 2026): the original two flames sat at the canvas's own far edges (x 46 and x 354 of
-   400, centred text spanning 120-280) -- nearly the full shared canvas width, and captured almost entirely
-   hidden under "GOAL" at hold. Redrawn smaller and pulled inward/left (flames now anchored at x 16 and
-   x 216, text re-centred between them at x 118), so the whole motif clears the GOAL word's footprint. */
+   Flames anchored at x 16 and x 216 of the shared canvas, text centred between them at x 118, pulled in
+   from the canvas edges so the whole motif clears the GOAL word's own footprint at hold. */
 body[data-family="uefa"] .bug[data-home-club="liverpool"] { --motif-home: url("liverpool.svg"); }
 body[data-family="uefa"] .bug[data-away-club="liverpool"] { --motif-away: url("liverpool-away.svg"); }

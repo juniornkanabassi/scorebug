@@ -1,0 +1,8 @@
+/* Slovan Bratislava -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the
+   club's own identity, not any reference clip). Slovan are Bratislava's own side, so this motif reaches for
+   the city's own hilltop castle overlooking the Danube rather than a crest substitute, its silhouette and
+   two corner towers on the hill, the same way Sporting's motif is a lion drawn fresh rather than the badge
+   itself. Never the club's actual crest. Slug "slovan-bratislava" matches seed-library.json's club name,
+   lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="slovan-bratislava"] { --motif-home: url("slovan-bratislava.svg"); }
+body[data-family="uefa"] .bug[data-away-club="slovan-bratislava"] { --motif-away: url("slovan-bratislava-away.svg"); }

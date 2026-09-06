@@ -1,0 +1,9 @@
+/* AEK Athens -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). AEK was founded by Greek refugees from Constantinople, but the
+   club's own badge already carries the Byzantine double-headed eagle from that story, so this motif instead
+   reaches for the city itself: a Parthenon-style temple silhouette on the Acropolis, the landmark Athens is
+   known by worldwide, the same way Paris Saint-Germain's motif is the Eiffel Tower rather than a crest
+   substitute. Never the club's actual crest. Slug "aek-athens" matches seed-library.json's club name,
+   lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="aek-athens"] { --motif-home: url("aek-athens.svg"); }
+body[data-family="uefa"] .bug[data-away-club="aek-athens"] { --motif-away: url("aek-athens-away.svg"); }

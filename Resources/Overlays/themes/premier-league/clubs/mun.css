@@ -1,39 +1,12 @@
-/* Manchester United ("Red Devils"), code MUN -- Round 9 rebuild against the official clip's own MUN
-   row (scratchpad/pl7/mun_strip.png): a single pitchfork sits in the bar's own padding gutter just
-   past the "L" (the clip does NOT flank both sides -- there is no room for a second fork before the
-   crest, and the frame-by-frame crop only ever shows one), over a low red-to-orange fire-glow wash
-   across the wordmark, and "GOAL" itself renders in dark text on the red bar (not the shared white --
-   see the .main::after override below). Box widened past the other clubs' 3.15H contract to
-   calc(var(--h)*3.91) = the wordmark's own 3.15H PLUS the 0.76H padding-right gutter .main::after
-   leaves past "L" before .main's actual right edge -- anchored at  (the bar's real edge)
-   instead of  (the text's edge) so the fork has that gutter to sit in without painting
-   over the L or past .main's own bounds. Left/right of the SVG's own 434-wide viewBox are unchanged
-   from the shared letter-position math (see mci.css) since the extra width was added only on the
-   right; away mirrors it for free via the shared rule's default scaleX(-1) (not overridden here,
-   unlike MCI/NFO/TOT -- flipping is exactly what puts the fork on the correct/outer side of the away
-   plate, same as Arsenal's cannon).
-   Wordmark colour: task brief's own carve-out ("a club whose GOAL is black on a coloured bar... may
-   set the wordmark colour through a club-scoped rule on .main::after for that slug only") -- done as
-   a plain !important override, which per the CSS cascade (important author styles beat animations)
-   wins over pl-wipe's own  keyframe stops without needing a second competing @keyframes.
-   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
-   ('Manchester United' -> "manchester-united"). */
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-united"] .main::before,
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-united"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20434%20100%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22f%22%20x1%3D%220%25%22%20y1%3D%22100%25%22%20x2%3D%220%25%22%20y2%3D%220%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23ff7a00%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23ff3d00%22%20stop-opacity%3D%220.2%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ff3d00%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22350%22%20height%3D%22100%22%20fill%3D%22url%28%23f%29%22%2F%3E%3Cg%20fill%3D%22%23ff5a1f%22%20opacity%3D%220.6%22%3E%3Cpath%20d%3D%22M40%2C100%20C36%2C84%2046%2C80%2042%2C66%20C54%2C76%2052%2C90%2060%2C100%20Z%22%2F%3E%3Cpath%20d%3D%22M160%2C100%20C156%2C86%20168%2C80%20163%2C68%20C176%2C78%20172%2C92%20182%2C100%20Z%22%2F%3E%3Cpath%20d%3D%22M270%2C100%20C266%2C86%20278%2C80%20273%2C68%20C286%2C78%20282%2C92%20292%2C100%20Z%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22%23111%22%3E%3Crect%20x%3D%22386%22%20y%3D%2230%22%20width%3D%228%22%20height%3D%2260%22%2F%3E%3Crect%20x%3D%22370%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22382%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22394%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22406%22%20y%3D%2210%22%20width%3D%226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22366%22%20y%3D%2230%22%20width%3D%2248%22%20height%3D%228%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  width: calc(var(--h) * 3.91);
-  height: calc(var(--h) * 0.9);
-  clip-path: inset(0);
-  animation-name: pl-motif-hold;
-}
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-united"] .main::before {
-  left: auto;
-  right: 0;
-}
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-united"] .main::before {
-  left: 0;
-}
+/* Manchester United ("Red Devils"), code MUN -- twin forks flank the word over a fire gradient */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-united"] .main::after,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-united"] .main::after {
-  color: #111 !important;
+  --pl-goal-word: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2014%2030%22%20width%3D%2214%22%20height%3D%2230%22%3E%3Crect%20x%3D%225.5%22%20y%3D%2210%22%20width%3D%223%22%20height%3D%2220%22%20fill%3D%22%23F2C14E%22%2F%3E%3Cpath%20d%3D%22M1%200%20L1%208%20L5.5%2012%20L5.5%200%20Z%20M8.5%200%20L8.5%2012%20L13%208%20L13%200%20Z%22%20fill%3D%22%23F2C14E%22%2F%3E%3C%2Fsvg%3E") "GOAL" url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2014%2030%22%20width%3D%2214%22%20height%3D%2230%22%3E%3Crect%20x%3D%225.5%22%20y%3D%2210%22%20width%3D%223%22%20height%3D%2220%22%20fill%3D%22%23F2C14E%22%2F%3E%3Cpath%20d%3D%22M1%200%20L1%208%20L5.5%2012%20L5.5%200%20Z%20M8.5%200%20L8.5%2012%20L13%208%20L13%200%20Z%22%20fill%3D%22%23F2C14E%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat, no-repeat; background-size: auto 96%, 100% 100%;
+}
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-united"] .main::after {
+  background-image: var(--goal-crest, none), linear-gradient(180deg, #ff5a1f, #b3170f); background-position: calc(var(--h) * 0.3) center, 0 0;
+}
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-united"] .main::after {
+  background-image: var(--goal-crest, none), linear-gradient(180deg, #ff5a1f, #b3170f); background-position: right calc(var(--h) * 0.3) center, 0 0;
 }

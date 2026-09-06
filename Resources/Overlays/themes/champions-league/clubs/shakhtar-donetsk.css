@@ -1,0 +1,9 @@
+/* Shakhtar Donetsk -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the
+   club's own identity, not any reference clip). "Shakhtar" means Miner, and the club is Donbas' own coal
+   country side -- drawn here as a pithead winding tower (the A-frame headframe with its twin wheels that
+   lowers miners into the shaft), a different mining image to RC Lens' own miner's lamp in this same folder
+   so the two clubs' identical "the Miners" nickname still reads as two distinct motifs. Never the club's
+   actual crest. Slug "shakhtar-donetsk" matches seed-library.json's club name, lowercased and hyphenated --
+   see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="shakhtar-donetsk"] { --motif-home: url("shakhtar-donetsk.svg"); }
+body[data-family="uefa"] .bug[data-away-club="shakhtar-donetsk"] { --motif-away: url("shakhtar-donetsk-away.svg"); }

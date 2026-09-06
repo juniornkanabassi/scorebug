@@ -1,0 +1,9 @@
+/* Galatasaray -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's
+   own identity, not any reference clip). "Aslan", the Lion -- Galatasaray's own long-standing nickname, tied
+   to the roar of the Ali Sami Yen crowd on European nights -- drawn here as a roaring lion's head with a
+   radiating mane, standing in for that shared identity the same way Arsenal's cannon stands in for the
+   Gunners (a different pose to Aston Villa's own walking heraldic lion in this same folder, so the two read
+   as distinct motifs despite sharing an animal). Never the club's actual crest. Slug "galatasaray" matches
+   seed-library.json's club name, lowercased and hyphenated -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="galatasaray"] { --motif-home: url("galatasaray.svg"); }
+body[data-family="uefa"] .bug[data-away-club="galatasaray"] { --motif-away: url("galatasaray-away.svg"); }

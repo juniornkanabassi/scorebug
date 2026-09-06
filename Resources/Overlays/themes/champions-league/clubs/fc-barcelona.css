@@ -9,10 +9,8 @@
    reuses the identical drawing rather than reshuffling the ball glyph to the other side, per the brief's
    "keep it simple and reuse the same word both ways" option. Slug "fc-barcelona" matches seed-library.json's
    club name, lowercased and hyphenated -- see Research/UCL goal motifs.md.
-   QA pass (6 September 2026): the original drawing filled the full shared canvas width (same box the base
-   uefa-goal-word text occupies) and was captured fully illegible under "GOAL" at hold (1100ms) -- only a
-   fragment of "BAR A" survived behind the word. Redrawn smaller and left-aligned (BAR/ball/A now span
-   roughly the left half of the canvas, x 16-222 of 400) so it clears the GOAL word's own footprint, in the
-   same left-weighted position pattern the icon motifs (arsenal, aston-villa, etc.) already use. */
+   Drawn small and left-aligned (BAR/ball/A span roughly the left half of the shared canvas, x 16-222 of
+   400) so it clears the GOAL word's own footprint at hold, the same left-weighted position pattern the
+   icon motifs (arsenal, aston-villa, etc.) use. */
 body[data-family="uefa"] .bug[data-home-club="fc-barcelona"] { --motif-home: url("fc-barcelona.svg"); }
 body[data-family="uefa"] .bug[data-away-club="fc-barcelona"] { --motif-away: url("fc-barcelona-away.svg"); }

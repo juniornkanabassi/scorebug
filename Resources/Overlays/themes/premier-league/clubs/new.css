@@ -1,29 +1,10 @@
-/* Newcastle United ("Magpies"), code NEW -- Round 9 rebuild against the official clip's own NEW row
-   (scratchpad/pl7/new_strip.png): the clip actually flips the wordmark through a split-flap/scoreboard
-   cycle -- solid tile blocks land first, then the letters underneath spell TOON, then ARMY, before
-   settling back on GOAL -- not a static checkerboard sitting beside the crest, which is what the
-   crude first pass drew. Literal TOON/ARMY text is still out of reach: .main::after's content is the
-   shared theme's fixed "GOAL" string with no per-glyph spans this file can hook (same DOM limit noted
-   at the top of theme.css). What IS achievable without touching that shared DOM: the black flip-tile
-   blocks themselves, sized and anchored to the actual wordmark zone this time (Arsenal/Chelsea
-   contract) so they land exactly over "GOAL" as a brief opaque mask -- same masking trick as
-   Sunderland's black box -- then the shared pl-motif-flash keyframe dissolves them away to reveal the
-   real "GOAL" text underneath, reading as a scoreboard flick-then-settle even without the letters
-   actually changing underneath.
-   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
-   ('Newcastle United' -> "newcastle-united"). */
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="newcastle-united"] .main::before,
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="newcastle-united"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20350%20100%22%3E%3Cg%20fill%3D%22%23111%22%3E%3Crect%20x%3D%228%22%20y%3D%226%22%20width%3D%2280%22%20height%3D%2288%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%226%22%20width%3D%2280%22%20height%3D%2288%22%2F%3E%3Crect%20x%3D%22184%22%20y%3D%226%22%20width%3D%2280%22%20height%3D%2288%22%2F%3E%3Crect%20x%3D%22272%22%20y%3D%226%22%20width%3D%2270%22%20height%3D%2288%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
-  width: calc(var(--h) * 3.15);
-  height: calc(var(--h) * 0.9);
-  clip-path: inset(0);
-  animation-name: pl-motif-flash;
+/* Newcastle United ("Magpies"), code NEW -- the word swaps for the club's own chant */
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="newcastle-united"] .main::after,
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="newcastle-united"] .main::after {
+  --pl-goal-word: "TOON ARMY";
+  /* Longer than every other club's word or letter-swap; shrink so it stays on one line in the
+     narrower goal box (nowrap is the shared default -- this club just needs the room). */
+  font-size: calc(var(--h) * 0.56); letter-spacing: 0.02em;
 }
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="newcastle-united"] .main::before {
-  left: auto;
-  right: calc(var(--h) * 0.76);
-}
-body[data-theme="premier-league"] .bug.goal-away[data-away-club="newcastle-united"] .main::before {
-  left: calc(var(--h) * 0.76);
-}
+/* Secondary is white -- white centre digits would vanish, so read them in the club's own primary instead. */
+body[data-theme="premier-league"] .bug[data-home-club="newcastle-united"] { --pl-centre-text: var(--home-primary); }

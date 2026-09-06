@@ -61,7 +61,8 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   const LAST_END = { halfTime: 2700, fullTime: 5400, extraBreak: 6300, extraFullTime: 7200, shootout: 7200, finished: 7200 };
 
   const pad = (n) => (n < 10 ? "0" : "") + n;
-  const fmt = (s) => { s = Math.max(0, Math.floor(s)); return pad(Math.floor(s / 60)) + ":" + pad(s % 60); };
+  // theme.json "clockFormat": "m:ss" drops the leading zero of the minutes (the UEFA feed shows 4:01, not 04:01).
+  const fmt = (s) => { s = Math.max(0, Math.floor(s)); const m = Math.floor(s / 60); return (theme && theme.clockFormat === "m:ss" ? String(m) : pad(m)) + ":" + pad(s % 60); };
   const now = () => (Date.now() + skewMs) / 1000;
   function elapsed(clock) {
     let t = clock.periodBaseSeconds + clock.accumulated;

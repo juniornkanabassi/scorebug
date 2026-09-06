@@ -16,5 +16,6 @@
       "top2": 342
     }
   },
-  "family": "uefa"
+  "family": "uefa",
+  "clockFormat": "m:ss"
 }

@@ -1,0 +1,8 @@
+/* Sabah FK -- DERIVED (no Behance/GIF reference covers this club; original motif drawn from the club's own
+   identity, not any reference clip). Sabah play in Baku, Azerbaijan, "the Land of Fire" -- drawn here as the
+   city's own Flame Towers skyline rather than a crest substitute, three flame-shaped towers of the actual
+   varying heights, the same way Paris Saint-Germain's motif is the Eiffel Tower rather than a badge. Never
+   the club's actual crest. Slug "sabah-fk" matches seed-library.json's club name, lowercased and hyphenated
+   -- see Research/UCL goal motifs.md. */
+body[data-family="uefa"] .bug[data-home-club="sabah-fk"] { --motif-home: url("sabah-fk.svg"); }
+body[data-family="uefa"] .bug[data-away-club="sabah-fk"] { --motif-away: url("sabah-fk-away.svg"); }
