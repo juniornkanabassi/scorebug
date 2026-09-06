@@ -18,8 +18,14 @@
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="chelsea"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="chelsea"] .main::before {
   background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2080%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%220%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.6%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Cpolygon%20points%3D%2230%2C80%2070%2C0%20100%2C0%2060%2C80%22%20fill%3D%22url%28%23g%29%22%2F%3E%20%3Cpolygon%20points%3D%228%2C80%2020%2C80%2055%2C0%2043%2C0%22%20fill%3D%22%23C8A458%22%2F%3E%20%3C%2Fsvg%3E");
-  width: calc(var(--h) * 2.4);
-  height: calc(var(--h) * 0.95);
+  /* Correction round (6 Sep): halved from 2.4H/0.95H -- a box that wide rotated to the entry keyframe's
+     38deg has a screen-space bounding height of ~2.2H (w*sin+h*cos), which painted well above/below the
+     bar regardless of .main's own clip-path allowance (theme.css, correction-round note on .main). At
+     1.2H/0.475H every keyframe's rotated bounding box stays under ~1.12H, small enough for that allowance
+     to fully contain it at all three of the lead's spot-check timestamps (300/900/1800ms). Still a legible
+     gold accent, just not spanning as much of the wordmark as before. */
+  width: calc(var(--h) * 1.2);
+  height: calc(var(--h) * 0.475);
 }
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="chelsea"] .main::before {
   animation-name: pl-motif-che-home;
@@ -34,17 +40,23 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="chelsea"] .main
   right: 46%;
   animation-name: pl-motif-che-away;
 }
+/* Round 8: retimed for the shared goal animation's 4s -> 4.7s duration change (theme.css, top-of-file note) --
+   percentages are now ms/4700. Streak reveal lands at 12.8%/600ms (matching the crest/GOAL pop-in) and settles
+   into its resting tilt by 34% (was 24% of the old 4s duration); hold now explicitly ends and fades with the
+   sweep itself at 72.3%/80.9% (3400/3800ms) instead of holding flat to 100%. */
 @keyframes pl-motif-che-home {
   0% { opacity: 0; transform: translateY(-50%) translateX(16%) rotate(38deg); }
-  9% { opacity: 1; transform: translateY(-50%) translateX(9%) rotate(24deg); }
-  24% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
-  86% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
+  12.8% { opacity: 1; transform: translateY(-50%) translateX(9%) rotate(24deg); }
+  34% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
+  72.3% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
+  80.9% { opacity: 0; transform: translateY(-50%) translateX(0%) rotate(6deg); }
   100% { opacity: 0; transform: translateY(-50%) translateX(0%) rotate(6deg); }
 }
 @keyframes pl-motif-che-away {
   0% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(16%) rotate(38deg); }
-  9% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(9%) rotate(24deg); }
-  24% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
-  86% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
+  12.8% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(9%) rotate(24deg); }
+  34% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
+  72.3% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
+  80.9% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
   100% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
 }

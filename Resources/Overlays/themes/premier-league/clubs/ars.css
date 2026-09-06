@@ -72,11 +72,15 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="arsenal"] .main
   left: calc(var(--h) * 0.76);
   background-color: var(--away-primary);
 }
+/* Round 8: retimed for the shared goal animation's 4s -> 4.7s duration change (theme.css, top-of-file note) --
+   percentages are now ms/4700 to match the new pl-wipe breakpoints (reveal complete at 12.8%/600ms, matching
+   when the crest/GOAL are actually popped in, not the old flat 9%). Dissolve still finishes well before the
+   72.3%/3400ms hold-end, same relative shape as before, just carried onto the new timeline. */
 @keyframes pl-motif-ars {
   0% { opacity: 0; filter: blur(0); }
-  9% { opacity: 1; filter: blur(0); }
-  20% { opacity: 1; filter: blur(0); }
-  28% { opacity: .5; filter: blur(5px); }
-  36% { opacity: 0; filter: blur(9px); }
+  12.8% { opacity: 1; filter: blur(0); }
+  28% { opacity: 1; filter: blur(0); }
+  40% { opacity: .5; filter: blur(5px); }
+  51% { opacity: 0; filter: blur(9px); }
   100% { opacity: 0; filter: blur(9px); }
 }
