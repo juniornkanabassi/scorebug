@@ -1,6 +1,7 @@
 // Owns state for both slots, calls MatchEngine, saves through Store, then broadcasts through OverlayServer.
 import Foundation
 import SwiftUI
+import QuartzCore
 import ScorebugCore
 
 struct LaunchOptions {
@@ -44,6 +45,7 @@ final class AppModel: ObservableObject {
     let resolver: OverlayResolver
     let options: LaunchOptions
     private var server: OverlayServer?
+    private var themeConfigCache: [String: ThemeConfig] = [:]
 
     var port: Int { options.port ?? settings.port }
     var baseURL: String { "http://127.0.0.1:\(port)" }
@@ -59,6 +61,7 @@ final class AppModel: ObservableObject {
         let bundled = OverlayResolver.locateBundledOverlays(explicit: options.overlaysDirectory)
             ?? URL(fileURLWithPath: "/nonexistent")
         self.resolver = OverlayResolver(bundled: bundled, overrides: settings.themeOverridesEnabled ? store.overlayOverridesDirectory : nil)
+        CrestImage.directory = store.crestsDirectory
         importDefaultCrestFolderIfPresent()
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
     }
@@ -74,8 +77,11 @@ final class AppModel: ObservableObject {
 
     func importCrestFolder(_ url: URL) {
         var lib = library
+        let before = Set(lib.clubs.compactMap(\.crestFile) + lib.competitions.compactMap(\.logoFile))
         let n = store.importCrests(from: url, into: &lib)
         library = lib
+        let after = Set(lib.clubs.compactMap(\.crestFile) + lib.competitions.compactMap(\.logoFile))
+        for file in after.subtracting(before) { CrestImage.invalidate(file: file) }
         settings.crestFolder = url.path
         saveSettings()
         saveLibrary()
@@ -101,17 +107,44 @@ final class AppModel: ObservableObject {
 
     func match(_ slot: Int) -> Match { state.match(slot: slot) ?? Match(slot: slot) }
 
+    /// `theme.json` decoded once per id, not on every body evaluation. Cleared in `saveSettings()`, since an
+    /// override-folder toggle can change which file an id resolves to.
+    func themeConfig(id: String) -> ThemeConfig? {
+        if let cached = themeConfigCache[id] { return cached }
+        let config = resolver.themeConfig(id: id)
+        if let config { themeConfigCache[id] = config }
+        return config
+    }
+
     func apply(_ command: Command, slot: Int) {
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return }
-        state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
-        persistAndBroadcast()
+        profiled(command) {
+            state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
+            persistAndBroadcast()
+        }
     }
 
     func applyRequest(_ request: CommandRequest, slot: Int) throws {
         let command = try request.toCommand()
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { throw EngineError.badRequest("slot must be 1 or 2") }
-        state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
-        persistAndBroadcast()
+        profiled(command) {
+            state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
+            persistAndBroadcast()
+        }
+    }
+
+    /// `SCOREBUG_PROFILE=1`: times the engine call plus save and broadcast, then logs to stderr once this
+    /// run-loop turn's layer tree has committed (`CATransaction`'s completion block), which approximates
+    /// command-to-painted-frame.
+    private static let profileEnabled = ProcessInfo.processInfo.environment["SCOREBUG_PROFILE"] != nil
+    private func profiled(_ command: Command, _ body: () -> Void) {
+        guard AppModel.profileEnabled else { body(); return }
+        let start = CFAbsoluteTimeGetCurrent()
+        body()
+        let label = String(describing: command).prefix { $0 != "(" }
+        CATransaction.setCompletionBlock {
+            FileHandle.standardError.write(Data(String(format: "profile %@ %.1f\n", "\(label)", (CFAbsoluteTimeGetCurrent() - start) * 1000).utf8))
+        }
     }
 
     func setClub(_ club: Club?, side: Side, slot: Int) {
@@ -142,7 +175,15 @@ final class AppModel: ObservableObject {
     }
 
     func snapshot() -> StateSnapshot {
-        StateSnapshot(serverTime: Date(), matches: state.matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop))
+        // The overlay never reads a squad; sending both every command's worth of players over the WebSocket
+        // is dead weight the client just discards.
+        let matches = state.matches.map { match -> Match in
+            var m = match
+            m.home.squad = nil
+            m.away.squad = nil
+            return m
+        }
+        return StateSnapshot(serverTime: Date(), matches: matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop))
     }
 
     func snapshotData() -> Data {
@@ -157,9 +198,10 @@ final class AppModel: ObservableObject {
 
     // MARK: Library
 
+    // Clubs never ride in the snapshot (only competitions do), so saving the library has nothing to broadcast;
+    // `updateCompetition` and `importCompetitionLogo` broadcast themselves for the part that does.
     func saveLibrary() {
         do { try store.saveLibrary(library) } catch { lastError = "Could not save library: \(error.localizedDescription)" }
-        broadcast()
     }
 
     func upsertClub(_ club: Club) {
@@ -175,6 +217,7 @@ final class AppModel: ObservableObject {
     func importCrest(from url: URL, for clubId: UUID) {
         do {
             let name = try store.importCrest(from: url, for: clubId)
+            CrestImage.invalidate(file: name)
             if let idx = library.clubs.firstIndex(where: { $0.id == clubId }) { library.clubs[idx].crestFile = name }
             saveLibrary()
             // Live matches using this club pick up the crest.
@@ -191,13 +234,18 @@ final class AppModel: ObservableObject {
     func importCompetitionLogo(from url: URL, for competitionId: String) {
         do {
             let name = try store.importCompetitionLogo(from: url, for: competitionId)
+            CrestImage.invalidate(file: name)
             if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) { library.competitions[idx].logoFile = name }
             saveLibrary()
+            broadcast()
         } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
     }
 
     func updateCompetition(_ comp: Competition) {
-        if let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) { library.competitions[idx] = comp; saveLibrary() }
+        guard let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) else { return }
+        library.competitions[idx] = comp
+        saveLibrary()
+        broadcast()
     }
 
     /// Interface text size, Cmd-plus and Cmd-minus, remembered between launches. This scales font point sizes
@@ -220,6 +268,7 @@ final class AppModel: ObservableObject {
     func zoom(_ delta: Int) { zoomLevel = min(3, max(-2, zoomLevel + delta)) }
 
     func saveSettings() {
+        themeConfigCache.removeAll()
         do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)" }
         // Settings (e.g. portraitTop) ride inside every state snapshot, so overlay clients need a fresh
         // broadcast on change, the same way a match edit does via persistAndBroadcast().

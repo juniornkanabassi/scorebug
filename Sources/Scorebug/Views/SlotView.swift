@@ -31,9 +31,9 @@ extension Phase {
 struct SlotView: View {
     @EnvironmentObject var model: AppModel
     let slot: Int
-    /// Goal whose scorer popover should be open. Set right after a plus button scores a goal so the
-    /// popover appears on that goal's row without the plus button itself waiting on anything.
-    @State private var scorerPopoverGoalId: UUID?
+    /// Goal whose scorer popover should be open on the plus button that just scored it. Cleared as soon as
+    /// that goal is no longer in `match.goals` (the guard `plusPromptBinding` checks on every render).
+    @State private var plusPromptGoalId: UUID?
     @State private var confirmReset = false
 
     private var match: Match { model.match(slot) }
@@ -47,6 +47,7 @@ struct SlotView: View {
                 matchCard
                 clockSection
                 goalsSection
+                knockoutSection
                 shootoutSection
             }
             .formStyle(.grouped)
@@ -56,8 +57,6 @@ struct SlotView: View {
         .navigationSubtitle("\(match.home.name) v \(match.away.name)")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button { model.apply(.playPause, slot: slot) } label: { Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body) }
-                    .disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)").keyboardShortcut(.space, modifiers: [])
                 Toggle(isOn: Binding(get: { match.visible }, set: { model.apply(.setVisible($0), slot: slot) })) {
                     Label(match.visible ? "Bug shown" : "Bug hidden", systemImage: match.visible ? "eye" : "eye.slash").scaledFont(.body)
                 }.toggleStyle(.button).help("Show or hide the bug in OBS")
@@ -103,17 +102,31 @@ struct SlotView: View {
                     .disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
                 Button {
                     model.apply(.goal(side, 1), slot: slot)
-                    // Open the new goal's scorer popover without making the plus button wait on it.
-                    scorerPopoverGoalId = match.lastGoal?.goalId
+                    // Open the new goal's scorer popover from this same button.
+                    plusPromptGoalId = match.lastGoal?.goalId
                 } label: { Image(systemName: "plus").scaledFont(.title2, weight: .bold) }
                     .buttonStyle(.borderedProminent).frame(width: 44, height: 44)
                     .keyboardShortcut(side == .home ? "h" : "a", modifiers: [.command, .shift])
                     .help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
                     .disabled(match.phase == .shootout).help("Goal for \(team.shortName)")
+                    .popover(isPresented: plusPromptBinding(for: side)) {
+                        if let id = plusPromptGoalId, let g = match.goals.first(where: { $0.id == id }) {
+                            GoalPrompt(goal: g, match: match, slot: slot, onPick: { plusPromptGoalId = nil })
+                        }
+                    }
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
+    }
+
+    /// True only while `plusPromptGoalId` names a goal still in `match.goals` on this side; a minus press
+    /// or a goal on the other side both make this false on the next render, dismissing the popover.
+    private func plusPromptBinding(for side: Side) -> Binding<Bool> {
+        Binding(
+            get: { plusPromptGoalId.flatMap { id in match.goals.first(where: { $0.id == id }) }?.side == side },
+            set: { if !$0 { plusPromptGoalId = nil } }
+        )
     }
 
     private var centreColumn: some View {
@@ -129,10 +142,18 @@ struct SlotView: View {
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
             // "End half" moved down to sit beside the period pills in the Clock section, where it
-            // reads as part of period control rather than a peer of Play/Pause here.
-            Button { model.apply(.playPause, slot: slot) } label: {
-                Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
-            }.disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
+            // reads as part of period control rather than a peer of Play/Pause here. This is the only
+            // Play/Pause control left (the toolbar's was removed), so it gets the full-width, extra-large
+            // treatment for a control pressed live throughout the match.
+            Button {
+                model.apply(.playPause, slot: slot)
+            } label: {
+                Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill")
+                    .frame(maxWidth: .infinity).scaledFont(.body, weight: .semibold)
+            }
+            .buttonStyle(.borderedProminent).controlSize(.extraLarge)
+            .keyboardShortcut(.space, modifiers: [])
+            .disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
             // Swapping ends is rare and deliberate, unlike Play/End half which are pressed live and
             // often, so it sits apart and smaller rather than sharing weight with them.
             Button("Swap", systemImage: "arrow.left.arrow.right") { model.apply(.swapTeams, slot: slot) }
@@ -173,6 +194,7 @@ struct SlotView: View {
     private func periodPill(_ p: Period) -> some View {
         let button = Button(p.shortLabel) { model.apply(.startPeriod(p), slot: slot) }
             .scaledFont(.body)
+            .controlSize(.large)
             .disabled(isPeriodOver(p))
             .help(p.title)
         if match.currentPeriod == p {
@@ -198,28 +220,17 @@ struct SlotView: View {
             }
             .scaledFont(.body)
             LabeledContent("Stoppage time") {
-                HStack(spacing: 14) {
-                    Toggle(isOn: Binding(
-                        get: { match.addedMinutes != nil },
-                        set: { on in model.apply(.setAddedMinutes(on ? max(1, match.addedMinutes ?? 1) : nil), slot: slot) }
-                    )) { EmptyView() }.labelsHidden().toggleStyle(.switch)
-                    Text("Minutes").scaledFont(.body).foregroundStyle(match.addedMinutes == nil ? .secondary : .primary)
-                    HStack(spacing: 6) {
-                        Button { adjustStoppageMinutes(-1) } label: { Image(systemName: "minus").scaledFont(.callout, weight: .semibold) }
-                            .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
-                        // A plain get/set binding (no focus juggling) is enough here: unlike the clock,
-                        // added minutes never changes on its own between keystrokes, only in response to
-                        // this same field, a nudge button, or an explicit command, so there's nothing to fight.
-                        TextField("", text: Binding(
-                            get: { "\(match.addedMinutes ?? 1)" },
-                            set: { text in if let n = Int(text) { model.apply(.setAddedMinutes(min(15, max(1, n))), slot: slot) } }
-                        ))
-                        .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
-                        .textFieldStyle(.roundedBorder).frame(width: 36)
-                        Button { adjustStoppageMinutes(1) } label: { Image(systemName: "plus").scaledFont(.callout, weight: .semibold) }
-                            .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
-                    }
-                    .disabled(match.addedMinutes == nil)
+                HStack(spacing: 8) {
+                    stoppageButton(nil, "Off")
+                    ForEach(1...9, id: \.self) { n in stoppageButton(n, "\(n)") }
+                    // The quick-pick row above covers the common case; this stays for the rare longer add.
+                    TextField("", text: Binding(
+                        get: { "\(match.addedMinutes ?? 0)" },
+                        set: { text in if let n = Int(text) { model.apply(.setAddedMinutes(min(15, max(0, n)) == 0 ? nil : min(15, n)), slot: slot) } }
+                    ))
+                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
+                    .textFieldStyle(.roundedBorder).frame(width: 36)
+                    .help("For added time over 9 minutes")
                 }
             }
             .scaledFont(.body)
@@ -229,9 +240,14 @@ struct SlotView: View {
         }
     }
 
-    private func adjustStoppageMinutes(_ delta: Int) {
-        let next = min(15, max(1, (match.addedMinutes ?? 1) + delta))
-        model.apply(.setAddedMinutes(next), slot: slot)
+    @ViewBuilder
+    private func stoppageButton(_ value: Int?, _ label: String) -> some View {
+        let button = Button(label) { model.apply(.setAddedMinutes(value), slot: slot) }.scaledFont(.body).controlSize(.large)
+        if match.addedMinutes == value {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.buttonStyle(.bordered)
+        }
     }
 
     // MARK: Goals
@@ -243,14 +259,53 @@ struct SlotView: View {
             }
             ForEach(match.goals) { goal in
                 LabeledContent("\(match.team(goal.side).shortName)  \(goal.minuteLabel)") {
-                    ScorerButton(goal: goal, squad: match.team(goal.side).squad ?? [], slot: slot, openGoalId: $scorerPopoverGoalId)
+                    GoalRow(goal: goal, match: match, slot: slot)
                 }
                 .scaledFont(.body)
             }
-            if !match.goals.isEmpty {
-                Text("Scorers appear in a strap under the bug for a few seconds every minute or so.").scaledFont(.caption).foregroundStyle(.secondary)
+            Button(match.showScorers ? "Hide scorers" : "Show scorers") {
+                model.apply(.setShowScorers(!match.showScorers), slot: slot)
+            }
+            .buttonStyle(.borderedProminent).controlSize(.large)
+            .disabled(match.goals.isEmpty)
+            Text("The strap under the bug lists the scorers while this is on.").scaledFont(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: Knockout tie
+
+    private var knockoutSection: some View {
+        Section("Knockout tie") {
+            Toggle("Two-legged tie", isOn: Binding(
+                get: { match.aggregate != nil },
+                set: { on in
+                    if on {
+                        model.apply(.setAggregate(home: match.aggregate?.firstLegHome ?? 0, away: match.aggregate?.firstLegAway ?? 0), slot: slot)
+                    } else {
+                        model.apply(.clearAggregate, slot: slot)
+                    }
+                }
+            )).scaledFont(.body)
+            if let agg = match.aggregate {
+                LabeledContent("First leg, goals for \(match.home.code)") {
+                    aggregateField(agg.firstLegHome) { model.apply(.setAggregate(home: $0, away: match.aggregate?.firstLegAway ?? 0), slot: slot) }
+                }.scaledFont(.body)
+                LabeledContent("goals for \(match.away.code)") {
+                    aggregateField(agg.firstLegAway) { model.apply(.setAggregate(home: match.aggregate?.firstLegHome ?? 0, away: $0), slot: slot) }
+                }.scaledFont(.body)
+                Text("Aggregate \(match.home.code) \(match.homeScore + agg.firstLegHome) – \(match.awayScore + agg.firstLegAway) \(match.away.code)")
+                    .scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func aggregateField(_ value: Int, onChange: @escaping (Int) -> Void) -> some View {
+        TextField("", text: Binding(
+            get: { "\(value)" },
+            set: { text in if let n = Int(text) { onChange(max(0, n)) } }
+        ))
+        .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
+        .textFieldStyle(.roundedBorder).frame(width: 44)
     }
 
     // MARK: Shootout
@@ -327,34 +382,34 @@ struct ClockFieldsRow: View {
     private var cumulativeSeconds: Int { Int(match.clock.elapsed(at: tick)) }
 
     var body: some View {
-        HStack(spacing: 14) {
-            field(text: $minutesText, focused: $minutesFocused, unit: "min", nudge: 60, width: 40)
-            field(text: $secondsText, focused: $secondsFocused, unit: "sec", nudge: 1, width: 34)
+        HStack(spacing: 10) {
+            nudgeButton("−1 min", deltaSeconds: -60)
+            nudgeButton("−10 s", deltaSeconds: -10)
+            HStack(spacing: 4) {
+                TextField("", text: $minutesText)
+                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.trailing)
+                    .textFieldStyle(.plain).frame(width: 36)
+                    .focused($minutesFocused).onSubmit(applyTypedTime)
+                Text(":").scaledFont(.body).foregroundStyle(.secondary)
+                TextField("", text: $secondsText)
+                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.leading)
+                    .textFieldStyle(.plain).frame(width: 30)
+                    .focused($secondsFocused).onSubmit(applyTypedTime)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.35)))
+            nudgeButton("+10 s", deltaSeconds: 10)
+            nudgeButton("+1 min", deltaSeconds: 60)
         }
         .disabled(match.currentPeriod == nil)
         .onReceive(timer) { tick = $0; resyncIfIdle() }
         .onAppear { resyncIfIdle(force: true) }
     }
 
-    private func field(text: Binding<String>, focused: FocusState<Bool>.Binding, unit: String, nudge: Int, width: CGFloat) -> some View {
-        HStack(spacing: 6) {
-            Button { model.apply(.adjustClock(deltaSeconds: -nudge), slot: slot) } label: { Image(systemName: "minus").scaledFont(.callout, weight: .semibold) }
-                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
-                .help("Subtract \(nudge == 60 ? "1 min" : "1 s") from the clock")
-            HStack(spacing: 4) {
-                TextField("", text: text)
-                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.trailing)
-                    .textFieldStyle(.plain).frame(width: width)
-                    .focused(focused)
-                    .onSubmit(applyTypedTime)
-                Text(unit).scaledFont(.caption).foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 8).padding(.vertical, 5)
-            .background(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.35)))
-            Button { model.apply(.adjustClock(deltaSeconds: nudge), slot: slot) } label: { Image(systemName: "plus").scaledFont(.callout, weight: .semibold) }
-                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
-                .help("Add \(nudge == 60 ? "1 min" : "1 s") to the clock")
-        }
+    private func nudgeButton(_ label: String, deltaSeconds: Int) -> some View {
+        Button(label) { model.apply(.adjustClock(deltaSeconds: deltaSeconds), slot: slot) }
+            .scaledFont(.body).controlSize(.large).buttonStyle(.bordered)
+            .help("\(deltaSeconds < 0 ? "Subtract" : "Add") \(abs(deltaSeconds)) s from the clock")
     }
 
     /// Re-reads the match clock into the text fields, unless the owner is mid-edit in either of them.
@@ -373,79 +428,32 @@ struct ClockFieldsRow: View {
     }
 }
 
-/// A goal's scorer control: a button showing the current scorer, or "Add scorer", that opens a popover with a
-/// search field over the scoring club's squad. Clicking a name (or pressing Return with no exact match, which
-/// uses the typed text as a custom name) sets the scorer and closes the popover.
-struct ScorerButton: View {
-    @EnvironmentObject var model: AppModel
+/// A goal row's scorer control: a button showing the current scorer (with " (og)"/" (pen)" appended) or
+/// "Add scorer", that opens `GoalPrompt` from itself. Each row owns its own open state, so removing the goal
+/// (minus pressed) removes the row, and its popover, with it.
+struct GoalRow: View {
     let goal: Goal
-    let squad: [String]
+    let match: Match
     let slot: Int
-    @Binding var openGoalId: UUID?
-    @State private var query = ""
-    @FocusState private var searchFocused: Bool
+    @State private var isOpen = false
 
-    private var isOpen: Bool { openGoalId == goal.id }
-    private var filtered: [String] { query.isEmpty ? squad : squad.filter { squadNameMatches($0, query: query) } }
+    private var label: String {
+        guard let scorer = goal.scorer, !scorer.isEmpty else { return "Add scorer" }
+        return scorer + (goal.ownGoal ? " (og)" : "") + (goal.penalty ? " (pen)" : "")
+    }
 
     var body: some View {
-        Button(goal.scorer?.isEmpty == false ? goal.scorer! : "Add scorer") {
-            query = ""
-            openGoalId = goal.id
-        }
-        .scaledFont(.body)
-        .frame(maxWidth: 280, alignment: .leading)
-        .popover(isPresented: Binding(get: { isOpen }, set: { if !$0 { openGoalId = nil } })) {
-            VStack(alignment: .leading, spacing: 0) {
-                TextField("Search scorer", text: $query)
-                    .scaledFont(.body)
-                    .textFieldStyle(.roundedBorder)
-                    .focused($searchFocused)
-                    .padding(8)
-                    .onSubmit(submitQuery)
-                Divider()
-                if squad.isEmpty {
-                    Text("No squad on file, type a name").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
-                } else if filtered.isEmpty {
-                    Text("No match. Press Return to use \"\(query)\".").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(filtered, id: \.self) { name in
-                                Button(name) { pick(name) }
-                                    .scaledFont(.body)
-                                    .buttonStyle(.plain)
-                                    .padding(.vertical, 4).padding(.horizontal, 8)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .contentShape(Rectangle())
-                            }
-                        }
-                    }.frame(maxHeight: 200)
-                }
+        Button(label) { isOpen = true }
+            .scaledFont(.body)
+            .frame(maxWidth: 280, alignment: .leading)
+            .popover(isPresented: $isOpen) {
+                GoalPrompt(goal: goal, match: match, slot: slot, onPick: { isOpen = false })
             }
-            .frame(width: 260)
-            .onAppear { searchFocused = true }
-        }
-    }
-
-    private func submitQuery() {
-        let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !typed.isEmpty else { return }
-        if let exact = squad.first(where: { $0.compare(typed, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) {
-            pick(exact)
-        } else {
-            pick(typed)
-        }
-    }
-
-    private func pick(_ name: String) {
-        model.apply(.setScorer(goal.id, name, ownGoal: nil, penalty: nil), slot: slot)
-        openGoalId = nil
     }
 }
 
 /// A Home or Away column's club control: a button showing the current team (crest thumbnail, name,
-/// chevron) that opens a search popover over the whole library, same pattern as `ScorerButton` above.
+/// chevron) that opens a search popover over the whole library, same pattern as `GoalPrompt`.
 /// The plain alphabetical menu of about 165 clubs and nations it replaces was impractical to scroll;
 /// this groups results instead and narrows them as the owner types. `model.setClub(_:side:slot:)` stays
 /// the only side effect, exactly as the old picker's `onChange` was.
@@ -463,27 +471,28 @@ struct ClubPickerButton: View {
     /// A club is a national team when its `competitionIds` contains "international" (same rule as
     /// `LibraryFilters`'s Clubs/Nations split, kept in sync with it).
     private func isNational(_ club: Club) -> Bool { club.competitionIds.contains("international") }
-    private func inThisCompetition(_ club: Club) -> Bool { club.competitionIds.isEmpty || club.competitionIds.contains(match.competitionId) }
 
-    /// Search results split into the three groups the popover shows, each sorted alphabetically;
-    /// national teams are pulled out first so a club's own competition membership only has to
-    /// distinguish "in this competition" from "other clubs".
-    private var groups: (inCompetition: [Club], other: [Club], nations: [Club]) {
+    /// A club with an empty `competitionIds` is in every competition (the library's own escape hatch).
+    /// Competition `other` shows everything. A national team otherwise only shows for `international`;
+    /// any other club shows only where its own `competitionIds` names this competition.
+    private func isEligible(_ club: Club) -> Bool {
+        if club.competitionIds.isEmpty || match.competitionId == "other" { return true }
+        if isNational(club) { return match.competitionId == "international" }
+        return club.competitionIds.contains(match.competitionId)
+    }
+
+    /// Search results split into the two groups the popover shows, each sorted alphabetically.
+    private var groups: (inCompetition: [Club], nations: [Club]) {
         let all = model.library.clubs
-        let filtered = query.isEmpty ? all : all.filter { nameMatches($0, in: match.competitionId, query: query) }
+        let filtered = (query.isEmpty ? all : all.filter { nameMatches($0, in: match.competitionId, query: query) }).filter(isEligible)
         let nations = filtered.filter(isNational).sorted { $0.name < $1.name }
-        let clubsOnly = filtered.filter { !isNational($0) }
-        let inComp = clubsOnly.filter(inThisCompetition).sorted { $0.name < $1.name }
-        let other = clubsOnly.filter { !inThisCompetition($0) }.sorted { $0.name < $1.name }
-        return (inComp, other, nations)
+        let inComp = filtered.filter { !isNational($0) }.sorted { $0.name < $1.name }
+        return (inComp, nations)
     }
 
-    /// What Return picks: the first row in reading order (in-competition clubs, then other clubs,
-    /// then national teams), matching how the groups are drawn top to bottom.
-    private var firstResult: Club? {
-        let g = groups
-        return g.inCompetition.first ?? g.other.first ?? g.nations.first
-    }
+    /// What Return picks: the first row in reading order (in-competition clubs, then national teams),
+    /// matching how the groups are drawn top to bottom.
+    private var firstResult: Club? { groups.inCompetition.first ?? groups.nations.first }
 
     var body: some View {
         Button {
@@ -509,13 +518,12 @@ struct ClubPickerButton: View {
                     .onSubmit(submitQuery)
                 Divider()
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
+                    LazyVStack(alignment: .leading, spacing: 0) {
                         noneRow
                         Divider().padding(.vertical, 2)
                         groupSection("In this competition", groups.inCompetition)
-                        groupSection("Other clubs", groups.other)
                         groupSection("National teams", groups.nations)
-                        if groups.inCompetition.isEmpty && groups.other.isEmpty && groups.nations.isEmpty {
+                        if groups.inCompetition.isEmpty && groups.nations.isEmpty {
                             Text("No match.").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
                         }
                     }

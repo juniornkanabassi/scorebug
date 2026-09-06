@@ -33,13 +33,17 @@ struct OverlayWebView: NSViewRepresentable {
 
     static let reloadRequested = Notification.Name("scorebug.reloadPreviews")
     func makeCoordinator() -> Coordinator { Coordinator() }
-    final class Coordinator { var observer: Any?; deinit { if let o = observer { NotificationCenter.default.removeObserver(o) } } }
+    final class Coordinator { var observer: Any?; var lastScale: CGFloat?; deinit { if let o = observer { NotificationCenter.default.removeObserver(o) } } }
 
+    /// Every SwiftUI body evaluation calls this, most with nothing actually different, so each of the three
+    /// AppKit side effects (frame, magnification, scroll position) is gated on its own value having changed;
+    /// touching the scroll view on every re-render was fighting the user's own drag-to-resize.
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let web = scroll.documentView as? WKWebView else { return }
-        if web.frame.size != size { web.frame = CGRect(origin: .zero, size: size) }
-        if abs(scroll.magnification - scale) > 0.0001 { scroll.magnification = scale }
-        scroll.contentView.scroll(to: .zero)
-        if web.url != url { web.load(URLRequest(url: url)) }
+        var changed = false
+        if web.frame.size != size { web.frame = CGRect(origin: .zero, size: size); changed = true }
+        if context.coordinator.lastScale != scale { scroll.magnification = scale; context.coordinator.lastScale = scale; changed = true }
+        if web.url != url { web.load(URLRequest(url: url)); changed = true }
+        if changed { scroll.contentView.scroll(to: .zero) }
     }
 }

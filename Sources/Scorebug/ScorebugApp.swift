@@ -128,7 +128,7 @@ struct ContentView: View {
                     }
                 }
                 Section {
-                    Label("Library", systemImage: "books.vertical").scaledFont(.body).tag(SidebarSection.library)
+                    Label("Team Library", systemImage: "books.vertical").scaledFont(.body).tag(SidebarSection.library)
                     Label("Settings", systemImage: "gearshape").scaledFont(.body).tag(SidebarSection.settings)
                 }
             }

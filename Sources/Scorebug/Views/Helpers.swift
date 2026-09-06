@@ -1,6 +1,41 @@
 // Small shared views: competition mark, crest thumbnail, colour helpers, squad search matching, zoom-scaled fonts.
 import SwiftUI
 import ScorebugCore
+import ImageIO
+
+/// Decoded crest and competition mark thumbnails, cached so a body re-evaluation never re-decodes a full-size
+/// PNG. `directory` is set once by `AppModel.init`; `invalidate(file:)` drops a file's cached sizes when its
+/// bytes change under the same name (a re-imported crest or competition mark).
+enum CrestImage {
+    static var directory: URL?
+    private static let cache = NSCache<NSString, NSImage>()
+    private static var keysByFile: [String: Set<String>] = [:]
+
+    static func thumbnail(file: String, size: CGFloat) -> NSImage? { image(file, points: size) }
+    /// SwiftUI's `Menu` ignores an `Image`'s `.frame` and draws it at native size, so a menu row needs a
+    /// pre-sized icon rather than a large crest scaled down in layout.
+    static func menuIcon(file: String) -> NSImage? { image(file, points: 18) }
+
+    static func invalidate(file: String) {
+        for key in keysByFile.removeValue(forKey: file) ?? [] { cache.removeObject(forKey: key as NSString) }
+    }
+
+    private static func image(_ file: String, points: CGFloat) -> NSImage? {
+        let key = "\(file)@\(Int(points))"
+        if let cached = cache.object(forKey: key as NSString) { return cached }
+        guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: points * 2,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        let img = NSImage(cgImage: cg, size: NSSize(width: points, height: points))
+        cache.setObject(img, forKey: key as NSString)
+        keysByFile[file, default: []].insert(key)
+        return img
+    }
+}
 
 // MARK: Zoom-scaled fonts
 //
@@ -94,14 +129,13 @@ enum CompetitionColours {
 /// `plate`, when true, sets the mark on a small light backing plate so a dark broadcast mark (the
 /// Premier League lion, drawn dark-on-transparent) still reads clearly on the app's dark match card.
 struct CompetitionMark: View {
-    @EnvironmentObject var model: AppModel
     let competition: Competition
     var size: CGFloat = 28
     var plate: Bool = false
     var body: some View {
         let mark = Group {
-            if let f = competition.logoFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(f)) {
-                Image(nsImage: img).resizable().scaledToFit()
+            if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
+                Image(nsImage: img)
             } else {
                 RoundedRectangle(cornerRadius: size * 0.22).fill(CompetitionColours.colour(for: competition.id))
                     .overlay(Text(competition.shortName.prefix(4)).font(.system(size: size * 0.34, weight: .heavy)).foregroundStyle(.white).minimumScaleFactor(0.5).padding(2))
@@ -117,13 +151,12 @@ struct CompetitionMark: View {
 }
 
 struct CrestView: View {
-    @EnvironmentObject var model: AppModel
     let team: TeamEntry
     var size: CGFloat = 24
     var body: some View {
         Group {
-            if let f = team.crestFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(f)) {
-                Image(nsImage: img).resizable().scaledToFit()
+            if let f = team.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
+                Image(nsImage: img)
             } else {
                 Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: size * 0.36, weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
             }

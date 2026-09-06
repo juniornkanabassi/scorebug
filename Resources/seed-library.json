@@ -637,9 +637,7 @@
       "name": "FC Bayern München",
       "shortName": "Bayern",
       "defaultCode": "FCB",
-      "codes": {
-        "champions-league": "BAY"
-      },
+      "codes": {},
       "primaryColour": "#DC052D",
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
@@ -654,9 +652,7 @@
       "name": "Borussia Dortmund",
       "shortName": "Dortmund",
       "defaultCode": "BVB",
-      "codes": {
-        "champions-league": "DOR"
-      },
+      "codes": {},
       "primaryColour": "#FDE100",
       "secondaryColour": "#000000",
       "textColour": "#000000",
@@ -687,9 +683,7 @@
       "name": "RB Leipzig",
       "shortName": "Leipzig",
       "defaultCode": "RBL",
-      "codes": {
-        "champions-league": "LEI"
-      },
+      "codes": {},
       "primaryColour": "#DD0741",
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
@@ -1678,7 +1672,8 @@
       "secondaryColour": "#000000",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "premier-league"
+        "premier-league",
+        "europa-league"
       ],
       "crestSource": "AFC Bournemouth.png"
     },
@@ -2353,6 +2348,837 @@
         "bundesliga"
       ],
       "crestSource": "SV Werder Bremen.png"
+    },
+    {
+      "name": "AEK Athens",
+      "shortName": "AEK Athens",
+      "defaultCode": "AEK",
+      "codes": {},
+      "primaryColour": "#FFFF00",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "AEK Athens.png"
+    },
+    {
+      "name": "AGF Aarhus",
+      "shortName": "AGF",
+      "defaultCode": "AGF",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "AGF Aarhus.png"
+    },
+    {
+      "name": "AZ Alkmaar",
+      "shortName": "AZ Alkmaar",
+      "defaultCode": "AZA",
+      "codes": {},
+      "primaryColour": "#EF2F24",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "AZ Alkmaar.png"
+    },
+    {
+      "name": "Ajax",
+      "shortName": "Ajax",
+      "defaultCode": "AJA",
+      "codes": {},
+      "primaryColour": "#DF1B27",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Ajax.png"
+    },
+    {
+      "name": "Anderlecht",
+      "shortName": "Anderlecht",
+      "defaultCode": "AND",
+      "codes": {},
+      "primaryColour": "#695196",
+      "secondaryColour": "#FAFAFC",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Anderlecht.png"
+    },
+    {
+      "name": "Ararat-Armenia",
+      "shortName": "Ararat-Armenia",
+      "defaultCode": "ARA",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Ararat-Armenia.png"
+    },
+    {
+      "name": "Beşiktaş",
+      "shortName": "Beşiktaş",
+      "defaultCode": "BES",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Beşiktaş.png"
+    },
+    {
+      "name": "Borac Banja Luka",
+      "shortName": "Borac Banja Luka",
+      "defaultCode": "BBL",
+      "codes": {},
+      "primaryColour": "#C60000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Borac Banja Luka.png"
+    },
+    {
+      "name": "Braga",
+      "shortName": "Braga",
+      "defaultCode": "SCB",
+      "codes": {},
+      "primaryColour": "#DE1F26",
+      "secondaryColour": "#2B6A36",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Braga.png"
+    },
+    {
+      "name": "Brann",
+      "shortName": "Brann",
+      "defaultCode": "SKB",
+      "codes": {},
+      "primaryColour": "#FF0000",
+      "secondaryColour": "#32CD32",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Brann.png"
+    },
+    {
+      "name": "CSKA Sofia",
+      "shortName": "CSKA Sofia",
+      "defaultCode": "CSK",
+      "codes": {},
+      "primaryColour": "#C60000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "CSKA Sofia.png"
+    },
+    {
+      "name": "Celtic",
+      "shortName": "Celtic",
+      "defaultCode": "CLT",
+      "codes": {},
+      "primaryColour": "#009921",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Celtic.png"
+    },
+    {
+      "name": "Club Brugge",
+      "shortName": "Club Brugge",
+      "defaultCode": "CLB",
+      "codes": {},
+      "primaryColour": "#005CA9",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Club Brugge.png"
+    },
+    {
+      "name": "Dinamo Zagreb",
+      "shortName": "Dinamo Zagreb",
+      "defaultCode": "DZG",
+      "codes": {},
+      "primaryColour": "#0000BB",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Dinamo Zagreb.png"
+    },
+    {
+      "name": "Egnatia",
+      "shortName": "Egnatia",
+      "defaultCode": "EGN",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Egnatia.png"
+    },
+    {
+      "name": "FC Copenhagen",
+      "shortName": "Copenhagen",
+      "defaultCode": "FCK",
+      "codes": {},
+      "primaryColour": "#C8102E",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FC Copenhagen.png"
+    },
+    {
+      "name": "FC Lugano",
+      "shortName": "FC Lugano",
+      "defaultCode": "LUG",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FC Lugano.png"
+    },
+    {
+      "name": "FC Midtjylland",
+      "shortName": "Midtjylland",
+      "defaultCode": "MID",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FF0900",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FC Midtjylland.png"
+    },
+    {
+      "name": "FC Nordsjælland",
+      "shortName": "Nordsjælland",
+      "defaultCode": "FCN",
+      "codes": {},
+      "primaryColour": "#CF010E",
+      "secondaryColour": "#0093EC",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FC Nordsjælland.png"
+    },
+    {
+      "name": "FC Thun",
+      "shortName": "FC Thun",
+      "defaultCode": "THU",
+      "codes": {},
+      "primaryColour": "#FF0900",
+      "secondaryColour": "#FCD116",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FC Thun.png"
+    },
+    {
+      "name": "FC Twente",
+      "shortName": "FC Twente",
+      "defaultCode": "TWE",
+      "codes": {},
+      "primaryColour": "#F31522",
+      "secondaryColour": "#9DF9F7",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FC Twente.png"
+    },
+    {
+      "name": "FK Jablonec",
+      "shortName": "FK Jablonec",
+      "defaultCode": "JAB",
+      "codes": {},
+      "primaryColour": "#025719",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "FK Jablonec.png"
+    },
+    {
+      "name": "Fenerbahçe",
+      "shortName": "Fenerbahçe",
+      "defaultCode": "FEN",
+      "codes": {},
+      "primaryColour": "#FFED00",
+      "secondaryColour": "#00285E",
+      "textColour": "#000000",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Fenerbahçe.png"
+    },
+    {
+      "name": "Ferencváros",
+      "shortName": "Ferencváros",
+      "defaultCode": "FTC",
+      "codes": {},
+      "primaryColour": "#239B56",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Ferencváros.png"
+    },
+    {
+      "name": "Feyenoord",
+      "shortName": "Feyenoord",
+      "defaultCode": "FEY",
+      "codes": {},
+      "primaryColour": "#EE2436",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Feyenoord.png"
+    },
+    {
+      "name": "Galatasaray",
+      "shortName": "Galatasaray",
+      "defaultCode": "GAL",
+      "codes": {},
+      "primaryColour": "#A50044",
+      "secondaryColour": "#FDB913",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Galatasaray.png"
+    },
+    {
+      "name": "Hajduk Split",
+      "shortName": "Hajduk Split",
+      "defaultCode": "HAJ",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Hajduk Split.png"
+    },
+    {
+      "name": "Hapoel Be'er Sheva",
+      "shortName": "Hapoel Be'er Sheva",
+      "defaultCode": "HBE",
+      "codes": {},
+      "primaryColour": "#FD0000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Hapoel Be'er Sheva.png"
+    },
+    {
+      "name": "Heart of Midlothian",
+      "shortName": "Hearts",
+      "defaultCode": "HOM",
+      "codes": {},
+      "primaryColour": "#8E003B",
+      "secondaryColour": "#EAD6B7",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Heart of Midlothian.png"
+    },
+    {
+      "name": "Iberia 1999 Tbilisi",
+      "shortName": "Iberia 1999",
+      "defaultCode": "IBE",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Iberia 1999 Tbilisi.png"
+    },
+    {
+      "name": "Inter Club d'Escaldes",
+      "shortName": "Inter Club d'Escaldes",
+      "defaultCode": "IDE",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Inter Club d'Escaldes.png"
+    },
+    {
+      "name": "Jagiellonia Białystok",
+      "shortName": "Jagiellonia",
+      "defaultCode": "JAG",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Jagiellonia Białystok.png"
+    },
+    {
+      "name": "KAA Gent",
+      "shortName": "KAA Gent",
+      "defaultCode": "GEN",
+      "codes": {},
+      "primaryColour": "#0000FF",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "KAA Gent.png"
+    },
+    {
+      "name": "Kairat Almaty",
+      "shortName": "Kairat Almaty",
+      "defaultCode": "KAI",
+      "codes": {},
+      "primaryColour": "#FCEE33",
+      "secondaryColour": "#81C0FF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Kairat Almaty.png"
+    },
+    {
+      "name": "Kauno Žalgiris",
+      "shortName": "Žalgiris",
+      "defaultCode": "ZAL",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Kauno Žalgiris.png"
+    },
+    {
+      "name": "KuPS",
+      "shortName": "KuPS",
+      "defaultCode": "KUP",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "KuPS.png"
+    },
+    {
+      "name": "LASK",
+      "shortName": "LASK",
+      "defaultCode": "LAS",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "LASK.png"
+    },
+    {
+      "name": "Lech Poznań",
+      "shortName": "Lech Poznań",
+      "defaultCode": "LEC",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Lech Poznań.png"
+    },
+    {
+      "name": "Levski Sofia",
+      "shortName": "Levski Sofia",
+      "defaultCode": "LES",
+      "codes": {},
+      "primaryColour": "#6182CF",
+      "secondaryColour": "#FCFCFC",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Levski Sofia.png"
+    },
+    {
+      "name": "Lillestrøm",
+      "shortName": "Lillestrøm",
+      "defaultCode": "LIL",
+      "codes": {},
+      "primaryColour": "#E8E337",
+      "secondaryColour": "#FF0000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Lillestrøm.png"
+    },
+    {
+      "name": "Lincoln Red Imps",
+      "shortName": "Lincoln Red Imps",
+      "defaultCode": "LRI",
+      "codes": {},
+      "primaryColour": "#C60000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Lincoln Red Imps.png"
+    },
+    {
+      "name": "Mjällby AIF",
+      "shortName": "Mjällby AIF",
+      "defaultCode": "MJA",
+      "codes": {},
+      "primaryColour": "#231F20",
+      "secondaryColour": "#FFD400",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Mjällby AIF.png"
+    },
+    {
+      "name": "NEC Nijmegen",
+      "shortName": "NEC Nijmegen",
+      "defaultCode": "NEC",
+      "codes": {},
+      "primaryColour": "#EF2F24",
+      "secondaryColour": "#84AEE7",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "NEC Nijmegen.png"
+    },
+    {
+      "name": "NK Celje",
+      "shortName": "NK Celje",
+      "defaultCode": "NKC",
+      "codes": {},
+      "primaryColour": "#000099",
+      "secondaryColour": "#FF6600",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "NK Celje.png"
+    },
+    {
+      "name": "OFI Crete",
+      "shortName": "OFI Crete",
+      "defaultCode": "OFI",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "OFI Crete.png"
+    },
+    {
+      "name": "Olympiacos",
+      "shortName": "Olympiacos",
+      "defaultCode": "OLY",
+      "codes": {},
+      "primaryColour": "#D01729",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Olympiacos.png"
+    },
+    {
+      "name": "Omonia",
+      "shortName": "Omonia",
+      "defaultCode": "OMO",
+      "codes": {},
+      "primaryColour": "#025719",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Omonia.png"
+    },
+    {
+      "name": "Pafos FC",
+      "shortName": "Pafos FC",
+      "defaultCode": "PAF",
+      "codes": {},
+      "primaryColour": "#82C0FE",
+      "secondaryColour": "#003399",
+      "textColour": "#000000",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Pafos FC.png"
+    },
+    {
+      "name": "Panathinaikos",
+      "shortName": "Panathinaikos",
+      "defaultCode": "PAO",
+      "codes": {},
+      "primaryColour": "#2B6A36",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Panathinaikos.png"
+    },
+    {
+      "name": "Red Star Belgrade",
+      "shortName": "Red Star Belgrade",
+      "defaultCode": "RSB",
+      "codes": {},
+      "primaryColour": "#FF0000",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Red Star Belgrade.png"
+    },
+    {
+      "name": "Riga FC",
+      "shortName": "Riga FC",
+      "defaultCode": "RIG",
+      "codes": {},
+      "primaryColour": "#00AAE4",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Riga FC.png"
+    },
+    {
+      "name": "Sabah FK",
+      "shortName": "Sabah FK",
+      "defaultCode": "SAB",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#FF1493",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Sabah FK.png"
+    },
+    {
+      "name": "Shakhtar Donetsk",
+      "shortName": "Shakhtar Donetsk",
+      "defaultCode": "SHK",
+      "codes": {},
+      "primaryColour": "#FF5900",
+      "secondaryColour": "#1A1A1A",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Shakhtar Donetsk.png"
+    },
+    {
+      "name": "Sint-Truidense",
+      "shortName": "Sint-Truidense",
+      "defaultCode": "STV",
+      "codes": {},
+      "primaryColour": "#F8EA2C",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Sint-Truidense.png"
+    },
+    {
+      "name": "Slavia Prague",
+      "shortName": "Slavia Prague",
+      "defaultCode": "SLA",
+      "codes": {},
+      "primaryColour": "#E30613",
+      "secondaryColour": "#0033A0",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Slavia Prague.png"
+    },
+    {
+      "name": "Slovan Bratislava",
+      "shortName": "Slovan Bratislava",
+      "defaultCode": "SLO",
+      "codes": {},
+      "primaryColour": "#6CACE4",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Slovan Bratislava.png"
+    },
+    {
+      "name": "Sparta Prague",
+      "shortName": "Sparta Prague",
+      "defaultCode": "SPA",
+      "codes": {},
+      "primaryColour": "#791B29",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Sparta Prague.png"
+    },
+    {
+      "name": "Sturm Graz",
+      "shortName": "Sturm Graz",
+      "defaultCode": "STG",
+      "codes": {},
+      "primaryColour": "#FFFFFF",
+      "secondaryColour": "#000000",
+      "textColour": "#000000",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Sturm Graz.png"
+    },
+    {
+      "name": "Torreense",
+      "shortName": "Torreense",
+      "defaultCode": "TOR",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ]
+    },
+    {
+      "name": "Trabzonspor",
+      "shortName": "Trabzonspor",
+      "defaultCode": "TRA",
+      "codes": {},
+      "primaryColour": "#7A1229",
+      "secondaryColour": "#63B8FF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Trabzonspor.png"
+    },
+    {
+      "name": "Union Saint-Gilloise",
+      "shortName": "Union Saint-Gilloise",
+      "defaultCode": "USG",
+      "codes": {},
+      "primaryColour": "#FCEE33",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#000000",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Union Saint-Gilloise.png"
+    },
+    {
+      "name": "Universitatea Craiova",
+      "shortName": "U. Craiova",
+      "defaultCode": "UCR",
+      "codes": {},
+      "primaryColour": "#000000",
+      "secondaryColour": "#C60000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "conference-league"
+      ],
+      "crestSource": "Universitatea Craiova.png"
+    },
+    {
+      "name": "Viking FK",
+      "shortName": "Viking FK",
+      "defaultCode": "VIK",
+      "codes": {},
+      "primaryColour": "#000080",
+      "secondaryColour": "#FFFFFF",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "champions-league"
+      ],
+      "crestSource": "Viking FK.png"
+    },
+    {
+      "name": "Viktoria Plzeň",
+      "shortName": "Viktoria Plzeň",
+      "defaultCode": "PLZ",
+      "codes": {},
+      "primaryColour": "#0000DD",
+      "secondaryColour": "#000000",
+      "textColour": "#FFFFFF",
+      "competitionIds": [
+        "europa-league"
+      ],
+      "crestSource": "Viktoria Plzeň.png"
     }
   ]
 }

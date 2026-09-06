@@ -216,6 +216,7 @@ if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
     check(seed.clubs.first { $0.shortName == "Marseille" }?.code(for: "champions-league") == "MAR", "seed keeps per-competition codes")
     let fiveLeagues = ["premier-league", "ligue1", "la-liga", "serie-a", "bundesliga"]
     let leagueCounts = [20, 18, 20, 20, 18]
+    check(seed.clubs.filter { $0.competitionIds.contains("champions-league") }.count == 36, "champions-league has 36 clubs for the 2026-27 league phase")
     for (comp, expected) in zip(fiveLeagues, leagueCounts) {
         let n = seed.clubs.filter { $0.competitionIds.contains(comp) }.count
         check(n == expected, "\(comp) has \(expected) clubs for 2026-27 (found \(n))")

@@ -1,8 +1,10 @@
-// Competitions and clubs. Codes per competition, colours and crest import.
-// The Clubs tab: search, tick-menu filters, removable chips, List/Icons view modes. See LibraryFilters.swift.
+// Team Library: competitions and clubs. Codes per competition, colours and crest import.
+// The Clubs tab: search, a Competitions tick-menu, Clubs/National teams/All, List/Icons. See LibraryFilters.swift.
 import SwiftUI
 import ScorebugCore
 import UniformTypeIdentifiers
+import ImageIO
+import AppKit
 
 struct LibraryView: View {
     @EnvironmentObject var model: AppModel
@@ -13,8 +15,8 @@ struct LibraryView: View {
 
     @State private var search = ""
     @State private var selectedCompetitions: Set<String> = []
-    @State private var selectedConfederations: Set<String> = []
     @State private var clubsNationsFilter: ClubsNationsFilter = .all
+    @State private var confirmDelete: Club?
     @AppStorage("libraryViewMode") private var viewMode: LibraryViewMode = .list
 
     var body: some View {
@@ -22,7 +24,8 @@ struct LibraryView: View {
             Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().frame(width: 260).padding(10)
             if mode == 1 { competitions } else { clubsSplit }
         }
-        .navigationTitle("Library")
+        .navigationTitle("Team Library")
+        .onAppear { LibraryCrestImage.crestsDirectory = model.store.crestsDirectory }
     }
 
     // MARK: Competitions tab
@@ -36,7 +39,6 @@ struct LibraryView: View {
     private var competitions: some View {
         HSplitView {
             VStack(spacing: 0) {
-                // The filter sits ahead of the list, same reading order as the Clubs tab.
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search competitions", text: $competitionSearch).scaledFont(.body).textFieldStyle(.plain)
@@ -49,26 +51,21 @@ struct LibraryView: View {
                 .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
                 .padding(10)
                 Divider()
-                // 22 pt marks (CompetitionMark's own `size` is the one source of truth for that; it is
-                // never scaled up by anything here), full name, short code.
                 List(filteredCompetitions, selection: $selectedCompetition) { c in
-                    HStack { CompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
+                    HStack { CachedCompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
                         .scaledFont(.body)
                         .tag(c.id)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(minWidth: 260, idealWidth: 300, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            // Editor stays on the right.
             Group {
                 if let id = selectedCompetition, let c = model.library.competitions.first(where: { $0.id == id }) { CompetitionEditor(competition: c).id(id) }
                 else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
             }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
         }
-        // Greedy frame on the HSplitView itself is not enough: each pane's own root view must also
-        // carry maxHeight: .infinity, or NSSplitView sizes that pane to the view's ideal (fitting)
-        // height and centres it in the leftover space instead of stretching it — see clubsSplit's
-        // longer note below, where this same defect was reproduced and proved.
+        // Each pane's own root view needs maxHeight: .infinity too, or NSSplitView sizes it to the
+        // content's ideal height instead of the pane's real height (see clubsSplit).
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -76,7 +73,7 @@ struct LibraryView: View {
 
     private var filteredClubs: [Club] {
         model.library.clubs
-            .filter { matchesSearch($0) && matchesCompetitions($0) && matchesConfederations($0) && matchesClubsNations($0) }
+            .filter { matchesSearch($0) && matchesCompetitions($0) && matchesClubsNations($0) }
             .sorted { $0.name < $1.name }
     }
 
@@ -93,10 +90,6 @@ struct LibraryView: View {
         selectedCompetitions.isEmpty || !selectedCompetitions.isDisjoint(with: Set(club.competitionIds))
     }
 
-    private func matchesConfederations(_ club: Club) -> Bool {
-        selectedConfederations.isEmpty || (club.confederation.map { selectedConfederations.contains($0) } ?? false)
-    }
-
     private func matchesClubsNations(_ club: Club) -> Bool {
         switch clubsNationsFilter {
         case .all: return true
@@ -105,14 +98,8 @@ struct LibraryView: View {
         }
     }
 
-    /// Confederations actually present on a club in the library, canonical order first.
-    private var confederationsPresent: [String] {
-        let present = Set(model.library.clubs.compactMap { $0.confederation })
-        return LibraryFilters.confederationOrder.filter { present.contains($0) } + present.subtracting(LibraryFilters.confederationOrder).sorted()
-    }
-
     private var hasActiveFilters: Bool {
-        !selectedCompetitions.isEmpty || !selectedConfederations.isEmpty || clubsNationsFilter != .all
+        !selectedCompetitions.isEmpty || clubsNationsFilter != .all
     }
 
     private func bindingFor(_ value: String, in set: Binding<Set<String>>) -> Binding<Bool> {
@@ -123,9 +110,6 @@ struct LibraryView: View {
         HSplitView {
             VStack(spacing: 0) {
                 toolbarRow
-                Picker("", selection: $clubsNationsFilter) {
-                    ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
-                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().padding(.horizontal, 10).padding(.top, 8)
                 countsRow
                 Divider()
                 Group { if viewMode == .list { clubList } else { clubGrid } }
@@ -133,19 +117,8 @@ struct LibraryView: View {
                 Divider()
                 addRemoveRow
             }
-            // The reproduced bug: this pane's root view must itself carry maxHeight: .infinity, or
-            // NSSplitView sizes the pane to the VStack's own ideal (fitting) height instead of the
-            // pane's real height. With 165 clubs the ideal height of the fixed rows above and below
-            // the list (search, filters, chips, counts, add/remove) already accounts for the whole
-            // reduced height NSSplitView gives this pane, leaving nothing for the list itself, which
-            // renders at zero height while the fixed rows sit vertically centred in the pane — exactly
-            // "the toolbar centred in the pane, rows never show". Confirmed by screenshot with and
-            // without this fix (agent-ui/library-bug-*-before.png vs library-fixed-*.png in the
-            // scratchpad): the same collapse also happened, less visibly, on the Competitions list
-            // above, which showed a few rows but not enough to fill the pane, for the identical reason.
-            // The outer `.frame(maxWidth: .infinity, maxHeight: .infinity)` on the HSplitView below only
-            // sizes the split view itself relative to its own parent; it does not, by itself, make
-            // either pane's content greedy.
+            // This pane's own root view must carry maxHeight: .infinity, or NSSplitView sizes the pane
+            // to the VStack's ideal height and the list renders at zero height instead of filling it.
             .frame(minWidth: 300, idealWidth: 340, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(shortcutButtons)
             Group {
@@ -160,15 +133,16 @@ struct LibraryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Search, the competitions/nations tick-menus, the view-mode toggle and the removable chips as one
-    /// toolbar block, so the pane reads as one filter bar instead of a stack of unrelated rows. The
-    /// All/Clubs/National teams choice is a separate row directly below (see clubsSplit).
+    /// Search, then one row: the Competitions menu, the Clubs/National teams/All choice and the
+    /// List/Icons toggle. Chips only appear while a filter is active.
     private var toolbarRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             searchField
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 competitionsMenu
-                nationsMenu
+                Picker("", selection: $clubsNationsFilter) {
+                    ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
+                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden()
                 Spacer()
                 Picker("", selection: $viewMode) {
                     Image(systemName: "list.bullet").tag(LibraryViewMode.list)
@@ -184,30 +158,29 @@ struct LibraryView: View {
         Menu {
             ForEach(model.library.competitions) { comp in
                 Toggle(isOn: bindingFor(comp.id, in: $selectedCompetitions)) {
-                    HStack { CompetitionMark(competition: comp, size: 16); Text(comp.name) }
+                    HStack { competitionMenuMark(comp); Text(comp.name) }
                 }.scaledFont(.body)
             }
             if !selectedCompetitions.isEmpty {
                 Divider()
-                Button("Show All Competitions") { selectedCompetitions.removeAll() }.scaledFont(.body)
+                Button("Show All") { selectedCompetitions.removeAll() }.scaledFont(.body)
             }
         } label: {
             Label("Competitions", systemImage: "trophy").scaledFont(.body)
         }
     }
 
-    private var nationsMenu: some View {
-        Menu {
-            ForEach(confederationsPresent, id: \.self) { conf in
-                Toggle(conf, isOn: bindingFor(conf, in: $selectedConfederations)).scaledFont(.body)
+    /// A uniform 18 pt circular mark for the Competitions menu. A plain `Image` there ignores `.frame`
+    /// and draws at the source's native pixel size, so this uses a pre-sized menu icon, not a resized one.
+    private func competitionMenuMark(_ comp: Competition) -> some View {
+        Group {
+            if let f = comp.logoFile, let img = LibraryCrestImage.menuIcon(file: f) {
+                Image(nsImage: img).clipShape(Circle())
+            } else {
+                Circle().fill(CompetitionColours.colour(for: comp.id)).frame(width: 18, height: 18)
+                    .overlay(Text(comp.shortName.prefix(2)).font(.system(size: 7, weight: .heavy)).foregroundStyle(.white))
             }
-            if !selectedConfederations.isEmpty {
-                Divider()
-                Button("Show All Nations") { selectedConfederations.removeAll() }.scaledFont(.body)
-            }
-        } label: {
-            Label("Nations", systemImage: "globe").scaledFont(.body)
-        }.disabled(confederationsPresent.isEmpty)
+        }
     }
 
     private var searchField: some View {
@@ -229,9 +202,6 @@ struct LibraryView: View {
                 ForEach(model.library.competitions.filter { selectedCompetitions.contains($0.id) }) { comp in
                     FilterChip(label: comp.shortName) { selectedCompetitions.remove(comp.id) }
                 }
-                ForEach(confederationsPresent.filter { selectedConfederations.contains($0) }, id: \.self) { conf in
-                    FilterChip(label: conf) { selectedConfederations.remove(conf) }
-                }
                 if clubsNationsFilter != .all {
                     FilterChip(label: clubsNationsFilter.title) { clubsNationsFilter = .all }
                 }
@@ -250,25 +220,14 @@ struct LibraryView: View {
         Array(model.library.competitions.filter { club.competitionIds.contains($0.id) }.prefix(4))
     }
 
-    private func crestThumb(_ club: Club, size: CGFloat = 20) -> some View {
-        Group {
-            if let f = club.crestFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(f)) {
-                Image(nsImage: img).resizable().scaledToFit()
-            } else {
-                Circle().fill(Color(hex: club.primaryColour))
-                    .overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: size * 0.32, weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
-            }
-        }.frame(width: size, height: size)
-    }
-
     private var clubList: some View {
         List(filteredClubs, selection: $selected) { club in
             HStack(spacing: 10) {
-                crestThumb(club)
+                CachedCrestThumb(club: club, size: 22)
                 Text(club.name)
                 Spacer()
                 Text(club.defaultCode).foregroundStyle(.secondary).monospaced()
-                HStack(spacing: 2) { ForEach(clubCompetitions(club)) { comp in CompetitionMark(competition: comp, size: 14) } }
+                HStack(spacing: 2) { ForEach(clubCompetitions(club)) { comp in CachedCompetitionMark(competition: comp, size: 14) } }
             }
             .scaledFont(.body)
             .tag(club.id)
@@ -278,7 +237,7 @@ struct LibraryView: View {
 
     private var clubGrid: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96, maximum: 112), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 104), spacing: 12)], spacing: 12) {
                 ForEach(filteredClubs) { club in clubTile(club) }
             }.padding(10)
         }
@@ -287,12 +246,15 @@ struct LibraryView: View {
     private func clubTile(_ club: Club) -> some View {
         let isSelected = selected == club.id
         return VStack(spacing: 6) {
-            crestThumb(club, size: 56)
+            ZStack {
+                Circle().fill(.quaternary).frame(width: 56, height: 56)
+                CachedCrestThumb(club: club, size: 44)
+            }
             Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
             Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.secondary).monospaced()
         }
         .padding(8)
-        .frame(width: 96, height: 96)
+        .frame(width: 104, height: 104)
         .background(RoundedRectangle(cornerRadius: 10).fill(isSelected ? Color.accentColor.opacity(0.18) : Color.clear))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1.5))
         .contentShape(Rectangle())
@@ -301,12 +263,30 @@ struct LibraryView: View {
 
     private var addRemoveRow: some View {
         HStack {
-            Button { let c = Club(name: "New club", shortName: "New", defaultCode: "NEW", primaryColour: "#333333"); model.upsertClub(c); selected = c.id } label: { Image(systemName: "plus") }
+            Button {
+                let ids = selectedCompetitions.count == 1 ? Array(selectedCompetitions) : []
+                let c = Club(name: "New club", shortName: "New", defaultCode: "NEW", primaryColour: "#333333", competitionIds: ids)
+                model.upsertClub(c); selected = c.id
+            } label: { Image(systemName: "plus") }
                 .scaledFont(.body)
-            Button { if let id = selected { model.deleteClub(id); selected = nil } } label: { Image(systemName: "minus") }
+            Button {
+                if let id = selected { confirmDelete = model.library.clubs.first(where: { $0.id == id }) }
+            } label: { Image(systemName: "minus") }
                 .scaledFont(.body).disabled(selected == nil)
             Spacer()
-        }.padding(8)
+        }
+        .padding(8)
+        .confirmationDialog(
+            "Delete \(confirmDelete?.name ?? "this club")?",
+            isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } }),
+            presenting: confirmDelete
+        ) { club in
+            Button("Delete", role: .destructive) {
+                model.deleteClub(club.id)
+                if selected == club.id { selected = nil }
+                confirmDelete = nil
+            }
+        }
     }
 
     /// Invisible buttons so Cmd-1 and Cmd-2 switch view mode, matching the segmented control.
@@ -317,6 +297,88 @@ struct LibraryView: View {
         }
         .opacity(0)
         .frame(width: 0, height: 0)
+    }
+}
+
+/// A competition's mark at a given size, backed by the thumbnail cache (never a full-size decode in a row).
+private struct CachedCompetitionMark: View {
+    let competition: Competition
+    var size: CGFloat = 22
+    var body: some View {
+        Group {
+            if let f = competition.logoFile, let img = LibraryCrestImage.thumbnail(file: f, size: size) {
+                Image(nsImage: img)
+            } else {
+                RoundedRectangle(cornerRadius: size * 0.22).fill(CompetitionColours.colour(for: competition.id))
+                    .overlay(Text(competition.shortName.prefix(4)).font(.system(size: size * 0.34, weight: .heavy)).foregroundStyle(.white).minimumScaleFactor(0.5).padding(2))
+            }
+        }.frame(width: size, height: size)
+    }
+}
+
+/// A club's crest at a given size, backed by the thumbnail cache (never a full-size decode in a row).
+private struct CachedCrestThumb: View {
+    let club: Club
+    var size: CGFloat = 22
+    var body: some View {
+        Group {
+            if let f = club.crestFile, let img = LibraryCrestImage.thumbnail(file: f, size: size) {
+                Image(nsImage: img)
+            } else {
+                Circle().fill(Color(hex: club.primaryColour))
+                    .overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: size * 0.32, weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
+            }
+        }.frame(width: size, height: size)
+    }
+}
+
+/// Stand-in for agent A's `CrestImage` (owned by Helpers.swift), which had not landed at the time of
+/// writing. Same two functions, so call sites above switch to `CrestImage` with a find-and-replace once
+/// it exists, and this type is deleted.
+private enum LibraryCrestImage {
+    static var crestsDirectory: URL?
+    private static let cache = NSCache<NSString, NSImage>()
+
+    static func thumbnail(file: String, size: CGFloat) -> NSImage? { image(file, points: size) }
+
+    /// A Menu label renders only the raw image, the same reason it ignores `.frame`: it reads the pixel
+    /// data straight off the NSImage rather than the full modified view, so a mark that is not already
+    /// circular (a flag, a square badge) must have that mask baked in here, not applied with `clipShape`.
+    static func menuIcon(file: String) -> NSImage? {
+        let key = "\(file)@menu" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let cg = thumbnailCGImage(file, maxPixel: 36) else { return nil }
+        let side = min(cg.width, cg.height)
+        let cropped = cg.cropping(to: CGRect(x: (cg.width - side) / 2, y: (cg.height - side) / 2, width: side, height: side)) ?? cg
+        let size = NSSize(width: 18, height: 18)
+        let circular = NSImage(size: size)
+        circular.lockFocus()
+        NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).setClip()
+        NSImage(cgImage: cropped, size: size).draw(in: NSRect(origin: .zero, size: size))
+        circular.unlockFocus()
+        cache.setObject(circular, forKey: key)
+        return circular
+    }
+
+    private static func image(_ file: String, points: CGFloat) -> NSImage? {
+        let key = "\(file)@\(points)" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let cg = thumbnailCGImage(file, maxPixel: points * 2) else { return nil }
+        let img = NSImage(cgImage: cg, size: NSSize(width: points, height: points))
+        cache.setObject(img, forKey: key)
+        return img
+    }
+
+    private static func thumbnailCGImage(_ file: String, maxPixel: CGFloat) -> CGImage? {
+        guard let dir = crestsDirectory else { return nil }
+        let url = dir.appendingPathComponent(file)
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 }
 
