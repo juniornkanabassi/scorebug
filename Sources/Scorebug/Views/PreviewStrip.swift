@@ -7,63 +7,39 @@ struct OverlayWebView: NSViewRepresentable {
     let scale: CGFloat
     let size: CGSize
 
-    /// The web view keeps the exact canvas size OBS gives the page as its bounds (so the page lays out at
-    /// 1920x1080 or 1080x1920) while its frame is the pane size; AppKit scales the view's drawing by the
-    /// bounds-to-frame ratio. No WebKit magnification: WebKit resets that per page and clamps small values,
-    /// which left the portrait pane unscaled (6 Sep).
-    func makeNSView(context: Context) -> WKWebView {
+    /// The web view keeps the exact canvas size OBS gives the page (1920x1080 or 1080x1920) and a scroll view
+    /// magnifies it to fit the stage. `pageZoom` used to scale the content while the page laid out at the stage's
+    /// own size, so portrait bugs rendered with a different viewport than in OBS and the preview lied.
+    func makeNSView(context: Context) -> NSScrollView {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
         let web = WKWebView(frame: CGRect(origin: .zero, size: size), configuration: config)
         web.setValue(false, forKey: "drawsBackground")
-        web.navigationDelegate = context.coordinator
-        context.coordinator.requestedURL = url
         web.load(URLRequest(url: url))
-        context.coordinator.watch(web)
-        return web
+        let scroll = NSScrollView()
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = false; scroll.hasHorizontalScroller = false
+        scroll.verticalScrollElasticity = .none; scroll.horizontalScrollElasticity = .none
+        scroll.allowsMagnification = true
+        // NSScrollView clamps magnification to 0.25 by default, which is above the portrait pane's 1080-to-pane
+        // scale, so the portrait preview rendered 1.6x too big and clipped (Junior, 6 Sep).
+        scroll.minMagnification = 0.02
+        scroll.documentView = web
+        scroll.magnification = scale
+        // View > Reload Previews (⌘R): WebKit can leave a view blank after its window was occluded or on another Space.
+        context.coordinator.observer = NotificationCenter.default.addObserver(forName: OverlayWebView.reloadRequested, object: nil, queue: .main) { [weak web] _ in web?.reload() }
+        return scroll
     }
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
 
     static let reloadRequested = Notification.Name("scorebug.reloadPreviews")
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    final class Coordinator { var observer: Any?; deinit { if let o = observer { NotificationCenter.default.removeObserver(o) } } }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
-        private var observers: [Any] = []
-        /// The URL last handed to `load`. `WKWebView.url` stays nil until the navigation commits, and a slow first
-        /// load restarted on every SwiftUI update never committed at all (both panes blank, 6 Sep).
-        var requestedURL: URL?
-        private var finished = false
-
-        /// WebKit stops painting a view whose window is occluded or on another Space; reloading once the window is
-        /// visible again, or on View > Reload Previews, brings a page back. Nothing is lost, state is the server's.
-        func watch(_ web: WKWebView) {
-            observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: nil, queue: .main) { [weak web, weak self] note in
-                guard let web, let win = note.object as? NSWindow, win === web.window, win.occlusionState.contains(.visible), self?.finished == true else { return }
-                web.reload()
-            })
-            observers.append(NotificationCenter.default.addObserver(forName: OverlayWebView.reloadRequested, object: nil, queue: .main) { [weak web] _ in web?.reload() })
-        }
-        deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
-
-        private func retry(_ web: WKWebView) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak web] in
-                guard let web else { return }
-                if let url = web.url { web.load(URLRequest(url: url)) } else { web.reload() }
-            }
-        }
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            if (error as NSError).code == NSURLErrorCancelled { return }
-            retry(webView)
-        }
-        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { retry(webView) }
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finished = true }
-        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
-    }
-
-    func updateNSView(_ web: WKWebView, context: Context) {
-        let frame = CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale))
-        if web.frame != frame { web.frame = frame }
-        if web.bounds.size != size { web.bounds = CGRect(origin: .zero, size: size) }
-        if context.coordinator.requestedURL != url { context.coordinator.requestedURL = url; web.load(URLRequest(url: url)) }
+    func updateNSView(_ scroll: NSScrollView, context: Context) {
+        guard let web = scroll.documentView as? WKWebView else { return }
+        if web.frame.size != size { web.frame = CGRect(origin: .zero, size: size) }
+        if abs(scroll.magnification - scale) > 0.0001 { scroll.magnification = scale }
+        scroll.contentView.scroll(to: .zero)
+        if web.url != url { web.load(URLRequest(url: url)) }
     }
 }
