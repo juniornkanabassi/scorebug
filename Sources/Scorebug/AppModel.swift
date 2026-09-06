@@ -110,13 +110,7 @@ final class AppModel: ObservableObject {
     func applyRequest(_ request: CommandRequest, slot: Int) throws {
         let command = try request.toCommand()
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { throw EngineError.badRequest("slot must be 1 or 2") }
-        var m = state.matches[idx]
-        if request.command == "playPause" {
-            m = MatchEngine.apply(.play, to: m, now: Date())
-        } else {
-            m = MatchEngine.apply(command, to: m, now: Date())
-        }
-        state.matches[idx] = m
+        state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
         persistAndBroadcast()
     }
 

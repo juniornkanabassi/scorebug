@@ -6,7 +6,9 @@ public enum Command: Sendable, Equatable {
     case setScorer(UUID, String?)
     case startPeriod(Period)
     case endPeriod
+    /// One-way start: a running clock stays running. `playPause` is the toggle for a single key or button.
     case play
+    case playPause
     case pause
     case setAddedMinutes(Int?)
     case adjustAddedMinutes(Int)
@@ -89,7 +91,7 @@ public struct CommandRequest: Codable, Sendable {
         case "endPeriod": return .endPeriod
         case "play": return .play
         case "pause": return .pause
-        case "playPause": return .play // resolved by the engine using the running flag
+        case "playPause": return .playPause
         case "setAddedMinutes": return .setAddedMinutes(minutes)
         case "adjustAddedMinutes": return .adjustAddedMinutes(delta ?? 1)
         case "setVisible": return .setVisible(visible ?? true)
@@ -152,6 +154,9 @@ public enum MatchEngine {
             freeze(&m.clock, now: now)
             m.phase = period.breakPhase
         case .play:
+            guard m.currentPeriod != nil, !m.clock.running else { return m }
+            m.clock.periodStart = now; m.clock.running = true
+        case .playPause:
             guard m.currentPeriod != nil else { return m }
             if m.clock.running { freeze(&m.clock, now: now) } else { m.clock.periodStart = now; m.clock.running = true }
         case .pause:

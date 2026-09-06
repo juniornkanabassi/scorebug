@@ -41,7 +41,7 @@ struct SlotView: View {
         .navigationSubtitle("\(match.home.name) v \(match.away.name)")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button { model.apply(.play, slot: slot) } label: { Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body) }
+                Button { model.apply(.playPause, slot: slot) } label: { Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body) }
                     .disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)").keyboardShortcut(.space, modifiers: [])
                 Toggle(isOn: Binding(get: { match.visible }, set: { model.apply(.setVisible($0), slot: slot) })) {
                     Label(match.visible ? "Bug shown" : "Bug hidden", systemImage: match.visible ? "eye" : "eye.slash").scaledFont(.body)
@@ -109,7 +109,7 @@ struct SlotView: View {
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
             HStack(spacing: 16) {
-                Button { model.apply(.play, slot: slot) } label: {
+                Button { model.apply(.playPause, slot: slot) } label: {
                     Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
                 }.disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
                 Button { model.apply(.endPeriod, slot: slot) } label: { Text("End half").scaledFont(.body) }.disabled(match.currentPeriod == nil)

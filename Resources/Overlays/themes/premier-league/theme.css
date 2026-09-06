@@ -140,9 +140,13 @@ body[data-theme="premier-league"] .added .counter:empty { display: none; }
    x=540 both with ?demo=show and with a live addedMinutes value set via /api/match -- see findings.md
    Round 5 "Portrait +N chip" table. */
 body[data-orientation="v"][data-theme="premier-league"] .added {
-  position: absolute; top: 100%; left: 50%; z-index: 1;
+  /* grid-area: sep, like .clock: an absolutely positioned grid child takes its own grid area as containing
+     block, so with grid-area "added" (the collapsed last column) left:50% was the bar's RIGHT edge and the
+     chip floated 280px off the bug (match-day rehearsal, 6 Sep). Same area as the clock = bar centre. */
+  grid-area: sep; position: absolute; top: 100%; left: 50%; z-index: 1;
   height: calc(var(--h) * 0.6); margin-left: 0;
-  transform: translateX(calc(-50% + (var(--h) * 2.47) / 2 + var(--h) * 0.12));
+  /* left edge = clock plate right edge + 0.12H gap (no -50%: that put the chip centre there and overlapped the clock). */
+  transform: translateX(calc((var(--h) * 2.47) / 2 + var(--h) * 0.12));
 }
 /* GOAL: club colour sweeps from the plate across the whole bar; crest sits at the cut; GOAL to the right.
    Round 4: GOAL wordmark, its padding and corner radius scale with the same ~1.35x the score digits grew

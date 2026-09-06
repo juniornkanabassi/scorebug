@@ -18,8 +18,12 @@ check(!m.clock.running && Int(m.clock.elapsed(at: at(900))) == 600, "pause freez
 m = MatchEngine.apply(.play, to: m, now: at(900))
 check(Int(m.clock.elapsed(at: at(1000))) == 700, "play resumes from the frozen value")
 m = MatchEngine.apply(.play, to: m, now: at(1000))
-check(!m.clock.running, "play while running pauses (play/pause key)")
-m = MatchEngine.apply(.play, to: m, now: at(1000))
+check(m.clock.running && Int(m.clock.elapsed(at: at(1100))) == 800, "play while running is a no-op (one-way start after startPeriod)")
+m = MatchEngine.apply(.playPause, to: m, now: at(1000))
+check(!m.clock.running, "playPause while running pauses (single key)")
+m = MatchEngine.apply(.playPause, to: m, now: at(1000))
+check(m.clock.running, "playPause while paused resumes")
+check((try? CommandRequest(command: "playPause").toCommand()) == .playPause, "playPause request decodes to the toggle")
 
 // Added time entered late, freezeAndCount
 let lateNow = at(1000 + (2700 - 700) + 75)   // 45:00 plus 75 seconds of play
