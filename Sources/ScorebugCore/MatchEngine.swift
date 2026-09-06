@@ -96,10 +96,10 @@ public struct CommandRequest: Codable, Sendable {
         case "adjustAddedMinutes": return .adjustAddedMinutes(delta ?? 1)
         case "setVisible": return .setVisible(visible ?? true)
         case "toggleVisible": return .toggleVisible
-        case "startShootout": return .startShootout((try? sideValue()) ?? .home)
+        case "startShootout": return .startShootout(side == nil ? .home : try sideValue())
         case "recordKick":
             guard let r = result, let v = KickResult(rawValue: r), v != .pending else { throw EngineError.badRequest("result must be scored or missed") }
-            return .recordKick(try? sideValue(), v)
+            return .recordKick(side == nil ? nil : try sideValue(), v)
         case "undoKick": return .undoKick
         case "setTeam":
             guard let t = team else { throw EngineError.badRequest("team required") }
@@ -146,6 +146,8 @@ public enum MatchEngine {
             let trimmed = scorer?.trimmingCharacters(in: .whitespacesAndNewlines)
             m.goals[idx].scorer = (trimmed?.isEmpty ?? true) ? nil : trimmed
         case .startPeriod(let period):
+            // Re-pressing the live period's pill must not zero a running clock (review, 6 Sep).
+            guard m.currentPeriod != period else { return m }
             m.phase = period.phase
             m.clock = Clock(periodBaseSeconds: period.baseSeconds, periodStart: now, accumulated: 0, running: true)
             m.addedMinutes = nil
@@ -172,6 +174,8 @@ public enum MatchEngine {
         case .toggleVisible:
             m.visible.toggle()
         case .startShootout(let first):
+            // Only between periods and after kick-off; an accidental press during play or pre-match is ignored.
+            guard m.currentPeriod == nil, m.phase != .preMatch else { return m }
             freeze(&m.clock, now: now)
             m.phase = .shootout
             m.addedMinutes = nil

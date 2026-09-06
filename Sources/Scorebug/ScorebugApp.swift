@@ -115,7 +115,10 @@ struct ContentView: View {
                         let m = model.match(slot)
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
+                                HStack(spacing: 6) {
+                                    Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
+                                    if m.visible { Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS") }
+                                }
                                 Text("\(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
                             }
                         } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square").scaledFont(.body) }

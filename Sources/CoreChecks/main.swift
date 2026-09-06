@@ -88,6 +88,15 @@ check(MatchEngine.minuteLabel(elapsed: 2700, phase: .firstHalf) == "45+1'", "45:
 check(MatchEngine.minuteLabel(elapsed: 6299, phase: .extraFirst) == "105'", "extra time first half minute label")
 
 // Shootout
+var pre = Match(slot: 1)
+pre = MatchEngine.apply(.startShootout(.home), to: pre, now: at(0))
+check(pre.phase == .preMatch && pre.shootout == nil, "startShootout before kick-off is ignored")
+var live = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
+live = MatchEngine.apply(.startShootout(.home), to: live, now: at(10))
+check(live.phase == .firstHalf && live.shootout == nil, "startShootout during a live period is ignored")
+live = MatchEngine.apply(.startPeriod(.firstHalf), to: live, now: at(1000))
+check(Int(live.clock.elapsed(at: at(1000))) == 1000, "re-pressing the live period does not zero the clock")
+m = MatchEngine.apply(.endPeriod, to: m, now: at(0))
 m = MatchEngine.apply(.startShootout(.away), to: m, now: at(0))
 let before = (m.homeScore, m.awayScore)
 m = MatchEngine.apply(.goal(.home, 1), to: m, now: at(0))

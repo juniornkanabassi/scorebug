@@ -181,10 +181,11 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   function frame() {
     if (match) {
       const d = clockDisplay(match, (theme && theme.clockStyle) || "freezeAndCount");
-      el.clockMain.textContent = d.main;
-      el.clock.classList.toggle("stopped", !!d.state); el.clockState.textContent = d.state || "";
+      if (el.clockMain.textContent !== d.main) el.clockMain.textContent = d.main;
+      el.clock.classList.toggle("stopped", !!d.state); if (el.clockState.textContent !== (d.state || "")) el.clockState.textContent = d.state || "";
       el.clock.classList.toggle("running", !!match.clock.running);
-      el.addedPlus.textContent = d.added || ""; el.addedCounter.textContent = d.counter || "";
+      if (el.addedPlus.textContent !== (d.added || "")) el.addedPlus.textContent = d.added || "";
+      if (el.addedCounter.textContent !== (d.counter || "")) el.addedCounter.textContent = d.counter || "";
       bug.classList.toggle("has-counter", !!d.counter);
       bug.classList.toggle("show-scorers", demoForceScorers || scorersVisible(match));
     }

@@ -34,6 +34,7 @@ struct SlotView: View {
     /// Goal whose scorer popover should be open. Set right after a plus button scores a goal so the
     /// popover appears on that goal's row without the plus button itself waiting on anything.
     @State private var scorerPopoverGoalId: UUID?
+    @State private var confirmReset = false
 
     private var match: Match { model.match(slot) }
     private var competition: Competition? { model.library.competitions.first { $0.id == match.competitionId } }
@@ -60,8 +61,11 @@ struct SlotView: View {
                 Toggle(isOn: Binding(get: { match.visible }, set: { model.apply(.setVisible($0), slot: slot) })) {
                     Label(match.visible ? "Bug shown" : "Bug hidden", systemImage: match.visible ? "eye" : "eye.slash").scaledFont(.body)
                 }.toggleStyle(.button).help("Show or hide the bug in OBS")
-                Button(role: .destructive) { model.apply(.reset, slot: slot) } label: { Label("Reset", systemImage: "arrow.counterclockwise").scaledFont(.body) }
+                Button(role: .destructive) { confirmReset = true } label: { Label("Reset match", systemImage: "arrow.counterclockwise").scaledFont(.body) }
                     .help("Zero the score, clock and shootout; keep the teams")
+                    .confirmationDialog("Reset this match?", isPresented: $confirmReset) {
+                        Button("Reset match", role: .destructive) { model.apply(.reset, slot: slot) }
+                    } message: { Text("Zeroes the score, clock, goals and shootout. The teams and competition stay.") }
             }
         }
     }
@@ -103,6 +107,8 @@ struct SlotView: View {
                     scorerPopoverGoalId = match.lastGoal?.goalId
                 } label: { Image(systemName: "plus").scaledFont(.title2, weight: .bold) }
                     .buttonStyle(.borderedProminent).frame(width: 44, height: 44)
+                    .keyboardShortcut(side == .home ? "h" : "a", modifiers: [.command, .shift])
+                    .help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
                     .disabled(match.phase == .shootout).help("Goal for \(team.shortName)")
             }
         }
@@ -151,6 +157,7 @@ struct SlotView: View {
             HStack(spacing: 8) {
                 ForEach(Period.allCases, id: \.self) { p in periodPill(p) }
                 Button("End half") { model.apply(.endPeriod, slot: slot) }
+                    .keyboardShortcut("e", modifiers: [.command, .shift]).help("End the current period (⇧⌘E)")
                     .scaledFont(.body)
                     .disabled(match.currentPeriod == nil)
             }
@@ -183,10 +190,7 @@ struct SlotView: View {
             LabeledContent("Clock") {
                 HStack(spacing: 16) {
                     ClockFieldsRow(slot: slot)
-                    Button { model.apply(.playPause, slot: slot) } label: {
-                        Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
-                    }.disabled(match.currentPeriod == nil)
-                    Button("Reset") { model.apply(.setClock(seconds: 0), slot: slot) }
+                    Button("Reset clock") { model.apply(.setClock(seconds: 0), slot: slot) }
                         .scaledFont(.body)
                         .disabled(match.currentPeriod == nil)
                         .help("Back to the start of this period")

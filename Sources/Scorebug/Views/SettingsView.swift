@@ -10,7 +10,10 @@ struct SettingsView: View {
         Form {
             Section("Server") {
                 LabeledContent("Status", value: model.serverStatus).scaledFont(.body)
-                Stepper("Port \(String(model.settings.port))", value: $model.settings.port, in: 1024...65535).scaledFont(.body).onChange(of: model.settings.port) { _, _ in model.saveSettings() }
+                LabeledContent("Port") {
+                    TextField("Port", value: Binding(get: { model.settings.port }, set: { model.settings.port = min(65535, max(1024, $0)) }), format: .number.grouping(.never))
+                        .scaledFont(.body).monospacedDigit().textFieldStyle(.roundedBorder).frame(width: 90)
+                }.scaledFont(.body).onChange(of: model.settings.port) { _, _ in model.saveSettings() }
                 Text("A port change takes effect after Scorebug is relaunched. OBS sources and the Stream Deck plugin default to 8600.").scaledFont(.caption).foregroundStyle(.secondary)
             }
             Section("OBS browser sources") {
