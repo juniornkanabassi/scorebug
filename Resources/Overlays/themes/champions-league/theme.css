@@ -70,6 +70,15 @@ body[data-family="uefa"] .bug { --h: 53.33px;
   --uefa-navy: #1D2AA0; --uefa-navy-2: #0C1262; --uefa-blue: #1B2ACF; --uefa-light: #FFFFFF; --uefa-dark: #1B2A5C;
   --uefa-sq-a: #2B3FE6; --uefa-sq-b: #1526C8; --uefa-topline: #2F45FF; --uefa-bracket: #3050FF; --uefa-tick: rgba(60,90,255,0.75);
   --uefa-digit-navy: #1E1F5A; --uefa-score-a: #001953; --uefa-score-b: #041041; --uefa-away-wipe: #C3C0B3;
+  /* Correction pass, 6 September 2026: team-code cells were painted with --uefa-navy/-2 (#1D2AA0/#0C1262), a
+     visibly brighter royal blue than the reference -- measurements.md samples the home/away cells directly at
+     #141F8D/#121882 (home) and #142082/#182070 (away), both close enough to share one darker token pair
+     without a second gradient. --uefa-navy/-2 stay as they were for everything else (goal-home wipe cover,
+     .shootout background) since only the resting cell colour was reported wrong. Status tab was reading as
+     the away club's own secondary colour (--away-secondary, still set by overlay.js for other themes) --
+     compare_steady.png's reference is gold regardless of the two clubs on screen, so it's a fixed status
+     colour here, not club branding. */
+  --uefa-cell-a: #141F8D; --uefa-cell-b: #121882; --uefa-gold: #DBA72D;
   --kick-pending: #2a3a8a; --kick-scored: #29D65E; --kick-missed: #FF3B4E;
   /* measurements.md: no drop shadow/glow detected on the reference bug at all (hard 1-2px edge). Kept as an inert
      zero-radius filter rather than deleted outright, so .bug keeps being a compositing stacking context -- the
@@ -98,9 +107,12 @@ body[data-family="uefa"] .team, body[data-family="uefa"] .score { color: #fff; b
    keep transparent backgrounds; their own text and pseudo-elements (brackets, tick, tab) still paint on top of
    this because DOM order puts them after the home-code cell. */
 body[data-family="uefa"] .team.home::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--h) * 8);
-  background: linear-gradient(180deg, var(--uefa-navy) 0 35%, var(--uefa-navy-2) 100%); border-top: 1px solid var(--uefa-topline);
+  background: linear-gradient(180deg, var(--uefa-cell-a) 0 35%, var(--uefa-cell-b) 100%); border-top: 1px solid var(--uefa-topline);
   box-sizing: border-box; z-index: -1; pointer-events: none; }
-body[data-family="uefa"] .team { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: calc(var(--h) * 0.76); letter-spacing: 0; }
+/* Weight 700 -> 600, 6 September 2026 correction pass: cap height was already within 2% of measurements.md's
+   0.533H target, so the "RMA"/"BAR" look larger and bolder complaint is stem width, not size. Montserrat's
+   variable face (overlay.css, weight range 100-899) covers 600 already, no font-family change needed. */
+body[data-family="uefa"] .team { font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: calc(var(--h) * 0.76); letter-spacing: 0; }
 body[data-family="uefa"] .score { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: calc(var(--h) * 0.9); letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: visible; }
 /* Distinctly darker navy fill for the score cells only, on top of the one continuous bar gradient (measurements.md:
    the score cell reads visibly darker than the team-code cells either side of it, a deliberate emphasis panel). */
@@ -117,63 +129,86 @@ body[data-family="uefa"] .score.home::after { content: ""; position: absolute; r
 body[data-family="uefa"] .score.away { padding-left: calc(var(--h) * 0.26); padding-right: calc(var(--h) * 0.16); }
 body[data-family="uefa"] .team.away { padding-left: calc(var(--h) * 0.42); padding-right: calc(var(--h) * 0.22); }
 body[data-family="uefa"] .team.away::before { content: ""; position: absolute; left: calc(var(--h) * 0.16); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.26); height: calc(var(--h) * 0.95); border-left: 2px solid var(--uefa-bracket); border-radius: 100% 0 0 100% / 50% 0 0 50%; opacity: 0.75; pointer-events: none; }
-/* Colour tab widened 0.09H -> 0.18H (measurements.md source A: ~0.20H solid tab at the bar's right edge). */
-body[data-family="uefa"] .team.away::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--h) * 0.2); background: var(--away-secondary); }
-/* GOAL in two layers over the navy bar only, revealed once the codes/scores fade (see uefa-text below). ::before carries
-   the sweep-darkened bar and the condensed italic GOAL word (pure white for its whole life, grown with font-size so the
-   bar fill itself never distorts, drifted left with padding so no transform is needed on the fill). ::after is stripes
-   only (transparent elsewhere) so it is the one thing that ever passes in front of the word. */
-/* left offsets scaled 0.8x alongside the bar-layout rescale above (3.89 -> 3.11, 4.89 -> 3.91) so the GOAL word
-   still centres over the score cell now that cell is narrower. */
-body[data-family="uefa"] .main::before, body[data-family="uefa"] .main::after { left: calc(var(--h) * 3.11); }
+/* Colour tab widened 0.09H -> 0.18H (measurements.md source A: ~0.20H solid tab at the bar's right edge).
+   Fixed to the reference's gold (#DBA72D) rather than the away club's own secondary colour -- both reference
+   sources show this tab as a fixed status colour (gold with no aggregate chip, grey/#C3C0B3 immediately
+   before one), not club branding, and it read as a random per-match teal here since --away-secondary is
+   still just the away team's own colour, set by overlay.js for the non-UEFA themes that do use it that way. */
+body[data-family="uefa"] .team.away::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--h) * 0.2); background: var(--uefa-gold); }
+/* GOAL in two layers over the navy bar only. Correction pass, 6 September 2026: ::before's own opacity now goes
+   to 1 immediately (was a 0->1 ramp finishing at 6%/63ms) so the cover is opaque for its ENTIRE visible life --
+   uclref/ref_away_goal shows the wipe fully hiding the codes/score with no translucency at all, at every frame
+   from the first one sampled. The "GOAL" word's OWN visibility is now gated separately via `color`
+   (transparent until a 55% cue, matching uclref/goal_seq's ~600ms reveal, then white) rather than piggybacking
+   on the box's opacity -- previously both the cover AND the word rode the same opacity ramp, so the word (and,
+   through .comp::after's independent timing, the club motif) were both already ghosting through by 80-160ms.
+   ::before also now carries the glitch/tear itself, as a `transform: scaleX()` growing late in the timeline --
+   uclref/goal_seq shows cap height staying ~constant (~0.95H) the whole time while the word's WIDTH keeps
+   growing (226px at 480ms to 747px at 840ms, H=165), i.e. a horizontal stretch, not the previous font-size
+   ramp (0.6H -> 1.6H) which grew the letters vertically too and overshot the reference by ~1.5x. ::after is
+   now an early, low-opacity "shine" pass only (measurements.md: a brighter sweep re-enters ~480-560ms, well
+   before the word even appears) instead of a late, fully-opaque diagonal-stripe cover -- the previous version
+   never dropped its own opacity back to 0, which is why a stripe fragment was still visible at 1200ms.
+   z-index:1 (new): .score.home/.score.away carry their own opaque background (the darker score-cell fill,
+   above) and .team.home/.team.away carry the resting text, all as ordinary z-index:auto DOM children of
+   .main painted AFTER .main::before in tree order -- i.e. on top of it. Without a z-index the cover was
+   sitting BEHIND the score cells' own fill and the team text the whole time, which is the actual reason
+   "RMA"/"BAR"/the score ghosted through it (not a translucency issue at all). 1 is enough to clear every
+   sibling (all z-index:auto); .comp::after's z-index:3 (clubs/_shared.css) still lands above both pseudos. */
+body[data-family="uefa"] .main::before, body[data-family="uefa"] .main::after { left: calc(var(--h) * 3.11); z-index: 1; }
 body[data-family="uefa"] .bug.has-added .main::before, body[data-family="uefa"] .bug.has-added .main::after { left: calc(var(--h) * 3.91); }
 body[data-family="uefa"] .main::before { content: "GOAL"; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
-  color: #fff; font-style: italic; font-weight: 700; font-family: "Barlow Condensed", Arial, sans-serif; letter-spacing: 0; }
-/* Home goal: navy sweep enters from the home (left) side, unchanged from the previous single-sided version. */
-body[data-family="uefa"] .bug.goal-home .main::before { background: linear-gradient(90deg, var(--uefa-navy) 0 30%, var(--uefa-dark) 30% 100%); background-size: 300% 100%; background-position: 100% 0; }
-/* Away goal (fix, 6 September 2026): previously this rule did not exist at all, so an away goal played the exact
-   same navy-on-navy wipe as a home goal -- reading, per Junior, as the panel "fading to black" rather than a
-   distinct away treatment. measurements.md (source B, the only away-goal example) is explicit: same mechanism,
-   but the covering colour is a warm silver/taupe grey (#C3C0B3, the SAME token the aggregate-chip divider already
-   uses elsewhere in the bug -- a shared "neutral" colour, not a bespoke away one) and it sweeps in from the away
-   (right) side instead of the left. The GOAL wordmark itself never changes -- white, same italic cut, for both
-   sides. background-position is mirrored (runs -200%->0% instead of 100%->0%) so the cover visibly arrives from
-   the right; see uefa-goal-word-away below, the same keyframe shape as home but mirrored end-to-end. */
-body[data-family="uefa"] .bug.goal-away .main::before { background: linear-gradient(90deg, var(--uefa-dark) 0 70%, var(--uefa-away-wipe) 70% 100%); background-size: 300% 100%; background-position: -200% 0; }
-body[data-family="uefa"] .main::after { background-image: repeating-linear-gradient(115deg, transparent 0 calc(var(--h) * 0.4), #ffffff calc(var(--h) * 0.4) calc(var(--h) * 0.8));
+  font-style: italic; font-weight: 700; font-family: "Barlow Condensed", Arial, sans-serif; letter-spacing: 0; }
+/* Home/away cover: a flat colour revealed by an animated clip-path (the same inset() reveal technique
+   uefa-build-wipe already uses below for the entrance) rather than a sliding gradient -- a gradient sized to
+   slide via background-position needs the maths to keep the visible slice inside the single (no-repeat)
+   image at every step, which the previous 300%/-200% figures didn't, and silently painted nothing over part
+   of the box. inset(0 100% 0 0) hides the box entirely (clipped from the right edge inward); animating the
+   right inset to 0% reveals it growing from the home (left) side. Home cover colour is --uefa-dark (already
+   the "flatter, slightly lighter" shade measurements.md calls out as distinct from the resting score-cell
+   navy); away is --uefa-away-wipe (#C3C0B3, the same token the aggregate-chip divider uses). */
+body[data-family="uefa"] .bug.goal-home .main::before { background: var(--uefa-dark); }
+/* Away goal: same mechanism, mirrored -- inset(0 0 0 100%) clips from the left edge inward, so animating the
+   LEFT inset to 0% reveals it growing from the away (right) side instead. */
+body[data-family="uefa"] .bug.goal-away .main::before { background: var(--uefa-away-wipe); }
+body[data-family="uefa"] .main::after { background-image: repeating-linear-gradient(115deg, transparent 0 calc(var(--h) * 0.4), rgba(255,255,255,0.5) calc(var(--h) * 0.4) calc(var(--h) * 0.6));
   background-repeat: no-repeat; background-size: 260% 100%; background-position: 260% 0; }
-/* Total duration 1.05s, not the previous 1.4s: measurements.md's home-goal timeline disagrees between sources
-   (~1.6-1.8s recreation vs ~1.0-1.04s AE template) and explicitly recommends trusting source B's snappier timing
-   as "likelier the intended broadcast timing" since A is a slowed-down fan recreation. The away-goal timeline
-   (source B only) is ~1.0-1.04s trigger-to-settle too, so one shared duration covers both sides correctly. The
-   club-motif hold in clubs/_shared.css (ucl-motif-in) is retimed to match in the same pass, see that file. */
+/* Total duration 1.05s: measurements.md's home-goal timeline disagrees between sources (~1.6-1.8s recreation vs
+   ~1.0-1.04s AE template) and explicitly recommends trusting source B's snappier timing as "likelier the
+   intended broadcast timing" since A is a slowed-down fan recreation. The away-goal timeline (source B only)
+   is ~1.0-1.04s trigger-to-settle too, so one shared duration covers both sides correctly. The club-motif hold
+   in clubs/_shared.css (ucl-motif-in) is retimed to match in the same pass, see that file. */
 body[data-family="uefa"] .bug.goal-home .main::before { opacity: 1; animation: uefa-goal-word-home 1.05s linear forwards; }
 body[data-family="uefa"] .bug.goal-away .main::before { opacity: 1; animation: uefa-goal-word-away 1.05s linear forwards; }
-body[data-family="uefa"] .bug.goal .main::after { opacity: 1; animation: uefa-goal-stripes 1.05s linear forwards; }
+body[data-family="uefa"] .bug.goal .main::after { opacity: 1; animation: uefa-goal-shine 1.05s linear forwards; }
 body[data-family="uefa"] .bug.goal .team, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.05s linear forwards; }
+/* Keyframes interpolate continuously between any two stops that set a property, even with nothing in between --
+   so `color` needs a same-value stop right before the cue (53%) or it fades in gradually starting at 0%
+   instead of snapping visible at the cue, and `transform` needs one at the same point (55%) or the scaleX
+   stretch starts creeping from frame 0 instead of only kicking in once the word is revealed. */
 @keyframes uefa-goal-word-home {
-  0%   { opacity: 0; background-position: 100% 0; font-size: calc(var(--h) * 0.6); padding-right: 0; }
-  6%   { opacity: 1; }
-  18%  { background-position: 100% 0; }
-  45%  { background-position: 0 0; }
-  80%  { font-size: calc(var(--h) * 1.6); padding-right: calc(var(--h) * 1.0); background-position: 0 0; }
-  92%  { opacity: 1; }
-  100% { opacity: 0; }
+  0%   { opacity: 1; color: transparent; clip-path: inset(0 100% 0 0); font-size: calc(var(--h) * 1.3); transform: scaleX(1); }
+  17%  { clip-path: inset(0 0 0 0); }
+  53%  { color: transparent; }
+  55%  { color: #fff; transform: scaleX(1); }
+  92%  { color: #fff; transform: scaleX(2.1); }
+  100% { opacity: 0; color: transparent; clip-path: inset(0 0 0 0); transform: scaleX(1); }
 }
-/* Mirror of uefa-goal-word-home for the away side: same shape, background-position and the word's drift direction
-   (padding-left instead of padding-right) both run the opposite way so the cover reads as arriving from the right. */
+/* Mirror of uefa-goal-word-home for the away side: same shape, only the clip-path origin runs the opposite
+   way so the cover reads as arriving from the right. */
 @keyframes uefa-goal-word-away {
-  0%   { opacity: 0; background-position: -200% 0; font-size: calc(var(--h) * 0.6); padding-left: 0; }
-  6%   { opacity: 1; }
-  18%  { background-position: -200% 0; }
-  45%  { background-position: 0 0; }
-  80%  { font-size: calc(var(--h) * 1.6); padding-left: calc(var(--h) * 1.0); background-position: 0 0; }
-  92%  { opacity: 1; }
-  100% { opacity: 0; }
+  0%   { opacity: 1; color: transparent; clip-path: inset(0 0 0 100%); font-size: calc(var(--h) * 1.3); transform: scaleX(1); }
+  17%  { clip-path: inset(0 0 0 0); }
+  53%  { color: transparent; }
+  55%  { color: #fff; transform: scaleX(1); }
+  92%  { color: #fff; transform: scaleX(2.1); }
+  100% { opacity: 0; color: transparent; clip-path: inset(0 0 0 0); transform: scaleX(1); }
 }
-@keyframes uefa-goal-stripes {
-  0%, 66% { opacity: 1; background-position: 260% 0; }
-  100% { opacity: 1; background-position: -60% 0; }
+@keyframes uefa-goal-shine {
+  0%, 18% { opacity: 0; background-position: 260% 0; }
+  30%  { opacity: 1; }
+  50%  { opacity: 1; background-position: -60% 0; }
+  62%, 100% { opacity: 0; }
 }
 @keyframes uefa-text { 0% { opacity: 1; } 8% { opacity: 0; } 89% { opacity: 0; } 96% { opacity: 1; } 100% { opacity: 1; } }
 body[data-family="uefa"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 14px; background: var(--uefa-navy); font-size: calc(var(--h) * 0.58); }

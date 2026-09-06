@@ -48,12 +48,14 @@ body[data-family="uefa"] .bug.has-added .comp::after { left: calc(var(--h) * 3.9
    ~1.0-1.04s trigger-to-settle is the intended broadcast timing, not source A's slowed-down 1.6-1.8s recreation). */
 body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.05s linear forwards; }
 body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.05s linear forwards; }
-/* Same build/hold/fade envelope as the base uefa-text/uefa-goal-word keyframes (theme.css) so the motif
-   appears and disappears in step with the rest of the goal choreography instead of fighting it. */
+/* Correction pass, 6 September 2026: motif reveal moved from 22% (231ms) to 62% (651ms) -- compare_goal_away.png
+   showed the motif fully visible by 160-400ms, well before the wipe had even revealed the "GOAL" cue (theme.css's
+   uefa-goal-word-home/away now turns that on at 55%/577ms). The reference order is wipe colour alone, then GOAL,
+   then the motif on top of it; this keeps the motif's own hold/fade shape but starts it just after the word does. */
 @keyframes ucl-motif-in {
   0%   { opacity: 0; transform: scale(0.82); }
-  10%  { opacity: 0; }
-  22%  { opacity: 1; transform: scale(1); }
-  80%  { opacity: 1; }
+  50%  { opacity: 0; }
+  62%  { opacity: 1; transform: scale(1); }
+  85%  { opacity: 1; }
   100% { opacity: 0; }
 }

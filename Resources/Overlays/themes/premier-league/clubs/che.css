@@ -46,6 +46,7 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="chelsea"] .main
    sweep itself at 72.3%/80.9% (3400/3800ms) instead of holding flat to 100%. */
 @keyframes pl-motif-che-home {
   0% { opacity: 0; transform: translateY(-50%) translateX(16%) rotate(38deg); }
+  8.5% { opacity: 0; transform: translateY(-50%) translateX(16%) rotate(38deg); }
   12.8% { opacity: 1; transform: translateY(-50%) translateX(9%) rotate(24deg); }
   34% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
   72.3% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
@@ -54,6 +55,7 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="chelsea"] .main
 }
 @keyframes pl-motif-che-away {
   0% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(16%) rotate(38deg); }
+  8.5% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(16%) rotate(38deg); }
   12.8% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(9%) rotate(24deg); }
   34% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
   72.3% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }

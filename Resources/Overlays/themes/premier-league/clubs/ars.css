@@ -77,10 +77,12 @@ body[data-theme="premier-league"] .bug.goal-away[data-away-club="arsenal"] .main
    when the crest/GOAL are actually popped in, not the old flat 9%). Dissolve still finishes well before the
    72.3%/3400ms hold-end, same relative shape as before, just carried onto the new timeline. */
 @keyframes pl-motif-ars {
+  /* clip: cannon lands with the club colour (600 ms), holds ~700 ms, dissolves ~400 ms; GOAL solid by 1.8 s */
   0% { opacity: 0; filter: blur(0); }
+  8.5% { opacity: 0; filter: blur(0); }
   12.8% { opacity: 1; filter: blur(0); }
-  28% { opacity: 1; filter: blur(0); }
-  40% { opacity: .5; filter: blur(5px); }
-  51% { opacity: 0; filter: blur(9px); }
+  27% { opacity: 1; filter: blur(0); }
+  33% { opacity: .5; filter: blur(5px); }
+  38% { opacity: 0; filter: blur(9px); }
   100% { opacity: 0; filter: blur(9px); }
 }

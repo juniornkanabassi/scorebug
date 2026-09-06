@@ -58,8 +58,8 @@ body[data-theme="premier-league"] .bug.goal-away .main::before { left: 54%; tran
    (shots/r5/clubs/mun-away-try*.png) that this reads as a legible icon beside the crest rather than a
    collision. */
 body[data-theme="premier-league"] .bug.goal .main::before { animation: pl-motif-hold 4.7s cubic-bezier(.25,.8,.2,1) forwards; }
-@keyframes pl-motif-hold { 0% { opacity: 0; } 12.8% { opacity: 1; } 72.3% { opacity: 1; } 80.9% { opacity: 0; } 100% { opacity: 0; } }
-@keyframes pl-motif-flash { 0% { opacity: 0; } 12.8% { opacity: 1; } 37% { opacity: 1; } 57% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes pl-motif-hold { 0% { opacity: 0; } 8.5% { opacity: 0; } 12.8% { opacity: 1; } 72.3% { opacity: 1; } 80.9% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes pl-motif-flash { 0% { opacity: 0; } 8.5% { opacity: 0; } 12.8% { opacity: 1; } 37% { opacity: 1; } 57% { opacity: 0; } 100% { opacity: 0; } }
 
 /* Premier League Productions world feed, 2024-25 onward. Verified against Optus Sport frames in the After Effects tutorial,
    Junior's reference (CRY 0 / 0 ARS), the Figma recreation and the Footy Headlines 2026-27 goal composite.
@@ -273,14 +273,14 @@ body[data-theme="premier-league"] .bug.goal .sep span { opacity: 0; transition-d
    single wipe-in-then-out (the bar's own shape never changes, only what's painted on it), background-color now
    carries the blue/club-colour/blue sequence as extra keyframe stops on the same rule. */
 @keyframes pl-wipe {
-  0%    { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
+  0%    { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
   3.4%  { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
-  8.5%  { background-color: #4b9bff; }
-  12.8% { background-color: var(--goal-primary, var(--pl-purple)); }
-  72.3% { background-color: var(--goal-primary, var(--pl-purple)); }
-  74%   { background-color: #4b9bff; }
-  78.3% { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
-  80.9% { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
+  8.5%  { background-color: #4b9bff; color: transparent; background-image: none; }
+  12.8% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
+  72.3% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
+  74%   { background-color: #4b9bff; color: transparent; background-image: none; }
+  78.3% { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
+  80.9% { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
   100%  { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
 }
 body[data-theme="premier-league"] .bug.goal .main::after { animation-timing-function: cubic-bezier(.16,.9,.2,1); }
@@ -292,14 +292,14 @@ body[data-theme="premier-league"] .bug.goal .main::after { animation-timing-func
 body[data-theme="premier-league"] .bug.goal-away .main::after { justify-content: flex-start; padding-left: calc(var(--h) * 0.76); padding-right: 0; background-position: 62% center; }
 body[data-theme="premier-league"] .bug.goal-away .main::after { animation-name: pl-wipe-away; }
 @keyframes pl-wipe-away {
-  0%    { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
+  0%    { clip-path: inset(0 0 0 100% round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
   3.4%  { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
-  8.5%  { background-color: #4b9bff; }
-  12.8% { background-color: var(--goal-primary, var(--pl-purple)); }
-  72.3% { background-color: var(--goal-primary, var(--pl-purple)); }
-  74%   { background-color: #4b9bff; }
-  78.3% { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
-  80.9% { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
+  8.5%  { background-color: #4b9bff; color: transparent; background-image: none; }
+  12.8% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
+  72.3% { background-color: var(--goal-primary, var(--pl-purple)); color: var(--goal-text, #fff); background-image: var(--goal-crest, none); }
+  74%   { background-color: #4b9bff; color: transparent; background-image: none; }
+  78.3% { clip-path: inset(0 0 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
+  80.9% { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; color: transparent; background-image: none; }
   100%  { clip-path: inset(0 100% 0 0 round var(--r-top) var(--r-top) 0 0); background-color: #4b9bff; }
 }
 body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; padding: 6px 14px; background: var(--pl-purple); border-radius: 8px; font-size: calc(var(--h) * 0.48); }
