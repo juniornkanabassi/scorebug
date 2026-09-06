@@ -1,14 +1,45 @@
-/* Brighton & Hove Albion ("Seagulls"), code BHA -- Round 5 dissection of the official
-   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
-   White gull-in-flight silhouette sweeps through on reveal, dissolved by the settled GOAL.
-   Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
-   ('Brighton & Hove Albion' -> "brighton-hove-albion") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
-   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+/* Brighton & Hove Albion ("Seagulls"), code BHA -- rebuilt against clubframes/strip_bha.png
+   (frames 050-090): a thin line-art gull (white outline, no fill) actually FLIES across the wordmark
+   left to right -- starts near the crest cut, glides over the whole "GOAL" width and exits past the
+   bar's right edge, fading before the hold ends (pl-motif-flash territory, own keyframes here because
+   this one also carries a translateX). The round-5 build had a static solid-white gull that never
+   moved; this replaces it with a moving line-art bird matching the clip. Box is sized to the bird
+   art itself (not the whole wordmark) and travels via `transform: translateX(...)`, relying on
+   .main's own clip-path (theme.css: inset(-0.13H -0.02H -0.08H -0.02H), i.e. only ~0.02H of side
+   slack) to crop it cleanly if it overshoots .main's right edge -- matches the clip's own look of the
+   gull exiting off-frame rather than needing a second clipping layer. */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="brighton-hove-albion"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="brighton-hove-albion"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%2060%22%3E%20%3Cpath%20d%3D%22M2%2042%20Q26%206%2050%2030%20Q74%206%2098%2042%20Q74%2030%2050%2038%20Q26%2030%202%2042%20Z%22%20fill%3D%22%23fff%22%2F%3E%20%3C%2Fsvg%3E");
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20150%2080%22%3E%3Cpath%20d%3D%22M4%2046%20Q30%208%2058%2034%20Q86%208%20116%2032%20Q95%2030%2078%2040%20Q100%2040%20116%2050%20Q88%2044%2068%2046%20Q86%2052%2096%2062%20Q68%2052%2058%2040%20Q42%2054%2020%2052%20Q34%2044%2042%2036%20Q22%2042%204%2046%20Z%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E");
+  width: calc(var(--h) * 1.5); height: calc(var(--h) * 0.8);
+  background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
 }
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="brighton-hove-albion"] .main::before,
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="brighton-hove-albion"] .main::before {
+  left: auto; right: calc(var(--h) * 1.9);
+  animation-name: pl-motif-bha-home;
+}
+/* Away goal: GOAL lands at the far LEFT -- crest/cut sits on the bar's RIGHT for an away goal, so
+   the gull's flight direction mirrors too (still crest-to-GOAL, now right-to-left on screen): flip
+   via scaleX(-1) baked into the transform chain (same technique che.css uses for its away streak)
+   plus a `left` anchor at the same clearance, rather than trying to keep `right` and negate the
+   translateX sign -- keeps the single keyframe's translateX magnitude reusable for both sides. */
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="brighton-hove-albion"] .main::before {
-  animation-name: pl-motif-flash;
+  right: auto; left: calc(var(--h) * 1.9);
+  animation-name: pl-motif-bha-away;
+}
+@keyframes pl-motif-bha-home {
+  0% { opacity: 0; transform: translateY(-50%) translateX(0); }
+  8.5% { opacity: 0; transform: translateY(-50%) translateX(0); }
+  12.8% { opacity: 1; transform: translateY(-50%) translateX(0); }
+  37% { opacity: 1; transform: translateY(-50%) translateX(calc(var(--h) * 2.2)); }
+  50% { opacity: 0; transform: translateY(-50%) translateX(calc(var(--h) * 2.6)); }
+  100% { opacity: 0; transform: translateY(-50%) translateX(calc(var(--h) * 2.6)); }
+}
+@keyframes pl-motif-bha-away {
+  0% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(0); }
+  8.5% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(0); }
+  12.8% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0); }
+  37% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(calc(var(--h) * 2.2)); }
+  50% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(calc(var(--h) * 2.6)); }
+  100% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(calc(var(--h) * 2.6)); }
 }

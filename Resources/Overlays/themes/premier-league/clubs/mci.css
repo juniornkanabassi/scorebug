@@ -1,10 +1,31 @@
-/* Manchester City ("Citizens"), code MCI -- Round 5 dissection of the official
-   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
-   Crescent moon with scattered stars -- the clip's own O-in-GOAL replacement; persists through the hold.
+/* Manchester City ("Citizens"), code MCI -- Round 9 rebuild against the official clip's own MCI row
+   (scratchpad/pl7/mci_strip.png): the crescent moon genuinely sits IN PLACE OF the "O" in "GOAL" (a
+   letter substitution, not a small watermark off to the side) with a scatter of small stars in the
+   open bar space past the "L". Box widened/repositioned to the wordmark-zone contract (Arsenal/
+   Chelsea precedent) and the crescent placed at the "O" glyph's own measured position: with the
+   shared .main::after text right-aligned at padding-right calc(var(--h)*0.76), Montserrat 800 at
+   0.94H/-0.06em... err +0.06em letter-spacing measured live via canvas.measureText (see notes.md) put
+   "GOAL"'s own total ink width at almost exactly 3.0H and the "O" glyph's centre at 1.177H in from
+   the text's own left edge -- baked into this SVG's 350x100 viewBox (350u = 3.15H, so 111.1u/H) so the
+   crescent centres on the O glyph regardless of how the bar's own width varies with codes/score.
+   No flip on the away side (scaleX(-1) would mirror the crescent into a backwards "C" and put the
+   star scatter on the wrong side of the O) -- transform and the away anchor are both overridden
+   below instead of inheriting the shared away rule's default mirror.
    Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
-   ('Manchester City' -> "manchester-city") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
-   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+   ('Manchester City' -> "manchester-city"). */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-city"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-city"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cpath%20d%3D%22M62%2020%20A32%2032%200%201%200%2062%2080%20A26%2026%200%201%201%2062%2020%20Z%22%20fill%3D%22%230b1e3d%22%2F%3E%20%3Ccircle%20cx%3D%2282%22%20cy%3D%2224%22%20r%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%2240%22%20r%3D%222%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2286%22%20cy%3D%2258%22%20r%3D%222.4%22%20fill%3D%22%23fff%22%2F%3E%20%3C%2Fsvg%3E");
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20350%20100%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20fill%3D%22%230b1e3d%22%20d%3D%22M153%2C14%20a35%2C35%200%201%2C0%200.1%2C70%20a35%2C35%200%201%2C0%20-0.1%2C-70%20Z%20M172%2C20%20a30%2C30%200%201%2C0%200.1%2C60%20a30%2C30%200%201%2C0%20-0.1%2C-60%20Z%22%2F%3E%3Cg%20fill%3D%22%23fff%22%3E%3Ccircle%20cx%3D%22222%22%20cy%3D%2230%22%20r%3D%223%22%2F%3E%3Ccircle%20cx%3D%22248%22%20cy%3D%2266%22%20r%3D%224%22%2F%3E%3Ccircle%20cx%3D%22282%22%20cy%3D%2224%22%20r%3D%222.5%22%2F%3E%3Ccircle%20cx%3D%22312%22%20cy%3D%2255%22%20r%3D%223.5%22%2F%3E%3Ccircle%20cx%3D%22336%22%20cy%3D%2234%22%20r%3D%222.8%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  width: calc(var(--h) * 3.15);
+  height: calc(var(--h) * 0.9);
+  clip-path: inset(0);
+  animation-name: pl-motif-hold;
+}
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="manchester-city"] .main::before {
+  left: auto;
+  right: calc(var(--h) * 0.76);
+}
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="manchester-city"] .main::before {
+  left: calc(var(--h) * 0.61);
+  transform: translateY(-50%);
 }

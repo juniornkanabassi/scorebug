@@ -1,10 +1,27 @@
-/* Nottingham Forest ("Tricky Trees"), code NFO -- Round 5 dissection of the official
-   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
-   Bell silhouette (echoing the club crest) linked to the badge by a small connecting line in the clip -- kept here as the bell alone; persists through the hold.
+/* Nottingham Forest ("Tricky Trees"), code NFO -- Round 9 rebuild against the official clip's own
+   NFO row (scratchpad/pl7/nfo_strip.png): the bell (echoing the club crest) sits at the "O" glyph's
+   own position -- same letter-substitution treatment and same measured O-centre placement as
+   Manchester City's crescent (see mci.css's comment for how that position was derived). The clip's
+   own thin connecting line from badge to bell is dropped: the box's own left margin ahead of the G
+   glyph is only 0.15H, not enough room for a visible stub without painting over the G itself, and the
+   crest's own x position lives inside .main::after's background-position which this file has no
+   reliable way to read anyway -- see notes.md compromise line.
+   No flip on the away side, same reasoning as MCI (a mirrored bell reads wrong).
    Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
-   ('Nottingham Forest' -> "nottingham-forest") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
-   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+   ('Nottingham Forest' -> "nottingham-forest"). */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="nottingham-forest"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="nottingham-forest"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cpath%20d%3D%22M50%2015%20C35%2015%2030%2035%2030%2050%20C30%2065%2020%2072%2020%2078%20h60%20c0%20-6%20-10%20-13%20-10%20-28%20c0%20-15%20-5%20-35%20-20%20-35%20Z%22%20fill%3D%22%23fff%22%2F%3E%20%3Crect%20x%3D%2244%22%20y%3D%2278%22%20width%3D%2212%22%20height%3D%2210%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2212%22%20r%3D%225%22%20fill%3D%22%23fff%22%2F%3E%20%3C%2Fsvg%3E");
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20350%20100%22%3E%3Cg%20fill%3D%22%23fff%22%3E%3Cpath%20d%3D%22M145%2C15%20C130%2C15%20125%2C35%20125%2C50%20C125%2C65%20115%2C72%20115%2C78%20h60%20c0%2C-6%20-10%2C-13%20-10%2C-28%20c0%2C-15%20-5%2C-35%20-20%2C-35%20Z%22%2F%3E%3Crect%20x%3D%22139%22%20y%3D%2278%22%20width%3D%2212%22%20height%3D%2210%22%20rx%3D%223%22%2F%3E%3Ccircle%20cx%3D%22145%22%20cy%3D%2212%22%20r%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  width: calc(var(--h) * 3.15);
+  height: calc(var(--h) * 0.9);
+  clip-path: inset(0);
+  animation-name: pl-motif-hold;
+}
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="nottingham-forest"] .main::before {
+  left: auto;
+  right: calc(var(--h) * 0.76);
+}
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="nottingham-forest"] .main::before {
+  left: calc(var(--h) * 0.61);
+  transform: translateY(-50%);
 }

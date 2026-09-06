@@ -1,14 +1,26 @@
-/* Liverpool ("Reds"), code LIV -- Round 5 dissection of the official
-   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
-   Liverbird silhouette watermarked across the sweep (the clip shows it repeated in the background, not as a single small icon) -- persists through the hold.
-   (Round 5 fix: the first path here rendered as a solid rounded blob rather than a recognisable
-   bird in Chrome -- too many compounded C-curves for a shape this small -- replaced with a plainer
-   body+two-wings+head construction that renders correctly at icon size; verified in
-   shots/r5/clubs/liv-home-*.png.)
+/* Liverpool ("Reds"), code LIV -- Round 9 rebuild against the official "Premier League Goal
+   ANIMATIONS" clip's own LIV row (frame-by-frame crop, scratchpad/pl7/liv_strip.png): a pair of
+   mirrored liverbird silhouettes sit inside the GOAL wordmark zone itself (not a small icon off to
+   the side, and not a full-bar background repeat -- they read as a dark-red-on-red watermark UNDER
+   the white "GOAL" lettering, still legible), and persist for the whole hold. Box now matches the
+   Arsenal/Chelsea contract: sized and anchored to the actual wordmark zone (padding-right/left
+   calc(var(--h)*0.76), same as .main::after's own text padding, plus a small margin) rather than the
+   old 0.72H square parked at 46%/54% next to the crest -- that old sizing put a full pair of birds
+   into a space barely large enough for one.
    Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
-   ('Liverpool' -> "liverpool") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
-   as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
+   ('Liverpool' -> "liverpool"). */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="liverpool"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="liverpool"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cellipse%20cx%3D%2250%22%20cy%3D%2255%22%20rx%3D%2210%22%20ry%3D%2224%22%20fill%3D%22%23fff%22%20opacity%3D%220.6%22%2F%3E%20%3Cpath%20d%3D%22M48%2042%20Q18%2030%204%2052%20Q26%2050%2044%2046%20Z%22%20fill%3D%22%23fff%22%20opacity%3D%220.6%22%2F%3E%20%3Cpath%20d%3D%22M52%2042%20Q82%2030%2096%2052%20Q74%2050%2056%2046%20Z%22%20fill%3D%22%23fff%22%20opacity%3D%220.6%22%2F%3E%20%3Ccircle%20cx%3D%2250%22%20cy%3D%2228%22%20r%3D%229%22%20fill%3D%22%23fff%22%20opacity%3D%220.6%22%2F%3E%20%3C%2Fsvg%3E");
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20350%20100%22%3E%3Cg%20fill%3D%22%235c0d16%22%20fill-opacity%3D%220.55%22%3E%3Cellipse%20cx%3D%22140%22%20cy%3D%2255%22%20rx%3D%2210%22%20ry%3D%2224%22%2F%3E%3Cpath%20d%3D%22M138%2C42%20Q108%2C30%2094%2C52%20Q116%2C50%20134%2C46%20Z%22%2F%3E%3Cpath%20d%3D%22M142%2C42%20Q172%2C30%20186%2C52%20Q164%2C50%20146%2C46%20Z%22%2F%3E%3Ccircle%20cx%3D%22140%22%20cy%3D%2228%22%20r%3D%229%22%2F%3E%3Cellipse%20cx%3D%22260%22%20cy%3D%2255%22%20rx%3D%2210%22%20ry%3D%2224%22%2F%3E%3Cpath%20d%3D%22M258%2C42%20Q228%2C30%20214%2C52%20Q236%2C50%20254%2C46%20Z%22%2F%3E%3Cpath%20d%3D%22M262%2C42%20Q292%2C30%20306%2C52%20Q284%2C50%20266%2C46%20Z%22%2F%3E%3Ccircle%20cx%3D%22260%22%20cy%3D%2228%22%20r%3D%229%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  width: calc(var(--h) * 3.15);
+  height: calc(var(--h) * 0.9);
+  clip-path: inset(0);
+  animation-name: pl-motif-hold;
+}
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="liverpool"] .main::before {
+  left: auto;
+  right: calc(var(--h) * 0.76);
+}
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="liverpool"] .main::before {
+  left: calc(var(--h) * 0.76);
 }
