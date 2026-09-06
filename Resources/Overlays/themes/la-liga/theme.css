@@ -44,6 +44,12 @@ body[data-theme="la-liga"] .main::after { content: "GOOOOL!"; left: 100%; right:
    fixes it: the clip mask then moves on the compositor without touching the text raster underneath. */
 body[data-theme="la-liga"] .bug.goal .main::after { opacity: 1; animation: ll-plate 3.2s cubic-bezier(.3,.8,.2,1) forwards; will-change: clip-path; transform: translateZ(0); }
 @keyframes ll-plate { 0% { clip-path: inset(0 100% 0 0); } 18% { clip-path: inset(0 0 0 0); } 80% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 0 0 100%); } }
+/* Slot 2 sits at the right edge of the landscape canvas (overlay.css mirrors the bug), so its plate slides out to
+   the LEFT of the bar with the crest on its right end; otherwise the plate ran off the canvas (final rehearsal, 6 Sep). */
+body[data-orientation="h"][data-slot="2"][data-theme="la-liga"] .main::after { left: auto; right: 100%; justify-content: flex-end; padding-left: 0; padding-right: calc(var(--h) * 2.05);
+  background-position: right calc(var(--h) * 0.35) center; clip-path: inset(0 0 0 100%); }
+body[data-orientation="h"][data-slot="2"][data-theme="la-liga"] .bug.goal .main::after { animation-name: ll-plate-2; }
+@keyframes ll-plate-2 { 0% { clip-path: inset(0 0 0 100%); } 18% { clip-path: inset(0 0 0 0); } 80% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
 body[data-theme="la-liga"] .score.roll .digit { animation: digit-roll 700ms 900ms cubic-bezier(.2,.8,.2,1) both; }
 body[data-theme="la-liga"] .shootout { margin-top: 5px; gap: 14px; padding: 6px 14px; background: var(--ll-black); font-size: calc(var(--h) * 0.5); }
 body[data-theme="la-liga"] .scorers { margin-top: 5px; gap: 20px; padding: 6px 14px; background: rgba(15,15,15,0.95); font-size: calc(var(--h) * 0.4); font-weight: 600; }

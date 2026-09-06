@@ -122,7 +122,9 @@ body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-g
    bar, ~0.01H over top/bottom). Everything else a per-club motif file does (Arsenal's cannon already
    self-clips to its own box, per its own comment) stays comfortably inside this. */
 body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 0.72);
-  clip-path: inset(calc(var(--h) * -0.13) calc(var(--h) * -0.02) calc(var(--h) * -0.08) calc(var(--h) * -0.02)); }
+  /* bottom allowance covers the clock plate (0.78H, top:100%) and the portrait +N chip beside it, which the
+     first cut of this clip hid to a hairline (final rehearsal, 6 Sep). */
+  clip-path: inset(calc(var(--h) * -0.13) calc(var(--h) * -0.02) calc(var(--h) * -0.95) calc(var(--h) * -0.02)); }
 body[data-theme="premier-league"] .comp, body[data-theme="premier-league"] .team .name, body[data-theme="premier-league"] .team .crest { display: none; }
 /* Correction round (6 Sep): lead review rejected round 8's Barlow Condensed pick -- the reference
    (plref/ref_steady.png) is wide/heavy, not condensed (digit width 0.81H at cap height 1.07H). Switched
