@@ -18,6 +18,8 @@ struct OverlayWebView: NSViewRepresentable {
         web.setValue(false, forKey: "drawsBackground")
         web.allowsMagnification = true
         web.navigationDelegate = context.coordinator
+        context.coordinator.requestedURL = url
+        context.coordinator.scale = scale window=\(String(describing: web.window))")
         web.load(URLRequest(url: url))
         web.setMagnification(scale, centeredAt: .zero)
         context.coordinator.watch(web)
@@ -32,13 +34,18 @@ struct OverlayWebView: NSViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         private var observers: [Any] = []
+        /// The URL last handed to `load`. `WKWebView.url` stays nil until the navigation commits, and a slow first
+        /// load restarted on every SwiftUI update never committed at all (both panes blank, 6 Sep).
+        var requestedURL: URL?
+        /// Magnification is per page in WebKit and resets to 1 when a navigation commits, so it is re-applied there.
+        var scale: CGFloat = 1
+        private var finished = false
         /// WebKit stops painting a view whose window is occluded or on another Space, and on this Mac the view
         /// stayed blank after the window came back (6 Sep, both panes black). Reloading when the window becomes
         /// visible again, or on View > Reload Previews, brings the page back; nothing is lost, state is the server's.
         func watch(_ web: WKWebView) {
-            observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: nil, queue: .main) { [weak web] note in
-                guard let web, let win = note.object as? NSWindow, win === web.window, win.occlusionState.contains(.visible) else { return }
-                web.reload()
+            observers.append(NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: nil, queue: .main) { [weak web, weak self] note in
+                guard let web, let win = note.object as? NSWindow, win === web.window, win.occlusionState.contains(.visible), self?.finished == true else { return } web.reload()
             })
             observers.append(NotificationCenter.default.addObserver(forName: OverlayWebView.reloadRequested, object: nil, queue: .main) { [weak web] _ in web?.reload() })
         }
@@ -49,13 +56,23 @@ struct OverlayWebView: NSViewRepresentable {
                 if let url = web.url { web.load(URLRequest(url: url)) } else { web.reload() }
             }
         }
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { retry(webView) }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {")
+            if (error as NSError).code == NSURLErrorCancelled { return } // superseded by a newer load, nothing to retry
+            retry(webView)
+        }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            webView.setMagnification(scale, centeredAt: .zero)
+            finished = true
+        }
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {") }
+        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) { webView.setMagnification(scale, centeredAt: .zero) }
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { retry(webView) }
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     }
 
     func updateNSView(_ web: WKWebView, context: Context) {
+        context.coordinator.scale = scale
         if abs(web.magnification - scale) > 0.0001 { web.setMagnification(scale, centeredAt: .zero) }
-        if web.url != url { web.load(URLRequest(url: url)) }
+        if context.coordinator.requestedURL != url { context.coordinator.requestedURL = url;"); web.load(URLRequest(url: url)) }
     }
 }
