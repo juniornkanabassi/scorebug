@@ -21,6 +21,9 @@ struct OverlayWebView: NSViewRepresentable {
         scroll.hasVerticalScroller = false; scroll.hasHorizontalScroller = false
         scroll.verticalScrollElasticity = .none; scroll.horizontalScrollElasticity = .none
         scroll.allowsMagnification = true
+        // NSScrollView clamps magnification to 0.25 by default, which is above the portrait pane's 1080-to-pane
+        // scale, so the portrait preview rendered 1.6x too big and clipped (Junior, 6 Sep).
+        scroll.minMagnification = 0.02
         scroll.documentView = web
         scroll.magnification = scale
         return scroll

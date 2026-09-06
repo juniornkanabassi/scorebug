@@ -560,7 +560,10 @@ struct PreviewStage: View {
     let slot: Int
     var body: some View {
         GeometryReader { geo in
-            let stageH = max(60, geo.size.height - 16)
+            // Both panes share one height; that height is capped by the width too, so a narrow window scales
+            // the pair down instead of clipping the portrait pane at the right edge (Junior, 6 Sep).
+            let widthPerHeight: CGFloat = 16.0 / 9 + 9.0 / 16
+            let stageH = max(60, min(geo.size.height - 16, (geo.size.width - 16 - 12) / widthPerHeight))
             let hW = stageH * 16 / 9, vW = stageH * 9 / 16
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
