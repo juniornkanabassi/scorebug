@@ -1,10 +1,50 @@
-/* Chelsea ("Blues"), code CHE -- Round 5 dissection of the official
-   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
-   A bright diagonal light-streak slashes through the wordmark rather than a discrete icon; kept as a translucent white bar, persists through the hold.
+/* Chelsea ("Blues"), code CHE -- Round 6 re-dissection of the official
+   "Premier League Goal ANIMATIONS" clip against a frame-by-frame extraction
+   (see ars-che/notes.md): what actually crosses the wordmark is not a static
+   translucent bar. It is a soft white light-streak plus a solid gold diagonal
+   accent that both enter steeply rotated, then rotate + slide down to a
+   resting, slightly-tilted position where the gold accent stays as a
+   persistent diagonal divider through the rest of the hold -- genuinely
+   moving, not a static overlay. Kept on .main::before (the shared
+   .main::after is already the GOAL sweep -- see the top of theme.css); own
+   width/height/keyframes so the shared pl-motif-hold/pl-motif-flash timing
+   used by the other 21 clubs is untouched. Separate home/away keyframes
+   because the animation itself now carries `transform` (rotate + translateX),
+   which would otherwise clobber the base rule's own scaleX(-1) mirror used
+   on the away side.
    Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
    ('Chelsea' -> "chelsea") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
    as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="chelsea"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="chelsea"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cpolygon%20points%3D%2238%2C0%2058%2C0%2062%2C100%2042%2C100%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.55%22%2F%3E%20%3C%2Fsvg%3E");
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%2080%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%220%25%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220.6%22%2F%3E%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23fff%22%20stop-opacity%3D%220%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Cpolygon%20points%3D%2230%2C80%2070%2C0%20100%2C0%2060%2C80%22%20fill%3D%22url%28%23g%29%22%2F%3E%20%3Cpolygon%20points%3D%228%2C80%2020%2C80%2055%2C0%2043%2C0%22%20fill%3D%22%23C8A458%22%2F%3E%20%3C%2Fsvg%3E");
+  width: calc(var(--h) * 2.4);
+  height: calc(var(--h) * 0.95);
+}
+body[data-theme="premier-league"] .bug.goal-home[data-home-club="chelsea"] .main::before {
+  animation-name: pl-motif-che-home;
+}
+/* Away goal: "GOAL" lands at the FAR LEFT of the bar (pl-wipe-away/.bug.goal-away .main::after,
+   justify-content:flex-start) -- the opposite side from the shared left:54% rule, which puts a
+   small icon just past the crest toward the away side (fine for a badge-sized watermark on the
+   other 21 clubs, wrong side for a streak that needs to actually cross the text). Swap to `right`
+   so it sits over the crest's other side instead. */
+body[data-theme="premier-league"] .bug.goal-away[data-away-club="chelsea"] .main::before {
+  left: auto;
+  right: 46%;
+  animation-name: pl-motif-che-away;
+}
+@keyframes pl-motif-che-home {
+  0% { opacity: 0; transform: translateY(-50%) translateX(16%) rotate(38deg); }
+  9% { opacity: 1; transform: translateY(-50%) translateX(9%) rotate(24deg); }
+  24% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
+  86% { opacity: 1; transform: translateY(-50%) translateX(0%) rotate(6deg); }
+  100% { opacity: 0; transform: translateY(-50%) translateX(0%) rotate(6deg); }
+}
+@keyframes pl-motif-che-away {
+  0% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(16%) rotate(38deg); }
+  9% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(9%) rotate(24deg); }
+  24% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
+  86% { opacity: 1; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
+  100% { opacity: 0; transform: translateY(-50%) scaleX(-1) translateX(0%) rotate(6deg); }
 }

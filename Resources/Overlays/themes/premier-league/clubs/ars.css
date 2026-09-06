@@ -1,14 +1,82 @@
-/* Arsenal ("Gunners"), code ARS -- Round 5 dissection of the official
-   "Premier League Goal ANIMATIONS" clip (Research/PL goal motifs.md has the full breakdown).
-   Full cannon (barrel + spoked wheel) fills the wordmark on reveal, then a particle dissolve wipes it away -- settled state is plain GOAL, no persistent icon.
+/* Arsenal ("Gunners"), code ARS -- Round 7 fix pass against the frame-by-frame
+   extraction (see ars-che/notes.md) and the round-6 comparison sheet
+   (SHEET_arsenal.png), which turned up two defects in round 6's own build:
+   1) the box was sized calc(var(--h)*6) wide -- a leftover from chasing the
+      clip's own "fills the whole wordmark zone" read literally -- which is
+      wider than the actual leftover space between the crest and the bar's
+      right edge, so the SVG's own opaque red backing rect (needed to occlude
+      "GOAL" while the cannon holds) painted straight past the bar's own right
+      edge, and the dissolve's blur filter (which paints outside its element's
+      box, like a box-shadow) made that worse. Fixed by sizing the box to the
+      corrected, actually-measured proportions -- about the GOAL wordmark's own
+      cap height tall, ~2.2x that wide -- and anchoring it with `right` at the
+      same padding-right the wordmark itself uses (calc(var(--h)*0.76)) instead
+      of a left-percentage offset, so the box's own right edge can never sit
+      past .main's right edge regardless of geometry. The dissolve's blur is
+      additionally clipped to the box with `clip-path: inset()` (same trick the
+      task brief suggested) so it can't paint past that box either, belt and
+      braces.
+   2) the cannon SVG itself was a thin-line sketch (a 6:1 viewBox squashed the
+      whole illustration into a short wide strip, leaving no room for a wheel
+      that reads as more than a thin ring) -- redrawn as solid polygon/circle
+      shapes at a 2.2:1 viewBox matching the box's own aspect (still needed:
+      headless Chromium mis-renders an SVG background at a fraction of its box
+      when background-size stretches it to a DIFFERENT aspect than its own
+      viewBox, confirmed in round 6): a big 8-spoke wheel with a filled hub, a
+      tapered barrel (wide at the breech, narrow before a flared muzzle cap),
+      and a short two-piece carriage trail behind the wheel.
+   Kept on .main::before (the shared .main::after is already the GOAL sweep --
+   see the top of theme.css); own width/height and its own keyframe so the
+   shared pl-motif-hold/pl-motif-flash timing used by the other 21 clubs is
+   untouched. The smoke-puff wipe itself is still approximated as an
+   opacity+blur dissolve -- a true multi-blob smoke sprite would need a second
+   layer this theme doesn't have spare (.main::after is taken).
    Selectors are keyed on data-home-club/data-away-club, a slug of the club's "name" field
    ('Arsenal' -> "arsenal") -- overlay.js now sets these live (commit b7e60ce, "Expose each side's club
    as a data attribute for per-club goal motifs"); see the top of theme.css for how this was verified. */
 body[data-theme="premier-league"] .bug.goal-home[data-home-club="arsenal"] .main::before,
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="arsenal"] .main::before {
-  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%2070%22%3E%20%3Ccircle%20cx%3D%2230%22%20cy%3D%2250%22%20r%3D%2215%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%224%22%2F%3E%20%3Cline%20x1%3D%2230%22%20y1%3D%2250%22%20x2%3D%2230%22%20y2%3D%2237%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%20%3Cline%20x1%3D%2230%22%20y1%3D%2250%22%20x2%3D%2241%22%20y2%3D%2255%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%20%3Cline%20x1%3D%2230%22%20y1%3D%2250%22%20x2%3D%2219%22%20y2%3D%2255%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%20%3Crect%20x%3D%2218%22%20y%3D%2224%22%20width%3D%2260%22%20height%3D%2215%22%20rx%3D%226%22%20fill%3D%22%23fff%22%2F%3E%20%3Ccircle%20cx%3D%2280%22%20cy%3D%2231%22%20r%3D%225%22%20fill%3D%22%23fff%22%2F%3E%20%3C%2Fsvg%3E");
+  /* SVG's own viewBox (220x100 = 2.2:1) matches the box's own aspect ratio exactly, for the headless
+     Chromium mis-render reason above. */
+  background-image: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22220%22%20height%3D%22100%22%20viewBox%3D%220%200%20220%20100%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22220%22%20height%3D%22100%22%20fill%3D%22%23EF0107%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%2286%22%20width%3D%2242%22%20height%3D%228%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3Cpolygon%20points%3D%224%2C90%2034%2C90%2040%2C70%2014%2C70%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2266%22%20cy%3D%2258%22%20r%3D%2234%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2266%22%20cy%3D%2258%22%20r%3D%2224%22%20fill%3D%22%23EF0107%22%2F%3E%3Cg%20stroke%3D%22%23fff%22%20stroke-width%3D%226%22%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2290%22%20y2%3D%2258%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2283%22%20y2%3D%2241%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2266%22%20y2%3D%2234%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2249%22%20y2%3D%2241%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2242%22%20y2%3D%2258%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2249%22%20y2%3D%2275%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2266%22%20y2%3D%2282%22%2F%3E%3Cline%20x1%3D%2266%22%20y1%3D%2258%22%20x2%3D%2283%22%20y2%3D%2275%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2266%22%20cy%3D%2258%22%20r%3D%229%22%20fill%3D%22%23fff%22%2F%3E%3Cpolygon%20points%3D%2252%2C36%20188%2C44%20188%2C54%2052%2C64%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%22186%22%20y%3D%2239%22%20width%3D%2220%22%20height%3D%2217%22%20rx%3D%223%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fsvg%3E");
+  /* Height ~= the GOAL wordmark's own cap height (font-size 0.89H, bold sans cap height reads ~0.6-0.65H
+     of that); width fixed at 2.2x that per the task's own re-measurement, matching the SVG's viewBox. */
+  /* Lead's round 8: the clip's cannon occupies the WHOLE wordmark zone and no letter of GOAL shows until
+     the dissolve, so the box spans the wordmark (3.1H wide, 0.8H tall) and paints the club colour behind
+     the cannon to mask the text; the SVG itself is drawn at its own 2.2:1 aspect inside it (auto 100%). */
+  width: calc(var(--h) * 3.1);
+  height: calc(var(--h) * 0.8);
+  background-color: var(--home-primary);
+  background-size: auto 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: calc(var(--h) * 0.08);
+  /* Blur (used by the dissolve keyframe below) paints outside its own element's box like a box-shadow --
+     clip it to this box's own bounds so it can never bleed past the bar regardless of radius. */
+  clip-path: inset(0 round calc(var(--h) * 0.08));
+  /* Anchored at the SAME padding-right the GOAL wordmark itself uses (.main::after's padding-right,
+     theme.css), not a left-percentage offset off the crest: that guarantees the box's right edge lines up
+     with (never past) the text's own right edge, and therefore never past .main's own right edge, however
+     the bar's width ends up varying with codes/score. Overrides the shared rule's `left: 46%`. */
+  left: auto;
+  right: calc(var(--h) * 0.76);
+  animation-name: pl-motif-ars;
 }
-body[data-theme="premier-league"] .bug.goal-home[data-home-club="arsenal"] .main::before,
+/* Away goal: "GOAL" lands at the FAR LEFT of the bar (pl-wipe-away/.bug.goal-away .main::after,
+   justify-content:flex-start, padding-left calc(var(--h)*0.76)) -- the opposite side from the shared
+   left:54% rule, which puts a small icon just past the crest toward the away side. Mirror of the home
+   anchor above: same padding value, other edge. transform stays the shared rule's translateY(-50%)
+   scaleX(-1) (mirrors the cannon to point the other way, toward where GOAL lands on this side). */
 body[data-theme="premier-league"] .bug.goal-away[data-away-club="arsenal"] .main::before {
-  animation-name: pl-motif-flash;
+  right: auto;
+  left: calc(var(--h) * 0.76);
+  background-color: var(--away-primary);
+}
+@keyframes pl-motif-ars {
+  0% { opacity: 0; filter: blur(0); }
+  9% { opacity: 1; filter: blur(0); }
+  20% { opacity: 1; filter: blur(0); }
+  28% { opacity: .5; filter: blur(5px); }
+  36% { opacity: 0; filter: blur(9px); }
+  100% { opacity: 0; filter: blur(9px); }
 }
