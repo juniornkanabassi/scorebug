@@ -185,24 +185,28 @@ body[data-family="uefa"] .bug.goal .team, body[data-family="uefa"] .bug.goal .sc
 /* Keyframes interpolate continuously between any two stops that set a property, even with nothing in between --
    so `color` needs a same-value stop right before the cue (53%) or it fades in gradually starting at 0%
    instead of snapping visible at the cue, and `transform` needs one at the same point (55%) or the scaleX
-   stretch starts creeping from frame 0 instead of only kicking in once the word is revealed. */
+   stretch starts creeping from frame 0 instead of only kicking in once the word is revealed. font-size needs
+   repeating at every stop for the same reason, PLUS a browser-specific gotcha: a property set at only one
+   offset gets an IMPLICIT keyframe synthesised at the other end from the element's non-animated cascade value
+   (here font-size: 16px, since .main::before never has a font-size outside this animation) -- so leaving it
+   out of the 100% keyframe was quietly animating font-size from 1.3H down to 16px over the whole 1.05s. */
 @keyframes uefa-goal-word-home {
   0%   { opacity: 1; color: transparent; clip-path: inset(0 100% 0 0); font-size: calc(var(--h) * 1.3); transform: scaleX(1); }
-  17%  { clip-path: inset(0 0 0 0); }
-  53%  { color: transparent; }
-  55%  { color: #fff; transform: scaleX(1); }
-  92%  { color: #fff; transform: scaleX(2.1); }
-  100% { opacity: 0; color: transparent; clip-path: inset(0 0 0 0); transform: scaleX(1); }
+  17%  { clip-path: inset(0 0 0 0); font-size: calc(var(--h) * 1.3); }
+  53%  { color: transparent; font-size: calc(var(--h) * 1.3); }
+  55%  { color: #fff; transform: scaleX(1); font-size: calc(var(--h) * 1.3); }
+  92%  { color: #fff; transform: scaleX(2.6); font-size: calc(var(--h) * 1.3); }
+  100% { opacity: 0; color: transparent; clip-path: inset(0 0 0 0); transform: scaleX(1); font-size: calc(var(--h) * 1.3); }
 }
 /* Mirror of uefa-goal-word-home for the away side: same shape, only the clip-path origin runs the opposite
    way so the cover reads as arriving from the right. */
 @keyframes uefa-goal-word-away {
   0%   { opacity: 1; color: transparent; clip-path: inset(0 0 0 100%); font-size: calc(var(--h) * 1.3); transform: scaleX(1); }
-  17%  { clip-path: inset(0 0 0 0); }
-  53%  { color: transparent; }
-  55%  { color: #fff; transform: scaleX(1); }
-  92%  { color: #fff; transform: scaleX(2.1); }
-  100% { opacity: 0; color: transparent; clip-path: inset(0 0 0 0); transform: scaleX(1); }
+  17%  { clip-path: inset(0 0 0 0); font-size: calc(var(--h) * 1.3); }
+  53%  { color: transparent; font-size: calc(var(--h) * 1.3); }
+  55%  { color: #fff; transform: scaleX(1); font-size: calc(var(--h) * 1.3); }
+  92%  { color: #fff; transform: scaleX(2.6); font-size: calc(var(--h) * 1.3); }
+  100% { opacity: 0; color: transparent; clip-path: inset(0 0 0 0); transform: scaleX(1); font-size: calc(var(--h) * 1.3); }
 }
 @keyframes uefa-goal-shine {
   0%, 18% { opacity: 0; background-position: 260% 0; }
