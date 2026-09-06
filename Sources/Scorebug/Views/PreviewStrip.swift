@@ -15,6 +15,7 @@ struct OverlayWebView: NSViewRepresentable {
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
         let web = WKWebView(frame: CGRect(origin: .zero, size: size), configuration: config)
         web.setValue(false, forKey: "drawsBackground")
+        web.navigationDelegate = context.coordinator
         web.load(URLRequest(url: url))
         let scroll = NSScrollView()
         scroll.drawsBackground = false
@@ -27,6 +28,23 @@ struct OverlayWebView: NSViewRepresentable {
         scroll.documentView = web
         scroll.magnification = scale
         return scroll
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    /// A blank preview is worse than a late one: the first load can race the embedded server at launch
+    /// (provisional navigation fails, the view stays black), and WebKit blanks a view whose content process
+    /// was terminated under memory pressure. Both are retried here (Junior saw both panes black, 6 Sep).
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        private func retry(_ web: WKWebView) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak web] in
+                guard let web else { return }
+                if let url = web.url { web.load(URLRequest(url: url)) } else { web.reload() }
+            }
+        }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { retry(webView) }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { retry(webView) }
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
