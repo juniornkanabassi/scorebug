@@ -116,6 +116,8 @@ final class AppModel: ObservableObject {
 
     func setClub(_ club: Club?, side: Side, slot: Int) {
         let m = match(slot)
+        // Picking the club that already occupies the other side swaps the teams instead of putting it on both.
+        if let club, m.team(side.other).clubId == club.id { apply(.swapTeams, slot: slot); return }
         let entry = club?.entry(for: m.competitionId) ?? (side == .home ? TeamEntry.placeholderHome : TeamEntry.placeholderAway)
         apply(.setTeam(side, entry), slot: slot)
     }
