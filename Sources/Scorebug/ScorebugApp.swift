@@ -40,7 +40,6 @@ struct ScorebugApp: App {
     var body: some Scene {
         WindowGroup("Scorebug", id: "main") {
             ContentView().environmentObject(model).frame(minWidth: 960, minHeight: 640)
-                .environment(\.zoomScale, model.zoomScale)
                 .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
                 .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
@@ -55,10 +54,6 @@ struct ScorebugApp: App {
                 Divider()
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
-        }
-
-        MenuBarExtra("Scorebug", systemImage: model.serverRunning ? "sportscourt.fill" : "sportscourt") {
-            MenuBarContent().environmentObject(model)
         }
     }
 }
@@ -85,25 +80,27 @@ enum WindowSetup {
     }
 }
 
-struct MenuBarContent: View {
-    @EnvironmentObject var model: AppModel
-    @Environment(\.openWindow) private var openWindow
+enum SidebarSection: Hashable { case slot(Int), library, settings }
+
+/// One sidebar row for a match slot. Equatable on the tiny summary it draws (codes, scores, visible), not
+/// the whole `Match` (which drags in both squads via `TeamEntry`), so a command that leaves this slot's
+/// summary untouched skips the row entirely.
+struct SidebarMatchRow: View, Equatable {
+    let slot: Int
+    let summary: SlotSummary
+    static func == (l: Self, r: Self) -> Bool { l.slot == r.slot && l.summary == r.summary }
     var body: some View {
-        Group {
-            Text(model.serverStatus)
-            Divider()
-            ForEach([1, 2], id: \.self) { slot in
-                let m = model.match(slot)
-                Text("\(slot == 1 ? "Primary" : "Secondary"): \(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)")
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
+                    if summary.visible { Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS") }
+                }
+                Text("\(summary.homeCode) \(summary.homeScore) – \(summary.awayScore) \(summary.awayCode)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
-            Divider()
-            Button("Open Scorebug") { openWindow(id: "main"); NSApp.activate(ignoringOtherApps: true) }
-            Button("Quit Scorebug") { NSApp.terminate(nil) }.keyboardShortcut("q")
-        }
+        } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square").scaledFont(.body) }
     }
 }
-
-enum SidebarSection: Hashable { case slot(Int), library, settings }
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
@@ -114,17 +111,7 @@ struct ContentView: View {
             List(selection: $section) {
                 Section("Matches") {
                     ForEach([1, 2], id: \.self) { slot in
-                        let m = model.match(slot)
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack(spacing: 6) {
-                                    Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
-                                    if m.visible { Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS") }
-                                }
-                                Text("\(m.home.code) \(m.homeScore) – \(m.awayScore) \(m.away.code)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
-                            }
-                        } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square").scaledFont(.body) }
-                        .tag(SidebarSection.slot(slot))
+                        SidebarMatchRow(slot: slot, summary: model.slotSummaries[slot] ?? SlotSummary()).equatable().tag(SidebarSection.slot(slot))
                     }
                 }
                 Section {

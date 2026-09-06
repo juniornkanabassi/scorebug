@@ -25,7 +25,6 @@ struct LibraryView: View {
             if mode == 1 { competitions } else { clubsSplit }
         }
         .navigationTitle("Team Library")
-        .onAppear { LibraryCrestImage.crestsDirectory = model.store.crestsDirectory }
     }
 
     // MARK: Competitions tab
@@ -174,7 +173,7 @@ struct LibraryView: View {
     /// and draws at the source's native pixel size, so this uses a pre-sized menu icon, not a resized one.
     private func competitionMenuMark(_ comp: Competition) -> some View {
         Group {
-            if let f = comp.logoFile, let img = LibraryCrestImage.menuIcon(file: f) {
+            if let f = comp.logoFile, let img = CrestImage.menuIcon(file: f) {
                 Image(nsImage: img).clipShape(Circle())
             } else {
                 Circle().fill(CompetitionColours.colour(for: comp.id)).frame(width: 18, height: 18)
@@ -306,7 +305,7 @@ private struct CachedCompetitionMark: View {
     var size: CGFloat = 22
     var body: some View {
         Group {
-            if let f = competition.logoFile, let img = LibraryCrestImage.thumbnail(file: f, size: size) {
+            if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
                 Image(nsImage: img)
             } else {
                 RoundedRectangle(cornerRadius: size * 0.22).fill(CompetitionColours.colour(for: competition.id))
@@ -322,63 +321,13 @@ private struct CachedCrestThumb: View {
     var size: CGFloat = 22
     var body: some View {
         Group {
-            if let f = club.crestFile, let img = LibraryCrestImage.thumbnail(file: f, size: size) {
+            if let f = club.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
                 Image(nsImage: img)
             } else {
                 Circle().fill(Color(hex: club.primaryColour))
                     .overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: size * 0.32, weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
             }
         }.frame(width: size, height: size)
-    }
-}
-
-/// Stand-in for agent A's `CrestImage` (owned by Helpers.swift), which had not landed at the time of
-/// writing. Same two functions, so call sites above switch to `CrestImage` with a find-and-replace once
-/// it exists, and this type is deleted.
-private enum LibraryCrestImage {
-    static var crestsDirectory: URL?
-    private static let cache = NSCache<NSString, NSImage>()
-
-    static func thumbnail(file: String, size: CGFloat) -> NSImage? { image(file, points: size) }
-
-    /// A Menu label renders only the raw image, the same reason it ignores `.frame`: it reads the pixel
-    /// data straight off the NSImage rather than the full modified view, so a mark that is not already
-    /// circular (a flag, a square badge) must have that mask baked in here, not applied with `clipShape`.
-    static func menuIcon(file: String) -> NSImage? {
-        let key = "\(file)@menu" as NSString
-        if let cached = cache.object(forKey: key) { return cached }
-        guard let cg = thumbnailCGImage(file, maxPixel: 36) else { return nil }
-        let side = min(cg.width, cg.height)
-        let cropped = cg.cropping(to: CGRect(x: (cg.width - side) / 2, y: (cg.height - side) / 2, width: side, height: side)) ?? cg
-        let size = NSSize(width: 18, height: 18)
-        let circular = NSImage(size: size)
-        circular.lockFocus()
-        NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).setClip()
-        NSImage(cgImage: cropped, size: size).draw(in: NSRect(origin: .zero, size: size))
-        circular.unlockFocus()
-        cache.setObject(circular, forKey: key)
-        return circular
-    }
-
-    private static func image(_ file: String, points: CGFloat) -> NSImage? {
-        let key = "\(file)@\(points)" as NSString
-        if let cached = cache.object(forKey: key) { return cached }
-        guard let cg = thumbnailCGImage(file, maxPixel: points * 2) else { return nil }
-        let img = NSImage(cgImage: cg, size: NSSize(width: points, height: points))
-        cache.setObject(img, forKey: key)
-        return img
-    }
-
-    private static func thumbnailCGImage(_ file: String, maxPixel: CGFloat) -> CGImage? {
-        guard let dir = crestsDirectory else { return nil }
-        let url = dir.appendingPathComponent(file)
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-        ]
-        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 }
 

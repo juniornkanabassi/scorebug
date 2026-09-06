@@ -12,9 +12,33 @@ enum CrestImage {
     private static var keysByFile: [String: Set<String>] = [:]
 
     static func thumbnail(file: String, size: CGFloat) -> NSImage? { image(file, points: size) }
-    /// SwiftUI's `Menu` ignores an `Image`'s `.frame` and draws it at native size, so a menu row needs a
-    /// pre-sized icon rather than a large crest scaled down in layout.
-    static func menuIcon(file: String) -> NSImage? { image(file, points: 18) }
+
+    /// SwiftUI's `Menu` ignores an `Image`'s `.frame` and draws it at native size straight off the pixel
+    /// data, so a menu row needs a pre-sized icon (not a large crest scaled down in layout) and, for a mark
+    /// that isn't already circular (a flag, a square badge), the round mask baked into those pixels rather
+    /// than applied with `.clipShape` (which a `Menu` also ignores).
+    static func menuIcon(file: String) -> NSImage? {
+        let key = "\(file)@menu"
+        if let cached = cache.object(forKey: key as NSString) { return cached }
+        guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: 36,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        let side = min(cg.width, cg.height)
+        let cropped = cg.cropping(to: CGRect(x: (cg.width - side) / 2, y: (cg.height - side) / 2, width: side, height: side)) ?? cg
+        let size = NSSize(width: 18, height: 18)
+        let circular = NSImage(size: size)
+        circular.lockFocus()
+        NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).setClip()
+        NSImage(cgImage: cropped, size: size).draw(in: NSRect(origin: .zero, size: size))
+        circular.unlockFocus()
+        cache.setObject(circular, forKey: key as NSString)
+        keysByFile[file, default: []].insert(key)
+        return circular
+    }
 
     static func invalidate(file: String) {
         for key in keysByFile.removeValue(forKey: file) ?? [] { cache.removeObject(forKey: key as NSString) }
@@ -42,19 +66,15 @@ enum CrestImage {
 // Interface zoom (View > Bigger/Smaller/Actual Size) scales font point sizes, not layout: on macOS the system
 // text styles (.body, .caption, .title2 ...) have fixed point sizes and ignore Dynamic Type, and scaling the
 // whole window with scaleEffect breaks hit-testing on AppKit-backed views (VSplitView, HSplitView, a grouped
-// Form, List, WKWebView) — see the comment above `AppModel.zoomLevel`. So every text-bearing view reads the
-// current `zoomScale` from the environment and builds its font from the system's own preferred point size for
-// that text style, multiplied by the scale.
-
-private struct ZoomScaleKey: EnvironmentKey {
-    static let defaultValue: CGFloat = 1
-}
-
-extension EnvironmentValues {
-    var zoomScale: CGFloat {
-        get { self[ZoomScaleKey.self] }
-        set { self[ZoomScaleKey.self] = newValue }
-    }
+// Form, List, WKWebView) — see the comment above `AppModel.zoomLevel`. `scaledFont` used to read the scale
+// from a custom `ViewModifier`'s own `@Environment`, which meant a distinct generic `ModifiedContent`
+// specialisation and a live environment lookup at every one of this codebase's 120-odd call sites, on every
+// view-graph update (this is what `sample` shows as `find1`/`EnvironmentValues.subscript.getter` and generic
+// metadata instantiation under `AG::Graph::UpdateStack::update`). `AppModel.zoomLevel`'s `didSet` (and its
+// init) now write the current scale into this plain static instead, so each call site is just a `.font(_:)`
+// with a value computed from that static, no environment plumbing, no custom modifier type, of its own.
+enum ScaledFonts {
+    static var scale: CGFloat = 1
 }
 
 /// Maps a SwiftUI text style to the AppKit text style whose preferred point size drives that style's scaling.
@@ -75,36 +95,16 @@ private func nsFontTextStyle(_ style: Font.TextStyle) -> NSFont.TextStyle {
     }
 }
 
-private struct ScaledTextStyleFont: ViewModifier {
-    @Environment(\.zoomScale) private var scale
-    let style: Font.TextStyle
-    var weight: Font.Weight?
-    var design: Font.Design?
-    func body(content: Content) -> some View {
-        let pointSize = NSFont.preferredFont(forTextStyle: nsFontTextStyle(style)).pointSize
-        content.font(.system(size: pointSize * scale, weight: weight ?? .regular, design: design ?? .default))
-    }
-}
-
-private struct ScaledFixedSizeFont: ViewModifier {
-    @Environment(\.zoomScale) private var scale
-    let size: CGFloat
-    var weight: Font.Weight?
-    var design: Font.Design?
-    func body(content: Content) -> some View {
-        content.font(.system(size: size * scale, weight: weight ?? .regular, design: design ?? .default))
-    }
-}
-
 extension View {
     /// A system text style (`.body`, `.caption`, `.title2` …) scaled by the interface zoom level.
     func scaledFont(_ style: Font.TextStyle, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
-        modifier(ScaledTextStyleFont(style: style, weight: weight, design: design))
+        let pointSize = NSFont.preferredFont(forTextStyle: nsFontTextStyle(style)).pointSize
+        return font(.system(size: pointSize * ScaledFonts.scale, weight: weight ?? .regular, design: design ?? .default))
     }
     /// A fixed point size scaled by the interface zoom level. Not for sizes derived from a fixed-size graphic
     /// (a crest or mark placeholder's initials), which must stay proportional to that graphic instead.
     func scaledFont(size: CGFloat, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
-        modifier(ScaledFixedSizeFont(size: size, weight: weight, design: design))
+        font(.system(size: size * ScaledFonts.scale, weight: weight ?? .regular, design: design ?? .default))
     }
 }
 
@@ -214,5 +214,13 @@ extension Color {
     var hexString: String {
         let c = NSColor(self).usingColorSpace(.sRGB) ?? .black
         return String(format: "#%02X%02X%02X", Int(round(c.redComponent * 255)), Int(round(c.greenComponent * 255)), Int(round(c.blueComponent * 255)))
+    }
+}
+
+extension View {
+    /// A popover whose AppKit host exists only while it is shown. An always-attached `.popover` costs about
+    /// 4 ms of main-thread work on every window update even when closed; four of them made every command slower.
+    func lazyPopover<Content: View>(isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> Content) -> some View {
+        overlay { if isPresented.wrappedValue { Color.clear.popover(isPresented: isPresented, content: content) } }
     }
 }

@@ -1,5 +1,5 @@
-// The shared scorer popover content: pressed from a goal's plus button (SlotView.teamColumn) or from its
-// row in the Goals section (GoalRow). Search field over the scoring side's squad, a second group over the
+// The shared scorer popover content: pressed from a goal's plus button (MatchCardSection.teamColumn) or from
+// its row in the Goals section (GoalRow). Search field over the scoring side's squad, a second group over the
 // other side's squad headed "Own goal" (picking there pre-sets it), and Own goal/Penalty toggles that apply
 // to the goal immediately, independent of picking a scorer.
 import SwiftUI
@@ -8,7 +8,6 @@ import ScorebugCore
 struct GoalPrompt: View {
     @EnvironmentObject var model: AppModel
     let goal: Goal
-    let match: Match
     let slot: Int
     /// Called once a scorer is committed (a name picked or Return submitted), so the caller can close its popover.
     let onPick: () -> Void
@@ -18,12 +17,16 @@ struct GoalPrompt: View {
     @State private var penalty: Bool
     @FocusState private var searchFocused: Bool
 
-    init(goal: Goal, match: Match, slot: Int, onPick: @escaping () -> Void) {
-        self.goal = goal; self.match = match; self.slot = slot; self.onPick = onPick
+    init(goal: Goal, slot: Int, onPick: @escaping () -> Void) {
+        self.goal = goal; self.slot = slot; self.onPick = onPick
         _ownGoal = State(initialValue: goal.ownGoal)
         _penalty = State(initialValue: goal.penalty)
     }
 
+    /// Read live rather than passed in: this view only exists while its popover is open, so the cost of a
+    /// section elsewhere in `SlotView` skipping its own diff (the whole point of the Equatable sections in
+    /// `SlotView.swift`) never applies here.
+    private var match: Match { model.match(slot) }
     private var scoringSquad: [String] { match.team(goal.side).squad ?? [] }
     private var otherSquad: [String] { match.team(goal.side.other).squad ?? [] }
     private var filteredScoring: [String] { query.isEmpty ? scoringSquad : scoringSquad.filter { squadNameMatches($0, query: query) } }

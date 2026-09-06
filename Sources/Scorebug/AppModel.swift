@@ -4,6 +4,17 @@ import SwiftUI
 import QuartzCore
 import ScorebugCore
 
+/// Tiny per-slot values the sidebar row and the menu bar extra actually draw, precomputed in
+/// `persistAndBroadcast()` rather than read from the full `Match` (which drags in both squads via
+/// `TeamEntry`) so those two Equatable-skippable views never decode more than they show.
+struct SlotSummary: Equatable {
+    var homeCode = "HOM"
+    var awayCode = "AWY"
+    var homeScore = 0
+    var awayScore = 0
+    var visible = true
+}
+
 struct LaunchOptions {
     var dataDirectory: URL
     var overlaysDirectory: String?
@@ -40,6 +51,7 @@ final class AppModel: ObservableObject {
     @Published var serverStatus: String = "Starting"
     @Published var serverRunning = false
     @Published var lastError: String?
+    @Published private(set) var slotSummaries: [Int: SlotSummary] = [:]
 
     let store: Store
     let resolver: OverlayResolver
@@ -62,6 +74,8 @@ final class AppModel: ObservableObject {
             ?? URL(fileURLWithPath: "/nonexistent")
         self.resolver = OverlayResolver(bundled: bundled, overrides: settings.themeOverridesEnabled ? store.overlayOverridesDirectory : nil)
         CrestImage.directory = store.crestsDirectory
+        ScaledFonts.scale = zoomScale
+        updateSlotSummaries()
         importDefaultCrestFolderIfPresent()
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
     }
@@ -101,6 +115,7 @@ final class AppModel: ObservableObject {
             state.matches[idx] = m
         }
         try? store.saveState(state)
+        updateSlotSummaries()
     }
 
     // MARK: Matches
@@ -171,7 +186,14 @@ final class AppModel: ObservableObject {
 
     private func persistAndBroadcast() {
         do { try store.saveState(state) } catch { lastError = "Could not save state: \(error.localizedDescription)" }
+        updateSlotSummaries()
         broadcast()
+    }
+
+    private func updateSlotSummaries() {
+        for m in state.matches {
+            slotSummaries[m.slot] = SlotSummary(homeCode: m.home.code, awayCode: m.away.code, homeScore: m.homeScore, awayScore: m.awayScore, visible: m.visible)
+        }
     }
 
     func snapshot() -> StateSnapshot {
@@ -257,7 +279,10 @@ final class AppModel: ObservableObject {
         let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 0
         return min(3, max(-2, stored))
     }() {
-        didSet { UserDefaults.standard.set(zoomLevel, forKey: "zoomLevel") }
+        didSet {
+            UserDefaults.standard.set(zoomLevel, forKey: "zoomLevel")
+            ScaledFonts.scale = zoomScale
+        }
     }
     /// Level 0 is 1.0, the system default point size. The clamp of -2...3 reaches from 0.85x up to 1.5x.
     private static let zoomScales: [CGFloat] = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5]

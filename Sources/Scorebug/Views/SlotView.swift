@@ -1,4 +1,6 @@
 // One match slot: a resizable live preview on top, then the match card (home, competition and clock, away) and grouped sections.
+// Each section below is its own Equatable view, so a command that only changes one section (e.g. a goal, which
+// touches the match card and goals list) does not force SwiftUI to re-diff the others.
 import SwiftUI
 import ScorebugCore
 
@@ -31,34 +33,36 @@ extension Phase {
 struct SlotView: View {
     @EnvironmentObject var model: AppModel
     let slot: Int
-    /// Goal whose scorer popover should be open on the plus button that just scored it. Cleared as soon as
-    /// that goal is no longer in `match.goals` (the guard `plusPromptBinding` checks on every render).
-    @State private var plusPromptGoalId: UUID?
     @State private var confirmReset = false
 
     private var match: Match { model.match(slot) }
     private var competition: Competition? { model.library.competitions.first { $0.id == match.competitionId } }
-    private var themeConfig: ThemeConfig? { model.resolver.themeConfig(id: match.themeId ?? competition?.themeId ?? match.competitionId) }
+    private var clockStyle: ClockStyle? { model.themeConfig(id: match.themeId ?? competition?.themeId ?? match.competitionId)?.clockStyle }
 
     var body: some View {
+        let m = match
         VSplitView {
-            PreviewStage(slot: slot).frame(minHeight: 180, idealHeight: 300)
+            PreviewStage(slot: slot, baseURL: model.baseURL).frame(minHeight: 180, idealHeight: 300)
             Form {
-                matchCard
-                clockSection
-                goalsSection
-                knockoutSection
-                shootoutSection
+                // `.equatable()` is what actually makes SwiftUI skip a section's diff when its inputs compare
+                // equal; conforming the view to Equatable alone does not opt it into that shortcut.
+                MatchCardSection(home: m.home, away: m.away, homeScore: m.homeScore, awayScore: m.awayScore,
+                                  competitionId: m.competitionId, phase: m.phase, clock: m.clock, addedMinutes: m.addedMinutes,
+                                  clockStyle: clockStyle, slot: slot, model: model).equatable()
+                ClockSection(phase: m.phase, clock: m.clock, addedMinutes: m.addedMinutes, clockStyle: clockStyle, slot: slot, model: model).equatable()
+                GoalsSection(goals: m.goals, homeShortName: m.home.shortName, awayShortName: m.away.shortName, showScorers: m.showScorers, slot: slot, model: model).equatable()
+                KnockoutSection(aggregate: m.aggregate, homeCode: m.home.code, awayCode: m.away.code, homeScore: m.homeScore, awayScore: m.awayScore, slot: slot, model: model).equatable()
+                ShootoutSection(shootout: m.shootout, phase: m.phase, homeShortName: m.home.shortName, awayShortName: m.away.shortName, slot: slot, model: model).equatable()
             }
             .formStyle(.grouped)
             .frame(minHeight: 320)
         }
         .navigationTitle(slot == 1 ? "Primary match" : "Secondary match")
-        .navigationSubtitle("\(match.home.name) v \(match.away.name)")
+        .navigationSubtitle("\(m.home.name) v \(m.away.name)")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Toggle(isOn: Binding(get: { match.visible }, set: { model.apply(.setVisible($0), slot: slot) })) {
-                    Label(match.visible ? "Bug shown" : "Bug hidden", systemImage: match.visible ? "eye" : "eye.slash").scaledFont(.body)
+                Toggle(isOn: Binding(get: { m.visible }, set: { model.apply(.setVisible($0), slot: slot) })) {
+                    Label(m.visible ? "Bug shown" : "Bug hidden", systemImage: m.visible ? "eye" : "eye.slash").scaledFont(.body)
                 }.toggleStyle(.button).help("Show or hide the bug in OBS")
                 Button(role: .destructive) { confirmReset = true } label: { Label("Reset match", systemImage: "arrow.counterclockwise").scaledFont(.body) }
                     .help("Zero the score, clock and shootout; keep the teams")
@@ -68,65 +72,65 @@ struct SlotView: View {
             }
         }
     }
+}
 
-    // MARK: Match card
+/// Home/away crest-and-score columns and the centre competition/clock/play controls. Equatable on the values
+/// it actually draws, so a command that leaves the match card untouched (a clock nudge, a shootout kick)
+/// skips this section's diff and layout entirely.
+struct MatchCardSection: View, Equatable {
+    let home: TeamEntry
+    let away: TeamEntry
+    let homeScore: Int
+    let awayScore: Int
+    let competitionId: String
+    let phase: Phase
+    let clock: Clock
+    let addedMinutes: Int?
+    let clockStyle: ClockStyle?
+    let slot: Int
+    let model: AppModel
 
-    private var matchCard: some View {
+    static func == (l: Self, r: Self) -> Bool {
+        l.home == r.home && l.away == r.away && l.homeScore == r.homeScore && l.awayScore == r.awayScore
+            && l.competitionId == r.competitionId && l.phase == r.phase && l.clock == r.clock
+            && l.addedMinutes == r.addedMinutes && l.clockStyle == r.clockStyle && l.slot == r.slot
+    }
+
+    private var competition: Competition? { model.library.competitions.first { $0.id == competitionId } }
+
+    var body: some View {
         Section {
             HStack(alignment: .top, spacing: 0) {
-                teamColumn(.home)
+                teamColumn(.home, team: home, score: homeScore)
                 Divider().padding(.vertical, 8)
                 centreColumn
                 Divider().padding(.vertical, 8)
-                teamColumn(.away)
+                teamColumn(.away, team: away, score: awayScore)
             }
             .padding(.vertical, 6)
         }
     }
 
-    private func teamColumn(_ side: Side) -> some View {
-        let team = match.team(side)
-        return VStack(spacing: 12) {
+    private func teamColumn(_ side: Side, team: TeamEntry, score: Int) -> some View {
+        VStack(spacing: 12) {
             Text(side == .home ? "HOME" : "AWAY").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2)
             CrestView(team: team, size: 72)
-            ClubPickerButton(side: side, slot: slot)
+            ClubPickerButton(side: side, slot: slot).equatable()
             // A placeholder reads "Home" or "Away" in full; a chosen club shows its broadcast code.
             Text(team.clubId == nil ? team.name : team.code).scaledFont(.caption).monospaced().foregroundStyle(.secondary)
-            Text("\(match.score(side))").scaledFont(size: 48, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 60)
+            Text("\(score)").scaledFont(size: 48, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 60)
             // The plus is the button pressed live, over and over, so it gets the large, unmissable
             // hit target (44x44 pt minimum, per Apple's own floor for a control meant to be hit
             // quickly and often); the minus is only ever an undo, so it stays small and secondary.
             HStack(spacing: 16) {
                 Button { model.apply(.goal(side, -1), slot: slot) } label: { Image(systemName: "minus").scaledFont(.callout, weight: .semibold) }
                     .buttonStyle(.bordered).controlSize(.small).frame(width: 28, height: 28)
-                    .disabled(match.score(side) == 0).help("Remove the last \(team.shortName) goal")
-                Button {
-                    model.apply(.goal(side, 1), slot: slot)
-                    // Open the new goal's scorer popover from this same button.
-                    plusPromptGoalId = match.lastGoal?.goalId
-                } label: { Image(systemName: "plus").scaledFont(.title2, weight: .bold) }
-                    .buttonStyle(.borderedProminent).frame(width: 44, height: 44)
-                    .keyboardShortcut(side == .home ? "h" : "a", modifiers: [.command, .shift])
-                    .help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
-                    .disabled(match.phase == .shootout).help("Goal for \(team.shortName)")
-                    .popover(isPresented: plusPromptBinding(for: side)) {
-                        if let id = plusPromptGoalId, let g = match.goals.first(where: { $0.id == id }) {
-                            GoalPrompt(goal: g, match: match, slot: slot, onPick: { plusPromptGoalId = nil })
-                        }
-                    }
+                    .disabled(score == 0).help("Remove the last \(team.shortName) goal")
+                PlusGoalButton(side: side, team: team, phase: phase, slot: slot, model: model).equatable()
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
-    }
-
-    /// True only while `plusPromptGoalId` names a goal still in `match.goals` on this side; a minus press
-    /// or a goal on the other side both make this false on the next render, dismissing the popover.
-    private func plusPromptBinding(for side: Side) -> Binding<Bool> {
-        Binding(
-            get: { plusPromptGoalId.flatMap { id in match.goals.first(where: { $0.id == id }) }?.side == side },
-            set: { if !$0 { plusPromptGoalId = nil } }
-        )
     }
 
     private var centreColumn: some View {
@@ -135,12 +139,12 @@ struct SlotView: View {
                 // On a small light plate: a dark broadcast mark (the Premier League lion, drawn
                 // dark-on-transparent) would otherwise disappear against this dark card.
                 if let c = competition { CompetitionMark(competition: c, size: 30, plate: true) }
-                Picker("Competition", selection: Binding(get: { match.competitionId }, set: { model.setCompetition($0, slot: slot) })) {
+                Picker("Competition", selection: Binding(get: { competitionId }, set: { model.setCompetition($0, slot: slot) })) {
                     ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
                 }.scaledFont(.body).labelsHidden().frame(maxWidth: 210)
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
-            ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
+            ClockReadout(clock: clock, phase: phase, addedMinutes: addedMinutes, style: clockStyle ?? .runOn)
             // "End half" moved down to sit beside the period pills in the Clock section, where it
             // reads as part of period control rather than a peer of Play/Pause here. This is the only
             // Play/Pause control left (the toolbar's was removed), so it gets the full-width, extra-large
@@ -148,12 +152,12 @@ struct SlotView: View {
             Button {
                 model.apply(.playPause, slot: slot)
             } label: {
-                Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill")
+                Label(clock.running ? "Pause" : "Play", systemImage: clock.running ? "pause.fill" : "play.fill")
                     .frame(maxWidth: .infinity).scaledFont(.body, weight: .semibold)
             }
             .buttonStyle(.borderedProminent).controlSize(.extraLarge)
             .keyboardShortcut(.space, modifiers: [])
-            .disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
+            .disabled(phase.period == nil).help("Play or pause the clock (Space)")
             // Swapping ends is rare and deliberate, unlike Play/End half which are pressed live and
             // often, so it sits apart and smaller rather than sharing weight with them.
             Button("Swap", systemImage: "arrow.left.arrow.right") { model.apply(.swapTeams, slot: slot) }
@@ -163,13 +167,105 @@ struct SlotView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
     }
+}
+
+/// The plus button and its scorer popover, alone. `.lazyPopover(isPresented:)` hosts are AppKit-bridged, and this
+/// button is pressed (and so re-diffed) on every goal; pulling it out of `MatchCardSection` and gating it on
+/// (side, team, phase, slot) means a goal on one side no longer re-attaches the *other* side's popover host,
+/// and neither side's re-attaches for a command that only changes the score (score lives in `teamColumn`,
+/// not here).
+struct PlusGoalButton: View, Equatable {
+    let side: Side
+    let team: TeamEntry
+    let phase: Phase
+    let slot: Int
+    let model: AppModel
+    static func == (l: Self, r: Self) -> Bool { l.side == r.side && l.team == r.team && l.phase == r.phase && l.slot == r.slot }
+
+    /// Goal whose scorer popover should be open on this button, since it just scored it. Cleared as soon as
+    /// that goal is no longer in the match (the guard below checks on every read, fetched live from `model`).
+    @State private var plusPromptGoalId: UUID?
+
+    var body: some View {
+        Button {
+            model.apply(.goal(side, 1), slot: slot)
+            plusPromptGoalId = model.match(slot).lastGoal?.goalId
+        } label: { Image(systemName: "plus").scaledFont(.title2, weight: .bold) }
+            .buttonStyle(.borderedProminent).frame(width: 44, height: 44)
+            .keyboardShortcut(side == .home ? "h" : "a", modifiers: [.command, .shift])
+            .help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
+            .disabled(phase == .shootout).help("Goal for \(team.shortName)")
+            .lazyPopover(isPresented: plusPromptBinding) {
+                if let id = plusPromptGoalId, let g = model.match(slot).goals.first(where: { $0.id == id }) {
+                    GoalPrompt(goal: g, slot: slot, onPick: { plusPromptGoalId = nil })
+                }
+            }
+    }
+
+    /// True only while `plusPromptGoalId` names a goal still in the match on this side; a minus press
+    /// or a goal on the other side both make this false on the next render, dismissing the popover.
+    private var plusPromptBinding: Binding<Bool> {
+        Binding(
+            get: { plusPromptGoalId.flatMap { id in model.match(slot).goals.first(where: { $0.id == id }) }?.side == side },
+            set: { if !$0 { plusPromptGoalId = nil } }
+        )
+    }
+}
+
+/// Period pills, the clock fields and the stoppage-time quick-picks. Equatable on phase/clock/addedMinutes/
+/// clockStyle, so a goal (which does not touch any of those) skips this section entirely.
+struct ClockSection: View, Equatable {
+    let phase: Phase
+    let clock: Clock
+    let addedMinutes: Int?
+    let clockStyle: ClockStyle?
+    let slot: Int
+    let model: AppModel
+
+    static func == (l: Self, r: Self) -> Bool {
+        l.phase == r.phase && l.clock == r.clock && l.addedMinutes == r.addedMinutes && l.clockStyle == r.clockStyle && l.slot == r.slot
+    }
+
+    var body: some View {
+        Section("Clock") {
+            LabeledContent("Period") { periodRow }.scaledFont(.body)
+            LabeledContent("Clock") {
+                HStack(spacing: 16) {
+                    ClockFieldsRow(slot: slot)
+                    Button("Reset clock") { model.apply(.setClock(seconds: 0), slot: slot) }
+                        .scaledFont(.body)
+                        .disabled(phase.period == nil)
+                        .help("Back to the start of this period")
+                }
+            }
+            .scaledFont(.body)
+            LabeledContent("Stoppage time") {
+                HStack(spacing: 8) {
+                    stoppageButton(nil, "Off")
+                    ForEach(1...9, id: \.self) { n in stoppageButton(n, "\(n)") }
+                    // The quick-pick row above covers the common case; this stays for the rare longer add.
+                    TextField("", text: Binding(
+                        get: { "\(addedMinutes ?? 0)" },
+                        set: { text in if let n = Int(text) { model.apply(.setAddedMinutes(min(15, max(0, n)) == 0 ? nil : min(15, n)), slot: slot) } }
+                    ))
+                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
+                    .textFieldStyle(.roundedBorder).frame(width: 36)
+                    .help("For added time over 9 minutes")
+                }
+            }
+            .scaledFont(.body)
+            if let style = clockStyle {
+                Text(style == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").scaledFont(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
 
     /// A period already finished (the match phase has moved past it, e.g. half time is past first
     /// half) can't be restarted from its pill; the live period's own pill stays enabled so re-pressing
     /// it is harmless.
     private func isPeriodOver(_ period: Period) -> Bool {
         let phases = Phase.allCases
-        guard let matchIndex = phases.firstIndex(of: match.phase), let periodIndex = phases.firstIndex(of: period.phase) else { return false }
+        guard let matchIndex = phases.firstIndex(of: phase), let periodIndex = phases.firstIndex(of: period.phase) else { return false }
         return matchIndex > periodIndex
     }
 
@@ -180,10 +276,10 @@ struct SlotView: View {
                 Button("End half") { model.apply(.endPeriod, slot: slot) }
                     .keyboardShortcut("e", modifiers: [.command, .shift]).help("End the current period (⇧⌘E)")
                     .scaledFont(.body)
-                    .disabled(match.currentPeriod == nil)
+                    .disabled(phase.period == nil)
             }
-            if match.currentPeriod == nil {
-                Text(match.phase.displayTitle).scaledFont(.caption).foregroundStyle(.secondary)
+            if phase.period == nil {
+                Text(phase.displayTitle).scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -197,103 +293,96 @@ struct SlotView: View {
             .controlSize(.large)
             .disabled(isPeriodOver(p))
             .help(p.title)
-        if match.currentPeriod == p {
+        if phase.period == p {
             button.buttonStyle(.borderedProminent)
         } else {
             button.buttonStyle(.bordered)
-        }
-    }
-
-    // MARK: Clock
-
-    private var clockSection: some View {
-        Section("Clock") {
-            LabeledContent("Period") { periodRow }.scaledFont(.body)
-            LabeledContent("Clock") {
-                HStack(spacing: 16) {
-                    ClockFieldsRow(slot: slot)
-                    Button("Reset clock") { model.apply(.setClock(seconds: 0), slot: slot) }
-                        .scaledFont(.body)
-                        .disabled(match.currentPeriod == nil)
-                        .help("Back to the start of this period")
-                }
-            }
-            .scaledFont(.body)
-            LabeledContent("Stoppage time") {
-                HStack(spacing: 8) {
-                    stoppageButton(nil, "Off")
-                    ForEach(1...9, id: \.self) { n in stoppageButton(n, "\(n)") }
-                    // The quick-pick row above covers the common case; this stays for the rare longer add.
-                    TextField("", text: Binding(
-                        get: { "\(match.addedMinutes ?? 0)" },
-                        set: { text in if let n = Int(text) { model.apply(.setAddedMinutes(min(15, max(0, n)) == 0 ? nil : min(15, n)), slot: slot) } }
-                    ))
-                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
-                    .textFieldStyle(.roundedBorder).frame(width: 36)
-                    .help("For added time over 9 minutes")
-                }
-            }
-            .scaledFont(.body)
-            if let t = themeConfig {
-                Text(t.clockStyle == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").scaledFont(.caption).foregroundStyle(.secondary)
-            }
         }
     }
 
     @ViewBuilder
     private func stoppageButton(_ value: Int?, _ label: String) -> some View {
         let button = Button(label) { model.apply(.setAddedMinutes(value), slot: slot) }.scaledFont(.body).controlSize(.large)
-        if match.addedMinutes == value {
+        if addedMinutes == value {
             button.buttonStyle(.borderedProminent)
         } else {
             button.buttonStyle(.bordered)
         }
     }
+}
 
-    // MARK: Goals
+/// The goal list and the scorer strap toggle. Equatable on the goal list and the two short names, so a
+/// clock edit or a shootout kick (neither touches goals) skips this section.
+struct GoalsSection: View, Equatable {
+    let goals: [Goal]
+    let homeShortName: String
+    let awayShortName: String
+    let showScorers: Bool
+    let slot: Int
+    let model: AppModel
 
-    private var goalsSection: some View {
+    static func == (l: Self, r: Self) -> Bool {
+        l.goals == r.goals && l.homeShortName == r.homeShortName && l.awayShortName == r.awayShortName
+            && l.showScorers == r.showScorers && l.slot == r.slot
+    }
+
+    var body: some View {
         Section("Goals") {
-            if match.goals.isEmpty {
+            if goals.isEmpty {
                 Text("No goals yet. Use the plus buttons above; each goal gets a line here for the scorer's name.").scaledFont(.caption).foregroundStyle(.secondary)
             }
-            ForEach(match.goals) { goal in
-                LabeledContent("\(match.team(goal.side).shortName)  \(goal.minuteLabel)") {
-                    GoalRow(goal: goal, match: match, slot: slot)
+            ForEach(goals) { goal in
+                LabeledContent("\(goal.side == .home ? homeShortName : awayShortName)  \(goal.minuteLabel)") {
+                    GoalRow(goal: goal, slot: slot)
                 }
                 .scaledFont(.body)
             }
-            Button(match.showScorers ? "Hide scorers" : "Show scorers") {
-                model.apply(.setShowScorers(!match.showScorers), slot: slot)
+            Button(showScorers ? "Hide scorers" : "Show scorers") {
+                model.apply(.setShowScorers(!showScorers), slot: slot)
             }
             .buttonStyle(.borderedProminent).controlSize(.large)
-            .disabled(match.goals.isEmpty)
+            .disabled(goals.isEmpty)
             Text("The strap under the bug lists the scorers while this is on.").scaledFont(.caption).foregroundStyle(.secondary)
         }
     }
+}
 
-    // MARK: Knockout tie
+/// The two-legged tie toggle and aggregate fields. Equatable on the aggregate, codes and scores, so a
+/// clock edit or a goal scorer pick (neither touches these) skips this section.
+struct KnockoutSection: View, Equatable {
+    let aggregate: Aggregate?
+    let homeCode: String
+    let awayCode: String
+    let homeScore: Int
+    let awayScore: Int
+    let slot: Int
+    let model: AppModel
 
-    private var knockoutSection: some View {
+    static func == (l: Self, r: Self) -> Bool {
+        l.aggregate == r.aggregate && l.homeCode == r.homeCode && l.awayCode == r.awayCode
+            && l.homeScore == r.homeScore && l.awayScore == r.awayScore && l.slot == r.slot
+    }
+
+    var body: some View {
         Section("Knockout tie") {
             Toggle("Two-legged tie", isOn: Binding(
-                get: { match.aggregate != nil },
+                get: { aggregate != nil },
                 set: { on in
                     if on {
-                        model.apply(.setAggregate(home: match.aggregate?.firstLegHome ?? 0, away: match.aggregate?.firstLegAway ?? 0), slot: slot)
+                        model.apply(.setAggregate(home: aggregate?.firstLegHome ?? 0, away: aggregate?.firstLegAway ?? 0), slot: slot)
                     } else {
                         model.apply(.clearAggregate, slot: slot)
                     }
                 }
             )).scaledFont(.body)
-            if let agg = match.aggregate {
-                LabeledContent("First leg, goals for \(match.home.code)") {
-                    aggregateField(agg.firstLegHome) { model.apply(.setAggregate(home: $0, away: match.aggregate?.firstLegAway ?? 0), slot: slot) }
+            if let agg = aggregate {
+                LabeledContent("First leg, goals for \(homeCode)") {
+                    aggregateField(agg.firstLegHome) { model.apply(.setAggregate(home: $0, away: aggregate?.firstLegAway ?? 0), slot: slot) }
                 }.scaledFont(.body)
-                LabeledContent("goals for \(match.away.code)") {
-                    aggregateField(agg.firstLegAway) { model.apply(.setAggregate(home: match.aggregate?.firstLegHome ?? 0, away: $0), slot: slot) }
+                LabeledContent("goals for \(awayCode)") {
+                    aggregateField(agg.firstLegAway) { model.apply(.setAggregate(home: aggregate?.firstLegHome ?? 0, away: $0), slot: slot) }
                 }.scaledFont(.body)
-                Text("Aggregate \(match.home.code) \(match.homeScore + agg.firstLegHome) – \(match.awayScore + agg.firstLegAway) \(match.away.code)")
+                Text("Aggregate \(homeCode) \(homeScore + agg.firstLegHome) – \(awayScore + agg.firstLegAway) \(awayCode)")
                     .scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
@@ -307,23 +396,37 @@ struct SlotView: View {
         .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
         .textFieldStyle(.roundedBorder).frame(width: 44)
     }
+}
 
-    // MARK: Shootout
+/// The penalty shootout tally and kick buttons. Equatable on the shootout, phase and short names, so a
+/// goal or clock edit (neither touches these once a shootout is not running) skips this section.
+struct ShootoutSection: View, Equatable {
+    let shootout: Shootout?
+    let phase: Phase
+    let homeShortName: String
+    let awayShortName: String
+    let slot: Int
+    let model: AppModel
 
-    private var shootoutSection: some View {
+    static func == (l: Self, r: Self) -> Bool {
+        l.shootout == r.shootout && l.phase == r.phase && l.homeShortName == r.homeShortName
+            && l.awayShortName == r.awayShortName && l.slot == r.slot
+    }
+
+    var body: some View {
         Section("Penalty shootout") {
-            if let s = match.shootout {
+            if let s = shootout {
                 ForEach(Side.allCases, id: \.self) { side in
-                    LabeledContent("\(match.team(side).shortName)  \(s.tally(side))") {
+                    LabeledContent("\(side == .home ? homeShortName : awayShortName)  \(s.tally(side))") {
                         HStack(spacing: 10) {
                             HStack(spacing: 5) {
                                 ForEach(s.kicks.filter { $0.side == side }) { k in
                                     Circle().fill(k.result == .scored ? Color.green : k.result == .missed ? Color.red : Color.gray).frame(width: 11, height: 11)
                                 }
                             }.frame(minWidth: 90, alignment: .leading)
-                            if s.nextSide == side && match.phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.secondary) }
-                            Button("Scored") { model.apply(.recordKick(side, .scored), slot: slot) }.scaledFont(.body).disabled(match.phase != .shootout)
-                            Button("Missed") { model.apply(.recordKick(side, .missed), slot: slot) }.scaledFont(.body).disabled(match.phase != .shootout)
+                            if s.nextSide == side && phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.secondary) }
+                            Button("Scored") { model.apply(.recordKick(side, .scored), slot: slot) }.scaledFont(.body).disabled(phase != .shootout)
+                            Button("Missed") { model.apply(.recordKick(side, .missed), slot: slot) }.scaledFont(.body).disabled(phase != .shootout)
                         }
                     }
                     .scaledFont(.body)
@@ -335,18 +438,25 @@ struct SlotView: View {
             }
         }
     }
-
 }
 
 /// The ticking clock and phase label, alone. This is the only part of a slot that changes four times a second,
-/// so it owns its own `Timer.publish` subscription; `SlotView` does not subscribe, and a tick here re-renders
-/// only this small view, leaving pickers and buttons elsewhere in the tree untouched.
+/// so it owns its own `Timer.publish` subscription; the section above does not, so a tick here re-renders
+/// only this small view, leaving pickers and buttons elsewhere in the tree untouched. Takes the clock's raw
+/// fields rather than a whole `Match` (a scratch `Match` is built once per tick to reuse `ClockEngine.display`,
+/// the single source of truth also used by overlay.js).
 struct ClockReadout: View {
-    let match: Match
+    let clock: Clock
+    let phase: Phase
+    let addedMinutes: Int?
     let style: ClockStyle
     @State private var tick = Date()
     private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
-    private var display: ClockDisplay { ClockEngine.display(match: match, style: style, now: tick) }
+    private var display: ClockDisplay {
+        var m = Match(slot: 0)
+        m.clock = clock; m.phase = phase; m.addedMinutes = addedMinutes
+        return ClockEngine.display(match: m, style: style, now: tick)
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -355,7 +465,7 @@ struct ClockReadout: View {
                 if let a = display.added { Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(.orange) }
                 if let c = display.addedCounter { Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary) }
             }.frame(height: 20)
-            Text(match.phase.displayTitle).scaledFont(.callout, weight: .medium).pillBadge()
+            Text(phase.displayTitle).scaledFont(.callout, weight: .medium).pillBadge()
         }
         .onReceive(timer) { tick = $0 }
     }
@@ -433,7 +543,6 @@ struct ClockFieldsRow: View {
 /// (minus pressed) removes the row, and its popover, with it.
 struct GoalRow: View {
     let goal: Goal
-    let match: Match
     let slot: Int
     @State private var isOpen = false
 
@@ -446,8 +555,8 @@ struct GoalRow: View {
         Button(label) { isOpen = true }
             .scaledFont(.body)
             .frame(maxWidth: 280, alignment: .leading)
-            .popover(isPresented: $isOpen) {
-                GoalPrompt(goal: goal, match: match, slot: slot, onPick: { isOpen = false })
+            .lazyPopover(isPresented: $isOpen) {
+                GoalPrompt(goal: goal, slot: slot, onPick: { isOpen = false })
             }
     }
 }
@@ -456,8 +565,11 @@ struct GoalRow: View {
 /// chevron) that opens a search popover over the whole library, same pattern as `GoalPrompt`.
 /// The plain alphabetical menu of about 165 clubs and nations it replaces was impractical to scroll;
 /// this groups results instead and narrows them as the owner types. `model.setClub(_:side:slot:)` stays
-/// the only side effect, exactly as the old picker's `onChange` was.
-struct ClubPickerButton: View {
+/// the only side effect, exactly as the old picker's `onChange` was. Equatable on (side, slot) alone (its
+/// only real inputs; everything else it reads live off `model` via its own `@EnvironmentObject`, so a goal
+/// on either side, which never changes the team, no longer re-attaches this popover host either.
+struct ClubPickerButton: View, Equatable {
+    static func == (l: Self, r: Self) -> Bool { l.side == r.side && l.slot == r.slot }
     @EnvironmentObject var model: AppModel
     let side: Side
     let slot: Int
@@ -508,7 +620,7 @@ struct ClubPickerButton: View {
             .frame(maxWidth: 220)
         }
         .buttonStyle(.bordered)
-        .popover(isPresented: $isOpen) {
+        .lazyPopover(isPresented: $isOpen) {
             VStack(alignment: .leading, spacing: 0) {
                 TextField("Search club or nation", text: $query)
                     .scaledFont(.body)
@@ -590,10 +702,12 @@ struct ClubPickerButton: View {
     }
 }
 
-/// Live preview of both pages from the local server, so the window shows exactly what OBS shows. Drag the divider below it to resize.
+/// Live preview of both pages from the local server, so the window shows exactly what OBS shows. Drag the
+/// divider below it to resize. Takes the base URL directly rather than the whole model, so a command on
+/// either slot never invalidates this view (its `updateNSView` already no-ops when nothing changed).
 struct PreviewStage: View {
-    @EnvironmentObject var model: AppModel
     let slot: Int
+    let baseURL: String
     var body: some View {
         GeometryReader { geo in
             // Both panes share one height; that height is capped by the width too, so a narrow window scales
@@ -603,9 +717,9 @@ struct PreviewStage: View {
             let hW = stageH * 16 / 9, vW = stageH * 9 / 16
             HStack(spacing: 12) {
                 Spacer(minLength: 0)
-                OverlayWebView(url: URL(string: "\(model.baseURL)/overlay/h/\(slot)")!, scale: hW / 1920, size: CGSize(width: 1920, height: 1080))
+                OverlayWebView(url: URL(string: "\(baseURL)/overlay/h/\(slot)")!, scale: hW / 1920, size: CGSize(width: 1920, height: 1080))
                     .frame(width: hW, height: stageH).background(.black).clipShape(RoundedRectangle(cornerRadius: 6))
-                OverlayWebView(url: URL(string: "\(model.baseURL)/overlay/v/\(slot)")!, scale: vW / 1080, size: CGSize(width: 1080, height: 1920))
+                OverlayWebView(url: URL(string: "\(baseURL)/overlay/v/\(slot)")!, scale: vW / 1080, size: CGSize(width: 1080, height: 1920))
                     .frame(width: vW, height: stageH).background(.black).clipShape(RoundedRectangle(cornerRadius: 6))
                 Spacer(minLength: 0)
             }.padding(8)
