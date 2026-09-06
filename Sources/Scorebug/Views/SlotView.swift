@@ -2,14 +2,28 @@
 import SwiftUI
 import ScorebugCore
 
-/// Short segmented-control label for a period; `.title` (from ScorebugCore) stays the tooltip's full name.
+/// Short pill label for the period row, matching Uno Overlays' "Match Time" tab wording;
+/// `.title` (from ScorebugCore) stays the tooltip's full name.
 extension Period {
     var shortLabel: String {
         switch self {
-        case .firstHalf: return "1H"
-        case .secondHalf: return "2H"
-        case .extraFirst: return "ET1"
-        case .extraSecond: return "ET2"
+        case .firstHalf: return "1st half"
+        case .secondHalf: return "2nd half"
+        case .extraFirst: return "1st extra"
+        case .extraSecond: return "2nd extra"
+        }
+    }
+}
+
+/// Full display name for the match phase, shown under the clock and beside the period pills
+/// while no period is live.
+extension Phase {
+    var displayTitle: String {
+        switch self {
+        case .preMatch: return "Pre-match"; case .firstHalf: return "First half"; case .halfTime: return "Half time"
+        case .secondHalf: return "Second half"; case .fullTime: return "Full time"; case .extraFirst: return "Extra time, first half"
+        case .extraBreak: return "Extra time break"; case .extraSecond: return "Extra time, second half"; case .extraFullTime: return "After extra time"
+        case .shootout: return "Penalty shootout"; case .finished: return "Finished"
         }
     }
 }
@@ -108,12 +122,11 @@ struct SlotView: View {
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             ClockReadout(match: match, style: themeConfig?.clockStyle ?? .runOn)
-            HStack(spacing: 16) {
-                Button { model.apply(.playPause, slot: slot) } label: {
-                    Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
-                }.disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
-                Button { model.apply(.endPeriod, slot: slot) } label: { Text("End half").scaledFont(.body) }.disabled(match.currentPeriod == nil)
-            }
+            // "End half" moved down to sit beside the period pills in the Clock section, where it
+            // reads as part of period control rather than a peer of Play/Pause here.
+            Button { model.apply(.playPause, slot: slot) } label: {
+                Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
+            }.disabled(match.currentPeriod == nil).help("Play or pause the clock (Space)")
             // Swapping ends is rare and deliberate, unlike Play/End half which are pressed live and
             // often, so it sits apart and smaller rather than sharing weight with them.
             Button("Swap", systemImage: "arrow.left.arrow.right") { model.apply(.swapTeams, slot: slot) }
@@ -124,60 +137,85 @@ struct SlotView: View {
         .padding(.horizontal, 12)
     }
 
-    /// Manual clock correction, for when play was pressed late and the bug needs to line up with the
-    /// broadcast: one bordered group of symbol buttons for quick offsets (a divider marks the halfway
-    /// point between subtracting and adding time), then "Set time…" for typing an exact value.
-    private var clockNudgeRow: some View {
-        HStack(spacing: 10) {
-            ControlGroup {
-                clockNudgeButton(-60, "1 min")
-                clockNudgeButton(-10, "10 s")
-                clockNudgeButton(-1, "1 s")
-            }
-            Divider().frame(height: 20)
-            ControlGroup {
-                clockNudgeButton(1, "1 s")
-                clockNudgeButton(10, "10 s")
-                clockNudgeButton(60, "1 min")
-            }
-            SetClockButton(match: match, slot: slot)
-        }
-        .fixedSize()
+    /// A period already finished (the match phase has moved past it, e.g. half time is past first
+    /// half) can't be restarted from its pill; the live period's own pill stays enabled so re-pressing
+    /// it is harmless.
+    private func isPeriodOver(_ period: Period) -> Bool {
+        let phases = Phase.allCases
+        guard let matchIndex = phases.firstIndex(of: match.phase), let periodIndex = phases.firstIndex(of: period.phase) else { return false }
+        return matchIndex > periodIndex
     }
 
-    private func clockNudgeButton(_ delta: Int, _ amount: String) -> some View {
-        Button { model.apply(.adjustClock(deltaSeconds: delta), slot: slot) } label: {
-            // Text, not a Label: ControlGroup on macOS collapses Labels to their icons, and the amount must stay visible.
-            Text("\(delta < 0 ? "−" : "+")\(amount)").scaledFont(.body).monospacedDigit().frame(minWidth: 44)
+    private var periodRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                ForEach(Period.allCases, id: \.self) { p in periodPill(p) }
+                Button("End half") { model.apply(.endPeriod, slot: slot) }
+                    .scaledFont(.body)
+                    .disabled(match.currentPeriod == nil)
+            }
+            if match.currentPeriod == nil {
+                Text(match.phase.displayTitle).scaledFont(.caption).foregroundStyle(.secondary)
+            }
         }
-        .disabled(match.currentPeriod == nil)
-        .help("\(delta < 0 ? "Subtract" : "Add") \(amount) \(delta < 0 ? "from" : "to") the clock")
+    }
+
+    /// `.bordered` and `.borderedProminent` are different concrete `ButtonStyle` types, so the live/not-live
+    /// choice between them needs two branches rather than one `buttonStyle(_ cond ? a : b)`.
+    @ViewBuilder
+    private func periodPill(_ p: Period) -> some View {
+        let button = Button(p.shortLabel) { model.apply(.startPeriod(p), slot: slot) }
+            .scaledFont(.body)
+            .disabled(isPeriodOver(p))
+            .help(p.title)
+        if match.currentPeriod == p {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.buttonStyle(.bordered)
+        }
     }
 
     // MARK: Clock
 
     private var clockSection: some View {
         Section("Clock") {
-            LabeledContent("Period") {
-                // Optional selection: while no period is live (pre-match, half time, full time) no
-                // segment is highlighted, matching the old buttons' "none active" state.
-                Picker("Period", selection: Binding<Period?>(
-                    get: { match.currentPeriod },
-                    set: { if let p = $0 { model.apply(.startPeriod(p), slot: slot) } }
-                )) {
-                    ForEach(Period.allCases, id: \.self) { p in
-                        Text(p.shortLabel).help(p.title).tag(Period?.some(p))
-                    }
-                }.scaledFont(.body).labelsHidden().pickerStyle(.segmented).frame(maxWidth: 260)
+            LabeledContent("Period") { periodRow }.scaledFont(.body)
+            LabeledContent("Clock") {
+                HStack(spacing: 16) {
+                    ClockFieldsRow(slot: slot)
+                    Button { model.apply(.playPause, slot: slot) } label: {
+                        Label(match.clock.running ? "Pause" : "Play", systemImage: match.clock.running ? "pause.fill" : "play.fill").scaledFont(.body)
+                    }.disabled(match.currentPeriod == nil)
+                    Button("Reset") { model.apply(.setClock(seconds: 0), slot: slot) }
+                        .scaledFont(.body)
+                        .disabled(match.currentPeriod == nil)
+                        .help("Back to the start of this period")
+                }
             }
             .scaledFont(.body)
-            LabeledContent("Adjust") { clockNudgeRow }.scaledFont(.body)
-            LabeledContent("Added time") {
-                HStack(spacing: 12) {
-                    Stepper(value: Binding(get: { match.addedMinutes ?? 0 }, set: { model.apply(.setAddedMinutes($0), slot: slot) }), in: 0...15) {
-                        Text(match.addedMinutes.map { "+\($0) min" } ?? "None").scaledFont(.body).monospacedDigit().frame(minWidth: 64, alignment: .leading)
+            LabeledContent("Stoppage time") {
+                HStack(spacing: 14) {
+                    Toggle(isOn: Binding(
+                        get: { match.addedMinutes != nil },
+                        set: { on in model.apply(.setAddedMinutes(on ? max(1, match.addedMinutes ?? 1) : nil), slot: slot) }
+                    )) { EmptyView() }.labelsHidden().toggleStyle(.switch)
+                    Text("Minutes").scaledFont(.body).foregroundStyle(match.addedMinutes == nil ? .secondary : .primary)
+                    HStack(spacing: 6) {
+                        Button { adjustStoppageMinutes(-1) } label: { Image(systemName: "minus").scaledFont(.callout, weight: .semibold) }
+                            .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
+                        // A plain get/set binding (no focus juggling) is enough here: unlike the clock,
+                        // added minutes never changes on its own between keystrokes, only in response to
+                        // this same field, a nudge button, or an explicit command, so there's nothing to fight.
+                        TextField("", text: Binding(
+                            get: { "\(match.addedMinutes ?? 1)" },
+                            set: { text in if let n = Int(text) { model.apply(.setAddedMinutes(min(15, max(1, n))), slot: slot) } }
+                        ))
+                        .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
+                        .textFieldStyle(.roundedBorder).frame(width: 36)
+                        Button { adjustStoppageMinutes(1) } label: { Image(systemName: "plus").scaledFont(.callout, weight: .semibold) }
+                            .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
                     }
-                    Button("Clear") { model.apply(.setAddedMinutes(nil), slot: slot) }.scaledFont(.body).disabled(match.addedMinutes == nil)
+                    .disabled(match.addedMinutes == nil)
                 }
             }
             .scaledFont(.body)
@@ -185,6 +223,11 @@ struct SlotView: View {
                 Text(t.clockStyle == .runOn ? "This design keeps counting past 45:00 and shows the added minutes beside the clock, as the broadcast does." : "This design stops at 45:00 and counts the added time separately.").scaledFont(.caption).foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func adjustStoppageMinutes(_ delta: Int) {
+        let next = min(15, max(1, (match.addedMinutes ?? 1) + delta))
+        model.apply(.setAddedMinutes(next), slot: slot)
     }
 
     // MARK: Goals
@@ -253,95 +296,76 @@ struct ClockReadout: View {
                 if let a = display.added { Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(.orange) }
                 if let c = display.addedCounter { Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary) }
             }.frame(height: 20)
-            Text(phaseTitle).scaledFont(.callout, weight: .medium).pillBadge()
+            Text(match.phase.displayTitle).scaledFont(.callout, weight: .medium).pillBadge()
         }
         .onReceive(timer) { tick = $0 }
     }
-
-    private var phaseTitle: String {
-        switch match.phase {
-        case .preMatch: return "Pre-match"; case .firstHalf: return "First half"; case .halfTime: return "Half time"
-        case .secondHalf: return "Second half"; case .fullTime: return "Full time"; case .extraFirst: return "Extra time, first half"
-        case .extraBreak: return "Extra time break"; case .extraSecond: return "Extra time, second half"; case .extraFullTime: return "After extra time"
-        case .shootout: return "Penalty shootout"; case .finished: return "Finished"
-        }
-    }
 }
 
-/// "Set time…": a popover with a free-text field for the exact match time the owner sees on the broadcast
-/// (mm:ss, "47m" for minutes, or a plain number of seconds), a live preview of what that parses to, and an
-/// Apply button. The field is read as the on-screen cumulative time the owner wants, matching what a
-/// broadcast graphic shows and what the popover previews back; `apply()` converts that into the period-local
-/// value `Command.setClock` expects (see its doc comment) by subtracting the current period's base, so the
-/// owner never has to do that arithmetic themselves in the second half or extra time.
-struct SetClockButton: View {
+/// The editable minutes/seconds pair in the Clock row: each shows the cumulative on-screen time (period
+/// base + elapsed, the same value `ClockReadout` derives via `Clock.elapsed(at:)`), flanked by round −/+
+/// buttons that nudge the clock directly. Like `ClockReadout`, this owns its own quarter-second timer so
+/// the running clock doesn't re-render the rest of the form. Typing a value only takes effect on Return
+/// (`onSubmit`), and the text mirrors re-sync from the match on every tick *unless* a field is focused, so
+/// a running clock never overwrites what the owner is mid-typing.
+struct ClockFieldsRow: View {
     @EnvironmentObject var model: AppModel
-    let match: Match
     let slot: Int
-    @State private var text = ""
-    @State private var isOpen = false
-    @FocusState private var fieldFocused: Bool
+    @State private var tick = Date()
+    private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
+    @State private var minutesText = "0"
+    @State private var secondsText = "00"
+    @FocusState private var minutesFocused: Bool
+    @FocusState private var secondsFocused: Bool
 
+    private var match: Match { model.match(slot) }
     private var periodBaseSeconds: Int { match.currentPeriod?.baseSeconds ?? 0 }
-    private var parsedSeconds: Int? { Self.parse(text) }
+    private var cumulativeSeconds: Int { Int(match.clock.elapsed(at: tick)) }
 
     var body: some View {
-        Button("Set time…") { text = ""; isOpen = true }
-            .scaledFont(.body)
-            .disabled(match.currentPeriod == nil)
-            .popover(isPresented: $isOpen) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Set match clock").scaledFont(.headline)
-                    TextField("mm:ss, minutes, or seconds", text: $text)
-                        .scaledFont(.body)
-                        .textFieldStyle(.roundedBorder)
-                        .focused($fieldFocused)
-                        .frame(width: 220)
-                        .onSubmit(apply)
-                    if let seconds = parsedSeconds {
-                        Text("Sets the clock to \(ClockEngine.format(seconds)).").scaledFont(.caption).foregroundStyle(.secondary)
-                    } else {
-                        Text("Enter mm:ss (47:30), minutes (47m), or plain seconds.").scaledFont(.caption).foregroundStyle(.secondary)
-                    }
-                    Text("The clock keeps running from this value if it's currently running, or stays paused at it if it's paused.")
-                        .scaledFont(.caption).foregroundStyle(.secondary)
-                    HStack {
-                        Spacer()
-                        Button("Apply", action: apply)
-                            .scaledFont(.body)
-                            .keyboardShortcut(.defaultAction)
-                            .disabled(parsedSeconds == nil)
-                    }
-                }
-                .padding(12)
-                .onAppear { fieldFocused = true }
+        HStack(spacing: 14) {
+            field(text: $minutesText, focused: $minutesFocused, unit: "min", nudge: 60, width: 40)
+            field(text: $secondsText, focused: $secondsFocused, unit: "sec", nudge: 1, width: 34)
+        }
+        .disabled(match.currentPeriod == nil)
+        .onReceive(timer) { tick = $0; resyncIfIdle() }
+        .onAppear { resyncIfIdle(force: true) }
+    }
+
+    private func field(text: Binding<String>, focused: FocusState<Bool>.Binding, unit: String, nudge: Int, width: CGFloat) -> some View {
+        HStack(spacing: 6) {
+            Button { model.apply(.adjustClock(deltaSeconds: -nudge), slot: slot) } label: { Image(systemName: "minus").scaledFont(.callout, weight: .semibold) }
+                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
+                .help("Subtract \(nudge == 60 ? "1 min" : "1 s") from the clock")
+            HStack(spacing: 4) {
+                TextField("", text: text)
+                    .scaledFont(.body).monospacedDigit().multilineTextAlignment(.trailing)
+                    .textFieldStyle(.plain).frame(width: width)
+                    .focused(focused)
+                    .onSubmit(applyTypedTime)
+                Text(unit).scaledFont(.caption).foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.secondary.opacity(0.35)))
+            Button { model.apply(.adjustClock(deltaSeconds: nudge), slot: slot) } label: { Image(systemName: "plus").scaledFont(.callout, weight: .semibold) }
+                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.small)
+                .help("Add \(nudge == 60 ? "1 min" : "1 s") to the clock")
+        }
     }
 
-    private func apply() {
-        guard let seconds = parsedSeconds else { return }
-        model.apply(.setClock(seconds: max(0, seconds - periodBaseSeconds)), slot: slot)
-        isOpen = false
+    /// Re-reads the match clock into the text fields, unless the owner is mid-edit in either of them.
+    private func resyncIfIdle(force: Bool = false) {
+        guard force || (!minutesFocused && !secondsFocused) else { return }
+        let s = cumulativeSeconds
+        minutesText = "\(s / 60)"
+        secondsText = String(format: "%02d", s % 60)
     }
 
-    /// Parses "mm:ss" (colon splits minutes and seconds), "<n>m" / "<n>min" (minutes), or a bare integer
-    /// (seconds) into a total number of seconds. Returns nil for anything else, including negative values.
-    static func parse(_ raw: String) -> Int? {
-        let trimmed = raw.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return nil }
-        if trimmed.contains(":") {
-            let parts = trimmed.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
-            guard parts.count == 2, let mm = Int(parts[0]), let ss = Int(parts[1]), mm >= 0, ss >= 0, ss < 60 else { return nil }
-            return mm * 60 + ss
-        }
-        let lower = trimmed.lowercased()
-        if lower.hasSuffix("min") || lower.hasSuffix("m") {
-            let digits = lower.hasSuffix("min") ? String(lower.dropLast(3)) : String(lower.dropLast(1))
-            guard let minutes = Int(digits.trimmingCharacters(in: .whitespaces)), minutes >= 0 else { return nil }
-            return minutes * 60
-        }
-        guard let seconds = Int(lower), seconds >= 0 else { return nil }
-        return seconds
+    /// Same conversion `SetClockButton.apply` used to do: the typed minutes/seconds are the on-screen
+    /// cumulative time, so the period's own base is subtracted back out before sending `.setClock`.
+    private func applyTypedTime() {
+        guard let m = Int(minutesText), let s = Int(secondsText), match.currentPeriod != nil else { resyncIfIdle(force: true); return }
+        model.apply(.setClock(seconds: max(0, m * 60 + s - periodBaseSeconds)), slot: slot)
     }
 }
 
