@@ -1,7 +1,7 @@
 {
   "id": "conference-league",
   "name": "Conference League",
-  "clockStyle": "runOn",
+  "clockStyle": "freezeAndCount",
   "verified": false,
   "geometry": {
     "h": {

@@ -1,7 +1,7 @@
 {
   "id": "europa-league",
   "name": "Europa League",
-  "clockStyle": "runOn",
+  "clockStyle": "freezeAndCount",
   "verified": false,
   "geometry": {
     "h": {

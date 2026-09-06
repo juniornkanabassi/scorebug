@@ -15,20 +15,28 @@
    camera-relative crop -- Junior's own broadcast size is H about 69px on the 1920 canvas, so
    46 * 1.5 = 69 (theme.json geometry.h.scale). No drop shadow anywhere in the reference. */
 body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-green: #00FF85; --pl-pink: #E90052; --pl-dark: #0E0E1A;
-  --pl-centre-text: #fff;
+  --pl-centre-text: #fff; --pl-away-plate: #EEF0F2; --pl-away-text: var(--away-primary);
   --kick-pending: #5b3a5e; --kick-scored: #00FF85; --kick-missed: #E90052; --r-top: calc(var(--h) * 0.12); --r-clock: calc(var(--h) * 0.055);
   font-family: "Premier Sans", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
-body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 1.95);
-  /* Bottom allowance covers the clock plate (0.78H), the stoppage strip stacked under it (1.1H) and the portrait +N strip's own gap. */
-  clip-path: inset(calc(var(--h) * -0.65) calc(var(--h) * -0.02) calc(var(--h) * -2.15) calc(var(--h) * -0.02)); }
+body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 2.02);
+  /* Bottom allowance covers the clock plate (0.82H), the stoppage strip stacked under it (1.1H) and the portrait +N strip's own gap. */
+  clip-path: inset(calc(var(--h) * -0.65) calc(var(--h) * -0.02) calc(var(--h) * -2.22) calc(var(--h) * -0.02)); }
 body[data-theme="premier-league"] .comp, body[data-theme="premier-league"] .team .name, body[data-theme="premier-league"] .team .crest { display: none; }
-body[data-theme="premier-league"] .team { padding: 0 calc(var(--h) * 0.3); font-size: calc(var(--h) * 0.84); }
+/* Plate width tuned against the real world-feed frame (Research/Real broadcast frames 2026-27.md
+   section 1(a)): home plate approx 3.2H, away approx 2.8H at matching H -- wider padding and bigger
+   letters than the earlier pass, which measured about a third narrower than the real frame throughout. */
+body[data-theme="premier-league"] .team { padding: 0 calc(var(--h) * 0.44); font-size: calc(var(--h) * 0.98); }
 body[data-theme="premier-league"] .team .code { font-weight: 800; letter-spacing: -0.02em; }
 /* Chevron: one straight diagonal edge per plate, not a V-notch -- home cuts its own top-right corner,
    away cuts its own bottom-left, both leaning the same way across the bar. */
 body[data-theme="premier-league"] .team.home { background: var(--home-primary); color: var(--home-text); border-radius: var(--r-top) 0 0 0; padding-right: calc(var(--h) * 0.55);
   clip-path: polygon(0 0, calc(100% - var(--h) * 0.46) 0, 100% 100%, 0 100%); margin-right: calc(var(--h) * -0.08); }
-body[data-theme="premier-league"] .team.away { background: var(--away-primary); color: var(--away-text); border-radius: 0 var(--r-top) 0 0; padding-left: calc(var(--h) * 0.55);
+/* Away plate is NOT a solid away-colour block -- pixel-measured off the real Burnley v Brentford
+   frame (Research/Real broadcast frames 2026-27.md section 1(a)), the away code sits on a pale
+   near-white plate in the away club's own primary colour text, the mirror of the home plate's
+   colour-block-plus-white-text. A club whose primary is too light to read on that plate overrides
+   --pl-away-text in its own clubs/*.css, same escape hatch as --pl-centre-text below. */
+body[data-theme="premier-league"] .team.away { background: var(--pl-away-plate); color: var(--pl-away-text); border-radius: 0 var(--r-top) 0 0; padding-left: calc(var(--h) * 0.55);
   clip-path: polygon(0 0, 100% 0, 100% 100%, calc(var(--h) * 0.46) 100%); margin-left: calc(var(--h) * -0.08); }
 /* Centre band (both score cells, the roundel column) is one continuous fill in the HOME club's own
    secondary colour, per the official clip and the real world-feed frame (Burnley's sky-blue centre,
@@ -43,7 +51,7 @@ body[data-theme="premier-league"] .score.away::after {
   content: ""; position: absolute; top: 0; left: 100%; width: calc(var(--h) * 0.46); height: 100%;
   transform: translateX(calc(var(--h) * -0.08)); background: var(--home-secondary); clip-path: polygon(0 0, 100% 100%, 0 100%); pointer-events: none;
 }
-body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.15); height: var(--h); color: var(--pl-centre-text); font-size: calc(var(--h) * 1.47); font-weight: 800; font-variant-numeric: tabular-nums; overflow: visible; background: var(--home-secondary); }
+body[data-theme="premier-league"] .score { min-width: calc(var(--h) * 1.5); height: var(--h); color: var(--pl-centre-text); font-size: calc(var(--h) * 1.47); font-weight: 800; font-variant-numeric: tabular-nums; overflow: visible; background: var(--home-secondary); }
 body[data-theme="premier-league"] .score.home { padding-left: calc(var(--h) * 0.02); position: relative; }
 body[data-theme="premier-league"] .score.away { padding-right: calc(var(--h) * 0.02); }
 body[data-theme="premier-league"] .score.home::before {
@@ -51,10 +59,13 @@ body[data-theme="premier-league"] .score.home::before {
   transform: translateX(calc(var(--h) * 0.08)); background: var(--home-secondary); clip-path: polygon(0 0, 100% 0, 100% 100%); pointer-events: none;
 }
 body[data-theme="premier-league"] .score .digit { display: inline-block; transform: translateY(calc(var(--h) * -0.05)); }
-/* Roundel: the crown-and-lion mark on a white disc, about 1.6H tall so it overlaps the bar top and
-   bottom (measured against ref/pl/steady_1.0.png); official mark shows when the user has imported one. */
-body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.6); background: var(--home-secondary); position: relative; z-index: 2; overflow: visible; }
-body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.55); height: calc(var(--h) * 1.55); transform: translate(-50%, -50%);
+/* Roundel: the crown-and-lion mark on a white disc. Pixel-measured off the real Burnley v Brentford
+   frame (Research/Real broadcast frames 2026-27.md section 1(a)) at about 1.4H, dipping only into the
+   bar's own top/bottom edges -- the previous 1.55H read as "enlarged" and its dip covered the clock's
+   own digits rather than just the plate's top edge (lead's critique). Official mark shows when the
+   user has imported one. */
+body[data-theme="premier-league"] .sep { width: calc(var(--h) * 1.45); background: var(--home-secondary); position: relative; z-index: 2; overflow: visible; }
+body[data-theme="premier-league"] .sep span { position: absolute; left: 50%; top: 50%; width: calc(var(--h) * 1.4); height: calc(var(--h) * 1.4); transform: translate(-50%, -50%);
   border-radius: 50%; background: #fff url() center / 78% no-repeat; background-image: var(--comp-logo, none); transition: opacity 200ms ease; }
 body[data-theme="premier-league"] .bug:not(.has-comp-logo) .sep span::after { content: ""; position: absolute; inset: 18%; background: var(--pl-purple);
   clip-path: polygon(50% 0, 62% 22%, 84% 10%, 78% 36%, 100% 46%, 84% 60%, 88% 100%, 62% 86%, 50% 100%, 38% 86%, 12% 100%, 16% 60%, 0 46%, 22% 36%, 16% 10%, 38% 22%); }
@@ -63,8 +74,12 @@ body[data-theme="premier-league"] .bug:not(.has-comp-logo) .sep span::after { co
    "runOn") and never changes colour -- no red anywhere, per the real world-feed frame (Burnley's
    clock plate stays the same plum throughout 90:00-103:38, Research/Real broadcast frames
    2026-27.md section 1(b)); the stoppage announcement is the separate gradient row below instead. */
+/* Digits sized to the real frame's own ratio (about 0.45H tall on a 0.8H plate, Research/Real
+   broadcast frames 2026-27.md section 1(a)) -- the previous 0.98H all but filled the plate top to
+   bottom, so the roundel's own small dip into the plate's top edge landed straight on the digit
+   strokes instead of clearing them. */
 body[data-theme="premier-league"] .clock { grid-area: sep; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; z-index: 1;
-  height: calc(var(--h) * 0.78); padding: 0 calc(var(--h) * 0.14); min-width: calc(var(--h) * 2.48); background: var(--pl-purple); border-radius: var(--r-clock); font-size: calc(var(--h) * 0.98); font-weight: 800; font-variant-numeric: tabular-nums; }
+  height: calc(var(--h) * 0.82); padding: 0 calc(var(--h) * 0.14); min-width: calc(var(--h) * 2.48); background: var(--pl-purple); border-radius: var(--r-clock); font-size: calc(var(--h) * 0.56); font-weight: 800; font-variant-numeric: tabular-nums; }
 body[data-theme="premier-league"] .clock.stopped { color: var(--pl-green); }
 /* Extra time: a small "ET" tag on the clock plate while it is actually running (HT/FT/AET already
    show as the clock's own stopped-state label, so this only fires for the two live extra periods). */
@@ -78,7 +93,7 @@ body[data-theme="premier-league"] .bug.extra-time .clock.running::after {
    docked (out of grid flow, centred under .main), so both plates read as one column in either
    orientation, portrait included. */
 body[data-theme="premier-league"] .added {
-  grid-area: sep; position: absolute; top: calc(100% + var(--h) * 0.84); left: 50%; transform: translateX(-50%); z-index: 1;
+  grid-area: sep; position: absolute; top: calc(100% + var(--h) * 0.88); left: 50%; transform: translateX(-50%); z-index: 1;
   height: calc(var(--h) * 1.1); min-width: calc(var(--h) * 2.48); padding: 0 calc(var(--h) * 0.14); margin-left: 0; gap: 0;
   background: linear-gradient(90deg, #FD5018, #E00C9F, #8B3CE0); border-radius: var(--r-clock);
   font-size: calc(var(--h) * 0.6); font-weight: 800; color: #fff;
