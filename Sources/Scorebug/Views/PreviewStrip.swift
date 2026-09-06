@@ -7,21 +7,18 @@ struct OverlayWebView: NSViewRepresentable {
     let scale: CGFloat
     let size: CGSize
 
-    /// The web view's own magnification scales the page while it keeps laying out at the OBS canvas size
-    /// (WebKit's layout viewport is the frame divided by the magnification), so the preview is the exact
-    /// page OBS renders, just smaller. Magnification is per page in WebKit and resets to 1 when a navigation
-    /// commits, so the coordinator re-applies it on commit and finish.
+    /// The web view keeps the exact canvas size OBS gives the page as its bounds (so the page lays out at
+    /// 1920x1080 or 1080x1920) while its frame is the pane size; AppKit scales the view's drawing by the
+    /// bounds-to-frame ratio. No WebKit magnification: WebKit resets that per page and clamps small values,
+    /// which left the portrait pane unscaled (6 Sep).
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
-        let web = WKWebView(frame: CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale)), configuration: config)
+        let web = WKWebView(frame: CGRect(origin: .zero, size: size), configuration: config)
         web.setValue(false, forKey: "drawsBackground")
-        web.allowsMagnification = true
         web.navigationDelegate = context.coordinator
         context.coordinator.requestedURL = url
-        context.coordinator.scale = scale
         web.load(URLRequest(url: url))
-        web.setMagnification(scale, centeredAt: .zero)
         context.coordinator.watch(web)
         return web
     }
@@ -35,7 +32,6 @@ struct OverlayWebView: NSViewRepresentable {
         /// The URL last handed to `load`. `WKWebView.url` stays nil until the navigation commits, and a slow first
         /// load restarted on every SwiftUI update never committed at all (both panes blank, 6 Sep).
         var requestedURL: URL?
-        var scale: CGFloat = 1
         private var finished = false
 
         /// WebKit stops painting a view whose window is occluded or on another Space; reloading once the window is
@@ -49,8 +45,6 @@ struct OverlayWebView: NSViewRepresentable {
         }
         deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
 
-        /// A blank preview is worse than a late one: a load that raced the embedded server at launch is retried,
-        /// and a view whose content process was terminated is reloaded.
         private func retry(_ web: WKWebView) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak web] in
                 guard let web else { return }
@@ -58,18 +52,18 @@ struct OverlayWebView: NSViewRepresentable {
             }
         }
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            if (error as NSError).code == NSURLErrorCancelled { return } // superseded by a newer load, nothing to retry
+            if (error as NSError).code == NSURLErrorCancelled { return }
             retry(webView)
         }
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { retry(webView) }
-        func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) { webView.setMagnification(scale, centeredAt: .zero) }
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { webView.setMagnification(scale, centeredAt: .zero); finished = true }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finished = true }
         func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     }
 
     func updateNSView(_ web: WKWebView, context: Context) {
-        context.coordinator.scale = scale
-        if abs(web.magnification - scale) > 0.0001 { web.setMagnification(scale, centeredAt: .zero) }
+        let frame = CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale))
+        if web.frame != frame { web.frame = frame }
+        if web.bounds.size != size { web.bounds = CGRect(origin: .zero, size: size) }
         if context.coordinator.requestedURL != url { context.coordinator.requestedURL = url; web.load(URLRequest(url: url)) }
     }
 }
