@@ -34,15 +34,20 @@
    (agent-ucl/capture.py) -- nothing here depends on overlay.js being touched first, the selectors just wait
    for the attribute to exist. */
 
+/* left/width rescaled 0.8x (6 September 2026 UEFA-accuracy pass) to match theme.css's own bar-layout rescale --
+   the score cell got narrower so the GOAL word (and this motif layer riding the same formula) moved and shrank
+   with it. Same numbers as theme.css's .main::before/::after left. */
 body[data-family="uefa"] .comp::after {
   content: ""; position: absolute; top: 0; height: 100%;
-  left: calc(var(--h) * 3.89); width: calc(var(--h) * 4.11);
+  left: calc(var(--h) * 3.11); width: calc(var(--h) * 3.29);
   background-repeat: no-repeat; background-position: center; background-size: contain;
   opacity: 0; pointer-events: none; z-index: 3;
 }
-body[data-family="uefa"] .bug.has-added .comp::after { left: calc(var(--h) * 4.89); width: calc(var(--h) * 3.11); }
-body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.4s linear forwards; }
-body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.4s linear forwards; }
+body[data-family="uefa"] .bug.has-added .comp::after { left: calc(var(--h) * 3.91); width: calc(var(--h) * 2.49); }
+/* Duration matched to theme.css's uefa-goal-word-home/away retime (1.4s -> 1.05s, measurements.md source B:
+   ~1.0-1.04s trigger-to-settle is the intended broadcast timing, not source A's slowed-down 1.6-1.8s recreation). */
+body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.05s linear forwards; }
+body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.05s linear forwards; }
 /* Same build/hold/fade envelope as the base uefa-text/uefa-goal-word keyframes (theme.css) so the motif
    appears and disappears in step with the rest of the goal choreography instead of fighting it. */
 @keyframes ucl-motif-in {
