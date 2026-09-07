@@ -201,7 +201,7 @@ struct MatchCardSection: View, Equatable {
                 if let c = competition { CompetitionMark(competition: c, size: 30, plate: true) }
                 Picker("Competition", selection: Binding(get: { competitionId }, set: { model.setCompetition($0, slot: slot) })) {
                     ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
-                }.scaledFont(.body).labelsHidden().frame(width: 230)
+                }.scaledFont(.body).labelsHidden().frame(minWidth: 120, idealWidth: 230, maxWidth: 230)
             }
             Text(competition?.name ?? "Competition").scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
             if hasKnockouts {
@@ -334,7 +334,9 @@ struct ClockSection: View, Equatable {
             VStack(spacing: 16) {
                 // The readout and the editable fields are the only part that changes four times a second, so
                 // only this row sits inside the periodic timeline; the rest of the panel never re-diffs for a tick.
-                TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                // Only a running clock needs a 4 Hz tick; a paused or pre-match slot would otherwise lay the
+                // whole panel out four times a second for a reading that never changes.
+                TimelineView(.periodic(from: .now, by: clock.running ? 1.0 : 3600)) { context in
                     HStack(spacing: 24) {
                         ClockReadout(clock: clock, phase: phase, addedMinutes: addedMinutes, style: clockStyle ?? .runOn, tick: context.date)
                         ClockFieldsRow(slot: slot, tick: context.date)
