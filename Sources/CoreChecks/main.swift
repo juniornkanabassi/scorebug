@@ -87,15 +87,36 @@ check(MatchEngine.minuteLabel(elapsed: 0, phase: .firstHalf) == "1'", "first sec
 check(MatchEngine.minuteLabel(elapsed: 2700, phase: .firstHalf) == "45+1'", "45:00 exactly is 45+1")
 check(MatchEngine.minuteLabel(elapsed: 6299, phase: .extraFirst) == "105'", "extra time first half minute label")
 
+// Editable goals: setGoalMinute and removeGoal
+var editM = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
+editM = MatchEngine.apply(.goal(.home, 1), to: editM, now: at(600))
+let editGoalId = editM.goals[0].id
+editM = MatchEngine.apply(.setGoalMinute(editGoalId, minute: 45, plus: 2), to: editM, now: at(0))
+check(editM.goals[0].minuteLabel == "45+2'" && editM.goals[0].elapsedSeconds == 46 * 60, "setGoalMinute with plus labels 45+2 and re-times to 46:00")
+editM = MatchEngine.apply(.setGoalMinute(editGoalId, minute: 47, plus: nil), to: editM, now: at(0))
+check(editM.goals[0].minuteLabel == "47'" && editM.goals[0].elapsedSeconds == 46 * 60, "setGoalMinute without plus drops it and re-times to 46:00")
+let scoreBeforeRemove = editM.homeScore
+editM = MatchEngine.apply(.removeGoal(editGoalId), to: editM, now: at(0))
+check(editM.goals.isEmpty && editM.homeScore == scoreBeforeRemove - 1 && editM.lastGoal == nil, "removeGoal deletes the goal, decrements the score and clears lastGoal")
+check((try? CommandRequest(command: "setGoalMinute", goalId: editGoalId.uuidString, minute: 45, plus: 2).toCommand()) == .setGoalMinute(editGoalId, minute: 45, plus: 2), "setGoalMinute request decodes")
+check((try? CommandRequest(command: "removeGoal", goalId: editGoalId.uuidString).toCommand()) == .removeGoal(editGoalId), "removeGoal request decodes")
+check((try? CommandRequest(command: "setGoalMinute", goalId: editGoalId.uuidString).toCommand()) == nil, "setGoalMinute without minute is rejected")
+
+// Knockout capability
+check(Competition.hasKnockouts(id: "champions-league") && !Competition.hasKnockouts(id: "ligue1") && !Competition.hasKnockouts(id: "premier-league")
+      && !Competition.hasKnockouts(id: "la-liga") && !Competition.hasKnockouts(id: "serie-a") && !Competition.hasKnockouts(id: "bundesliga"),
+      "the five leagues have no knockouts, every other competition does")
+
 // Shootout
 var pre = Match(slot: 1)
 pre = MatchEngine.apply(.startShootout(.home), to: pre, now: at(0))
 check(pre.phase == .preMatch && pre.shootout == nil, "startShootout before kick-off is ignored")
 var live = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
-live = MatchEngine.apply(.startShootout(.home), to: live, now: at(10))
-check(live.phase == .firstHalf && live.shootout == nil, "startShootout during a live period is ignored")
 live = MatchEngine.apply(.startPeriod(.firstHalf), to: live, now: at(1000))
 check(Int(live.clock.elapsed(at: at(1000))) == 1000, "re-pressing the live period does not zero the clock")
+live = MatchEngine.apply(.startShootout(.home), to: live, now: at(1200))
+check(live.phase == .shootout && live.shootout != nil && !live.clock.running, "startShootout now works from a live period, freezing the clock")
+check(Int(live.clock.elapsed(at: at(9999))) == 1200, "the clock stays frozen where the shootout started it")
 m = MatchEngine.apply(.endPeriod, to: m, now: at(0))
 m = MatchEngine.apply(.startShootout(.away), to: m, now: at(0))
 let before = (m.homeScore, m.awayScore)
@@ -133,6 +154,12 @@ check(aggM.aggregate == nil, "clearAggregate removes it")
 check((try? CommandRequest(command: "setAggregate", home: 2, away: 1).toCommand()) == .setAggregate(home: 2, away: 1), "setAggregate request decodes")
 check((try? CommandRequest(command: "clearAggregate").toCommand()) == .clearAggregate, "clearAggregate request decodes")
 check((try? CommandRequest(command: "setAggregate", home: 2).toCommand()) == nil, "setAggregate without both legs is rejected")
+var clearOnComp = MatchEngine.apply(.setAggregate(home: 2, away: 1), to: Match(slot: 1, competitionId: "champions-league"), now: at(0))
+clearOnComp = MatchEngine.apply(.setCompetition("ligue1"), to: clearOnComp, now: at(0))
+check(clearOnComp.aggregate == nil, "setCompetition to a league clears the aggregate")
+clearOnComp = MatchEngine.apply(.setAggregate(home: 2, away: 1), to: clearOnComp, now: at(0))
+clearOnComp = MatchEngine.apply(.setCompetition("europa-league"), to: clearOnComp, now: at(0))
+check(clearOnComp.aggregate == Aggregate(firstLegHome: 2, firstLegAway: 1), "setCompetition to a cup keeps the aggregate")
 
 var shootAgg = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
 shootAgg = MatchEngine.apply(.setAggregate(home: 1, away: 1), to: shootAgg, now: at(0))

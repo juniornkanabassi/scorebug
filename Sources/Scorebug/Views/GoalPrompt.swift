@@ -15,6 +15,7 @@ struct GoalPrompt: View {
     @State private var query = ""
     @State private var ownGoal: Bool
     @State private var penalty: Bool
+    @State private var highlighted = 0
     @FocusState private var searchFocused: Bool
 
     init(goal: Goal, slot: Int, onPick: @escaping () -> Void) {
@@ -31,6 +32,8 @@ struct GoalPrompt: View {
     private var otherSquad: [String] { match.team(goal.side.other).squad ?? [] }
     private var filteredScoring: [String] { query.isEmpty ? scoringSquad : scoringSquad.filter { squadNameMatches($0, query: query) } }
     private var filteredOther: [String] { query.isEmpty ? otherSquad : otherSquad.filter { squadNameMatches($0, query: query) } }
+    /// The navigable rows in reading order (the scoring side's squad, then the other side's).
+    private var flatResults: [(name: String, ownGoal: Bool)] { filteredScoring.map { ($0, false) } + filteredOther.map { ($0, true) } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -41,15 +44,18 @@ struct GoalPrompt: View {
                 .padding(8)
                 .onSubmit(submitQuery)
             Divider()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    group(match.team(goal.side).shortName, filteredScoring, ownGoal: false)
-                    group("Own goal", filteredOther, ownGoal: true)
-                    if filteredScoring.isEmpty && filteredOther.isEmpty {
-                        Text("No match. Press Return to use \"\(query)\".").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        group(match.team(goal.side).shortName, filteredScoring, ownGoal: false, startIndex: 0)
+                        group("Own goal", filteredOther, ownGoal: true, startIndex: filteredScoring.count)
+                        if flatResults.isEmpty {
+                            Text("No match. Press Return to use \"\(query)\".").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
+                        }
                     }
-                }
-            }.frame(maxHeight: 220)
+                }.frame(maxHeight: 220)
+                    .onChange(of: highlighted) { _, new in proxy.scrollTo(new, anchor: .center) }
+            }
             Divider()
             HStack(spacing: 20) {
                 Toggle("Own goal", isOn: ownGoalBinding)
@@ -59,29 +65,36 @@ struct GoalPrompt: View {
         }
         .frame(width: 260)
         .onAppear { searchFocused = true }
+        .onChange(of: query) { _, _ in highlighted = 0 }
+        .onKeyPress(.upArrow) { highlighted = max(0, highlighted - 1); return .handled }
+        .onKeyPress(.downArrow) { highlighted = min(max(0, flatResults.count - 1), highlighted + 1); return .handled }
+        .onKeyPress(.escape) { onPick(); return .handled }
     }
 
     @ViewBuilder
-    private func group(_ title: String, _ names: [String], ownGoal og: Bool) -> some View {
+    private func group(_ title: String, _ names: [String], ownGoal og: Bool, startIndex: Int) -> some View {
         if !names.isEmpty {
             Text(title).scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary)
                 .padding(.horizontal, 8).padding(.top, 6).padding(.bottom, 2)
-            ForEach(names, id: \.self) { name in
+            ForEach(Array(names.enumerated()), id: \.element) { i, name in
+                let index = startIndex + i
                 Button(name) { pick(name, ownGoal: og) }
                     .scaledFont(.body)
                     .buttonStyle(.plain)
                     .padding(.vertical, 4).padding(.horizontal, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
+                    .background(index == highlighted ? Color.accentColor.opacity(0.2) : .clear)
+                    .id(index)
             }
         }
     }
 
-    /// Return picks the first result in reading order (the scoring side's squad, then the other side's);
-    /// with no match at all, the typed text becomes the scorer, same as a free-typed name always has.
+    /// Return picks the highlighted row; with no result at all, the typed text becomes the scorer, same as
+    /// a free-typed name always has.
     private func submitQuery() {
-        if let first = filteredScoring.first { pick(first, ownGoal: false); return }
-        if let first = filteredOther.first { pick(first, ownGoal: true); return }
+        let results = flatResults
+        if results.indices.contains(highlighted) { pick(results[highlighted].name, ownGoal: results[highlighted].ownGoal); return }
         let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !typed.isEmpty else { return }
         pick(typed, ownGoal: ownGoal)

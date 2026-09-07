@@ -4,14 +4,48 @@ import ScorebugCore
 import ImageIO
 
 /// Decoded crest and competition mark thumbnails, cached so a body re-evaluation never re-decodes a full-size
-/// PNG. `directory` is set once by `AppModel.init`; `invalidate(file:)` drops a file's cached sizes when its
-/// bytes change under the same name (a re-imported crest or competition mark).
+/// PNG. `directory` is set once by `AppModel.init`; `invalidate(file:)` drops a file's cached sizes (and any
+/// stale persisted rendition) when its bytes change under the same name (a re-imported crest or mark).
 enum CrestImage {
     static var directory: URL?
     private static let cache = NSCache<NSString, NSImage>()
     private static var keysByFile: [String: Set<String>] = [:]
+    /// Files with a rendition-write already in flight, so a burst of rows for the same crest (list + grid +
+    /// menu, all missing the same file) does not queue the same decode-and-write job several times over.
+    private static var pendingRenditions: Set<String> = []
 
-    static func thumbnail(file: String, size: CGFloat) -> NSImage? { image(file, points: size) }
+    /// Aspect-preserving thumbnail for any crest or competition mark box. Reads the persisted small rendition
+    /// under `crests/.thumbs/<file>` when one exists (written at import time by `Store.writeThumbnail`, so
+    /// this is a small decode); on a cache miss it decodes the full file now, for this one row only, and
+    /// kicks off writing that rendition off the main thread so every later access, this session and the
+    /// next launch, is a small decode again. Callers draw the result with `.resizable().scaledToFit()` so a
+    /// non-square source (the squashed Atletico crest, formerly stretched to a square) keeps its own shape.
+    static func thumbnail(file: String, size: CGFloat) -> NSImage? {
+        let key = "\(file)@\(Int(size))"
+        if let cached = cache.object(forKey: key as NSString) { return cached }
+        guard let dir = directory else { return nil }
+        let fullFile = dir.appendingPathComponent(file)
+        let thumbFile = dir.appendingPathComponent(".thumbs").appendingPathComponent(file)
+        let haveThumb = FileManager.default.fileExists(atPath: thumbFile.path)
+        let useThumb = haveThumb && size * 2 <= Store.thumbnailPixelSize
+        guard let source = CGImageSourceCreateWithURL((useThumb ? thumbFile : fullFile) as CFURL, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: size * 2,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        let img = NSImage(cgImage: cg, size: NSSize(width: CGFloat(cg.width) / 2, height: CGFloat(cg.height) / 2))
+        cache.setObject(img, forKey: key as NSString)
+        keysByFile[file, default: []].insert(key)
+        if !haveThumb, pendingRenditions.insert(file).inserted {
+            Task.detached(priority: .utility) {
+                _ = Store.writeThumbnail(source: fullFile, dest: thumbFile)
+                _ = await MainActor.run { pendingRenditions.remove(file) }
+            }
+        }
+        return img
+    }
 
     /// SwiftUI's `Menu` ignores an `Image`'s `.frame` and draws it at native size straight off the pixel
     /// data, so a menu row needs a pre-sized icon (not a large crest scaled down in layout) and, for a mark
@@ -40,46 +74,10 @@ enum CrestImage {
         return circular
     }
 
-    /// Aspect-preserving thumbnail for `CrestView`'s `fitted` mode. `thumbnail(file:size:)` above stretches
-    /// every source to an exact square, which is what made two crests with different padding baked into
-    /// their PNGs (one file's badge tight to the edge, another's sitting in a wider margin) read at different
-    /// visual sizes: the padding survived the stretch unchanged, but a non-square source was distorted to fit
-    /// the square, throwing its apparent scale further off. This keeps the source's own aspect ratio, so
-    /// `CrestView` can fit it into a common box without adding a second, silent distortion on top.
-    static func fitted(file: String, size: CGFloat) -> NSImage? {
-        let key = "\(file)@fit\(Int(size))"
-        if let cached = cache.object(forKey: key as NSString) { return cached }
-        guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceThumbnailMaxPixelSize: size * 2,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-        ]
-        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-        let img = NSImage(cgImage: cg, size: NSSize(width: CGFloat(cg.width) / 2, height: CGFloat(cg.height) / 2))
-        cache.setObject(img, forKey: key as NSString)
-        keysByFile[file, default: []].insert(key)
-        return img
-    }
-
+    /// Drops this file's cached sizes and its persisted rendition, so a re-imported crest is decoded afresh.
     static func invalidate(file: String) {
         for key in keysByFile.removeValue(forKey: file) ?? [] { cache.removeObject(forKey: key as NSString) }
-    }
-
-    private static func image(_ file: String, points: CGFloat) -> NSImage? {
-        let key = "\(file)@\(Int(points))"
-        if let cached = cache.object(forKey: key as NSString) { return cached }
-        guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceThumbnailMaxPixelSize: points * 2,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-        ]
-        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
-        let img = NSImage(cgImage: cg, size: NSSize(width: points, height: points))
-        cache.setObject(img, forKey: key as NSString)
-        keysByFile[file, default: []].insert(key)
-        return img
+        if let dir = directory { try? FileManager.default.removeItem(at: dir.appendingPathComponent(".thumbs").appendingPathComponent(file)) }
     }
 }
 
@@ -157,7 +155,7 @@ struct CompetitionMark: View {
     var body: some View {
         let mark = Group {
             if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
-                Image(nsImage: img)
+                Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
             } else {
                 RoundedRectangle(cornerRadius: size * 0.22).fill(CompetitionColours.colour(for: competition.id))
                     .overlay(Text(competition.shortName.prefix(4)).font(.system(size: size * 0.34, weight: .heavy)).foregroundStyle(.white).minimumScaleFactor(0.5).padding(2))
@@ -181,10 +179,12 @@ struct CrestView: View {
     var fitted: Bool = false
     var body: some View {
         Group {
-            if fitted, let f = team.crestFile, let img = CrestImage.fitted(file: f, size: size) {
-                Image(nsImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: size * 60 / 72, height: size * 60 / 72)
-            } else if let f = team.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
-                Image(nsImage: img)
+            if let f = team.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
+                if fitted {
+                    Image(nsImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: size * 60 / 72, height: size * 60 / 72)
+                } else {
+                    Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
+                }
             } else {
                 Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: size * 0.36, weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
             }

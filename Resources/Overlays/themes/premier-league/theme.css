@@ -202,7 +202,7 @@ body[data-theme="premier-league"] .shootout { margin-top: 6px; gap: 14px; paddin
 /* Scorer strap: purple, same family/radius as the clock plate underneath it; clip-path reveal keeps
    it to transform/opacity/clip-path only, never a layout property, so it never leaves a stray frame. */
 body[data-theme="premier-league"] .scorers { display: flex; margin-top: 6px; gap: 20px; padding: 6px 14px; background: var(--pl-purple); border-radius: var(--r-clock); font-size: calc(var(--h) * 0.38); font-weight: 600;
-  clip-path: inset(0 0 100% 0); opacity: 0; transition: clip-path 320ms cubic-bezier(.25,.8,.2,1), opacity 260ms ease; }
+  visibility: visible; clip-path: inset(0 0 100% 0); opacity: 0; transition: clip-path 320ms cubic-bezier(.25,.8,.2,1), opacity 260ms ease; }
 body[data-theme="premier-league"] .bug.show-scorers .scorers { clip-path: inset(0 0 0 0); opacity: 1; }
 body[data-theme="premier-league"] .scorers .list.away { text-align: right; }
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { width: 100%; box-sizing: border-box; justify-content: center; }

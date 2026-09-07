@@ -57,7 +57,7 @@ struct LibraryView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(minWidth: 260, idealWidth: 300, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
             Group {
                 if let id = selectedCompetition, let c = model.library.competitions.first(where: { $0.id == id }) { CompetitionEditor(competition: c).id(id) }
                 else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
@@ -106,19 +106,22 @@ struct LibraryView: View {
     }
 
     private var clubsSplit: some View {
-        HSplitView {
+        // Computed once per body evaluation and threaded through, rather than each of countsRow/clubList/
+        // clubGrid calling the filteredClubs property itself and re-filtering the same 229 rows three times.
+        let filtered = filteredClubs
+        return HSplitView {
             VStack(spacing: 0) {
                 toolbarRow
-                countsRow
+                countsRow(filtered)
                 Divider()
-                Group { if viewMode == .list { clubList } else { clubGrid } }
+                Group { if viewMode == .list { clubList(filtered) } else { clubGrid(filtered) } }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 Divider()
                 addRemoveRow
             }
             // This pane's own root view must carry maxHeight: .infinity, or NSSplitView sizes the pane
             // to the VStack's ideal height and the list renders at zero height instead of filling it.
-            .frame(minWidth: 300, idealWidth: 340, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
             .background(shortcutButtons)
             Group {
                 if let id = selected, let club = model.library.clubs.first(where: { $0.id == id }) {
@@ -209,24 +212,29 @@ struct LibraryView: View {
         .padding(.top, 6)
     }
 
-    private var countsRow: some View {
-        Text("\(model.library.clubs.count) clubs and nations, \(model.library.clubs.filter { $0.crestFile != nil }.count) with crests, \(filteredClubs.count) shown")
+    private func countsRow(_ filtered: [Club]) -> some View {
+        Text("\(model.library.clubs.count) clubs and nations, \(model.library.clubs.filter { $0.crestFile != nil }.count) with crests, \(filtered.count) shown")
             .scaledFont(.caption).foregroundStyle(.secondary)
             .padding(.horizontal, 10).padding(.vertical, 6)
     }
 
-    private func clubCompetitions(_ club: Club) -> [Competition] {
-        Array(model.library.competitions.filter { club.competitionIds.contains($0.id) }.prefix(4))
+    /// Competitions this club plays in, in the library's own order, up to 4. `byId` is built once per row
+    /// pass by the caller so this is a lookup per membership instead of a filter over every competition.
+    private func clubCompetitions(_ club: Club, byId: [String: Competition]) -> [Competition] {
+        Array(club.competitionIds.compactMap { byId[$0] }.prefix(4))
     }
 
-    private var clubList: some View {
-        List(filteredClubs, selection: $selected) { club in
+    private func clubList(_ filtered: [Club]) -> some View {
+        // uniquingKeysWith rather than uniqueKeysWithValues: a duplicate id in a user-edited library.json
+        // must not trap the app, so the first competition with that id wins.
+        let byId = Dictionary(model.library.competitions.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return List(filtered, selection: $selected) { club in
             HStack(spacing: 10) {
                 CachedCrestThumb(club: club, size: 22)
                 Text(club.name)
                 Spacer()
                 Text(club.defaultCode).foregroundStyle(.secondary).monospaced()
-                HStack(spacing: 2) { ForEach(clubCompetitions(club)) { comp in CachedCompetitionMark(competition: comp, size: 14) } }
+                HStack(spacing: 2) { ForEach(clubCompetitions(club, byId: byId)) { comp in CachedCompetitionMark(competition: comp, size: 14) } }
             }
             .scaledFont(.body)
             .tag(club.id)
@@ -234,10 +242,10 @@ struct LibraryView: View {
         }
     }
 
-    private var clubGrid: some View {
+    private func clubGrid(_ filtered: [Club]) -> some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 104), spacing: 12)], spacing: 12) {
-                ForEach(filteredClubs) { club in clubTile(club) }
+                ForEach(filtered) { club in clubTile(club) }
             }.padding(10)
         }
     }
@@ -380,6 +388,23 @@ struct ClubEditor: View {
 
     var body: some View {
         Form {
+            Section {
+                VStack(spacing: 8) {
+                    Group {
+                        if let f = club.crestFile, let img = CrestImage.thumbnail(file: f, size: 160) {
+                            Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
+                        } else {
+                            Circle().fill(Color(hex: club.primaryColour)).overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: 44, weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
+                        }
+                    }.frame(width: 160, height: 160)
+                    Text(club.name).scaledFont(.title2, weight: .semibold)
+                    Text(club.shortName).scaledFont(.body).foregroundStyle(.secondary)
+                    Text(club.defaultCode).scaledFont(.caption).foregroundStyle(.secondary).monospaced()
+                    Button("Import image") { importing = true }.scaledFont(.body)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
             Section("Club") {
                 TextField("Full name", text: $club.name).scaledFont(.body)
                 TextField("Short name", text: $club.shortName).scaledFont(.body)
@@ -406,14 +431,6 @@ struct ClubEditor: View {
                 ColorPicker("Primary", selection: Binding(get: { Color(hex: club.primaryColour) }, set: { club.primaryColour = $0.hexString })).scaledFont(.body)
                 ColorPicker("Secondary", selection: Binding(get: { Color(hex: club.secondaryColour) }, set: { club.secondaryColour = $0.hexString })).scaledFont(.body)
                 ColorPicker("Text on primary", selection: Binding(get: { Color(hex: club.textColour) }, set: { club.textColour = $0.hexString })).scaledFont(.body)
-            }
-            Section("Crest") {
-                HStack {
-                    if let file = club.crestFile, let img = NSImage(contentsOf: model.store.crestsDirectory.appendingPathComponent(file)) {
-                        Image(nsImage: img).resizable().scaledToFit().frame(width: 48, height: 48)
-                    } else { Text("No crest").scaledFont(.body).foregroundStyle(.secondary) }
-                    Button("Import image") { importing = true }.scaledFont(.body)
-                }
             }
             Section("Competitions") {
                 ForEach(model.library.competitions) { comp in

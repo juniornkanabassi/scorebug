@@ -78,6 +78,7 @@ final class AppModel: ObservableObject {
         updateSlotSummaries()
         importDefaultCrestFolderIfPresent()
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
+        Task.detached(priority: .utility) { [store] in store.writeMissingThumbnails() }
     }
 
     /// First run on Junior's Mac: his logo library exists at a known place, so crests are imported without asking.

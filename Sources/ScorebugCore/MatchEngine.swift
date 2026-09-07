@@ -28,6 +28,9 @@ public enum Command: Sendable, Equatable {
     case clearAggregate
     case setShowScorers(Bool)
     case toggleShowScorers
+    /// Re-labels and re-times a goal after the fact. `plus` over 0 makes `"45+2'"`, else `"47'"`.
+    case setGoalMinute(UUID, minute: Int, plus: Int?)
+    case removeGoal(UUID)
     /// Manual clock correction, for when play was pressed late and the bug needs to line up with the broadcast.
     ///
     /// `seconds` is the elapsed time **within the current period** — the same period-local quantity
@@ -50,8 +53,11 @@ public enum Command: Sendable, Equatable {
 ///
 /// Commands: goal, setScorer, startPeriod, endPeriod, play, pause, playPause, setAddedMinutes,
 /// adjustAddedMinutes, setVisible, toggleVisible, startShootout, recordKick, undoKick, setTeam, swapTeams,
-/// setCompetition, setTheme, setAggregate, clearAggregate, setShowScorers, toggleScorers, reset, and the
-/// manual clock corrections below.
+/// setCompetition, setTheme, setAggregate, clearAggregate, setShowScorers, toggleScorers, setGoalMinute,
+/// removeGoal, reset, and the manual clock corrections below.
+///
+///   {"command":"setGoalMinute","goalId":"…","minute":45,"plus":2} -> Command.setGoalMinute(id, minute: 45, plus: 2)
+///   {"command":"removeGoal","goalId":"…"}                         -> Command.removeGoal(id)
 ///
 ///   {"command":"setClock","seconds":754}        -> Command.setClock(seconds: 754)
 ///   {"command":"adjustClock","delta":-5}         -> Command.adjustClock(deltaSeconds: -5)
@@ -82,12 +88,16 @@ public struct CommandRequest: Codable, Sendable {
     public var home: Int?
     public var away: Int?
     public var showScorers: Bool?
+    /// "setGoalMinute" only.
+    public var minute: Int?
+    public var plus: Int?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil) {
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
         self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
         self.competitionId = competitionId; self.team = team; self.themeId = themeId
         self.seconds = seconds; self.deltaSeconds = deltaSeconds; self.home = home; self.away = away; self.showScorers = showScorers
+        self.minute = minute; self.plus = plus
     }
 
     public func toCommand() throws -> Command {
@@ -130,6 +140,12 @@ public struct CommandRequest: Codable, Sendable {
         case "clearAggregate": return .clearAggregate
         case "setShowScorers": return .setShowScorers(showScorers ?? true)
         case "toggleScorers": return .toggleShowScorers
+        case "setGoalMinute":
+            guard let g = goalId, let id = UUID(uuidString: g), let min = minute else { throw EngineError.badRequest("goalId and minute required") }
+            return .setGoalMinute(id, minute: min, plus: plus)
+        case "removeGoal":
+            guard let g = goalId, let id = UUID(uuidString: g) else { throw EngineError.badRequest("goalId required") }
+            return .removeGoal(id)
         case "setClock":
             guard let s = seconds else { throw EngineError.badRequest("seconds required") }
             return .setClock(seconds: s)
@@ -197,8 +213,8 @@ public enum MatchEngine {
         case .toggleVisible:
             m.visible.toggle()
         case .startShootout(let first):
-            // Only between periods and after kick-off; an accidental press during play or pre-match is ignored.
-            guard m.currentPeriod == nil, m.phase != .preMatch else { return m }
+            // Allowed from any phase after kick-off, including live play; only a pre-match press is ignored.
+            guard m.phase != .preMatch else { return m }
             freeze(&m.clock, now: now)
             m.phase = .shootout
             m.addedMinutes = nil
@@ -229,6 +245,7 @@ public enum MatchEngine {
             m.lastGoal = nil
         case .setCompetition(let id):
             m.competitionId = id
+            if !Competition.hasKnockouts(id: id) { m.aggregate = nil }
         case .setKickoff(let date):
             m.kickoff = date
         case .setTheme(let id):
@@ -241,6 +258,16 @@ public enum MatchEngine {
             m.showScorers = v
         case .toggleShowScorers:
             m.showScorers.toggle()
+        case .setGoalMinute(let id, let minute, let plus):
+            guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
+            let extra = plus ?? 0
+            m.goals[idx].minuteLabel = extra > 0 ? "\(minute)+\(extra)'" : "\(minute)'"
+            m.goals[idx].elapsedSeconds = max(0, (minute + extra - 1) * 60)
+        case .removeGoal(let id):
+            guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
+            let goal = m.goals.remove(at: idx)
+            setScore(&m, goal.side, max(0, m.score(goal.side) - 1))
+            if m.lastGoal?.goalId == id { m.lastGoal = nil }
         case .setClock(let seconds):
             guard m.currentPeriod != nil else { return m }
             setLocalElapsed(&m.clock, to: TimeInterval(max(0, seconds)), now: now)

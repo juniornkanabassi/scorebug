@@ -280,6 +280,12 @@ public struct Competition: Codable, Sendable, Identifiable, Equatable {
     public init(id: String, name: String, shortName: String, themeId: String, sourceIds: [String: String] = [:], logoFile: String? = nil) {
         self.id = id; self.name = name; self.shortName = shortName; self.themeId = themeId; self.sourceIds = sourceIds; self.logoFile = logoFile
     }
+
+    /// League competitions that never have a two-legged tie, an aggregate or a knockout shootout. The only
+    /// place this list lives; `hasKnockouts` reads it by instance, `hasKnockouts(id:)` by a bare id.
+    private static let leagueIds: Set<String> = ["ligue1", "premier-league", "la-liga", "serie-a", "bundesliga"]
+    public var hasKnockouts: Bool { Competition.hasKnockouts(id: id) }
+    public static func hasKnockouts(id: String) -> Bool { !leagueIds.contains(id) }
 }
 
 public struct Library: Codable, Sendable, Equatable {

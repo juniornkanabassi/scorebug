@@ -1,14 +1,134 @@
 {
   "Name": "Scorebug",
-  "Version": "0.0.0.0",
+  "Version": "0.8.0.0",
   "Author": "Junior Nkana Bassi",
-  "Description": "Control the Scorebug app from the Stream Deck.",
+  "Description": "Control the Scorebug live overlay from a Stream Deck.",
   "UUID": "com.juniornkanabassi.scorebug",
-  "Icon": "imgs/plugin",
+  "Icon": "imgs/plugin/marketplace",
   "CodePath": "bin/plugin.js",
   "Nodejs": { "Version": "20", "Debug": "enabled" },
   "SDKVersion": 2,
   "Software": { "MinimumVersion": "6.4" },
   "OS": [ { "Platform": "mac", "MinimumVersion": "12" } ],
-  "Actions": []
+  "Category": "Scorebug",
+  "CategoryIcon": "imgs/plugin/category-icon",
+  "Actions": [
+    {
+      "Name": "Goal",
+      "UUID": "com.juniornkanabassi.scorebug.goal",
+      "Icon": "imgs/actions/goal/icon",
+      "Tooltip": "Press to score for the chosen side. Hold to undo its last goal.",
+      "PropertyInspectorPath": "ui/slot-side.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/goal/home-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Play / Pause",
+      "UUID": "com.juniornkanabassi.scorebug.play-pause",
+      "Icon": "imgs/actions/play-pause/icon",
+      "Tooltip": "Start or pause the master clock.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/play-pause/play-1", "TitleAlignment": "bottom" } ]
+    },
+    {
+      "Name": "Start Period",
+      "UUID": "com.juniornkanabassi.scorebug.start-period",
+      "Icon": "imgs/actions/start-period/icon",
+      "Tooltip": "Start the configured period.",
+      "PropertyInspectorPath": "ui/start-period.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/start-period/firstHalf-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "End Period",
+      "UUID": "com.juniornkanabassi.scorebug.end-period",
+      "Icon": "imgs/actions/end-period/icon",
+      "Tooltip": "End the current period.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/end-period/key-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Added Time",
+      "UUID": "com.juniornkanabassi.scorebug.added-time",
+      "Icon": "imgs/actions/added-time/icon",
+      "Tooltip": "Announce added time, or nudge it by a delta.",
+      "PropertyInspectorPath": "ui/added-time.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/added-time/plus-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Toggle Bug",
+      "UUID": "com.juniornkanabassi.scorebug.toggle-bug",
+      "Icon": "imgs/actions/toggle-bug/icon",
+      "Tooltip": "Show or hide the score bug.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/toggle-bug/off-1", "TitleAlignment": "bottom" } ]
+    },
+    {
+      "Name": "Toggle Scorers",
+      "UUID": "com.juniornkanabassi.scorebug.toggle-scorers",
+      "Icon": "imgs/actions/toggle-scorers/icon",
+      "Tooltip": "Show or hide the scorer strap.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/toggle-scorers/off-1", "TitleAlignment": "bottom" } ]
+    },
+    {
+      "Name": "Start Shootout",
+      "UUID": "com.juniornkanabassi.scorebug.start-shootout",
+      "Icon": "imgs/actions/start-shootout/icon",
+      "Tooltip": "Start the penalty shootout; the chosen side kicks first.",
+      "PropertyInspectorPath": "ui/slot-side.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/start-shootout/home-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Kick",
+      "UUID": "com.juniornkanabassi.scorebug.kick",
+      "Icon": "imgs/actions/kick/icon",
+      "Tooltip": "Record a penalty kick for the chosen side.",
+      "PropertyInspectorPath": "ui/kick.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/kick/home-scored-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Undo Kick",
+      "UUID": "com.juniornkanabassi.scorebug.undo-kick",
+      "Icon": "imgs/actions/undo-kick/icon",
+      "Tooltip": "Undo the last penalty kick.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/undo-kick/key-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Swap Teams",
+      "UUID": "com.juniornkanabassi.scorebug.swap-teams",
+      "Icon": "imgs/actions/swap-teams/icon",
+      "Tooltip": "Swap home and away.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/swap-teams/key-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Reset Match",
+      "UUID": "com.juniornkanabassi.scorebug.reset-match",
+      "Icon": "imgs/actions/reset-match/icon",
+      "Tooltip": "Hold for 1 second to reset the match. A short press does nothing.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/reset-match/key-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Set Competition",
+      "UUID": "com.juniornkanabassi.scorebug.set-competition",
+      "Icon": "imgs/actions/set-competition/icon",
+      "Tooltip": "Switch the match to another competition.",
+      "PropertyInspectorPath": "ui/set-competition.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/set-competition/default-1", "TitleAlignment": "middle" } ]
+    }
+  ]
 }

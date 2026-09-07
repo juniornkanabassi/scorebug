@@ -2,7 +2,25 @@
   "name": "scorebug-streamdeck",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "Stream Deck plugin for Scorebug. Talks to the local server on localhost:8600.",
-  "scripts": { "build": "rollup -c", "watch": "rollup -c -w" },
-  "dependencies": { "@elgato/streamdeck": "^1.0.0" }
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^2.1.2",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.9.0",
+    "@rollup/plugin-commonjs": "^25.0.8",
+    "@rollup/plugin-node-resolve": "^15.3.1",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^24.13.3",
+    "@types/ws": "^8.18.1",
+    "rollup": "^4.63.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
+  }
 }

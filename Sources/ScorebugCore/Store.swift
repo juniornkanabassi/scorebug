@@ -1,5 +1,7 @@
 // JSON persistence for library.json, state.json, settings.json. Atomic writes, schema checks, one-time backup on upgrade.
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 public enum StoreError: Error, CustomStringConvertible {
     case newerSchema(file: String, found: Int)
@@ -188,6 +190,39 @@ public final class Store: @unchecked Sendable {
         if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
         try FileManager.default.copyItem(at: source, to: target)
         return name
+    }
+
+    /// Longest side of a persisted crest rendition under `crests/.thumbs/`; boxes drawn larger than half this read the original.
+    public static let thumbnailPixelSize: CGFloat = 256
+
+    /// Writes an aspect-preserving rendition of `source` to `dest`, atomically through a temporary file since the
+    /// main thread may read `dest` while a detached task writes it. Called by `writeMissingThumbnails` at launch
+    /// and by the app's `CrestImage` cache on a miss, never on the main thread.
+    @discardableResult
+    public static func writeThumbnail(source: URL, dest: URL, maxPixelSize: CGFloat = thumbnailPixelSize) -> Bool {
+        guard let src = CGImageSourceCreateWithURL(source as CFURL, nil) else { return false }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+        ]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, options as CFDictionary) else { return false }
+        try? FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let tmp = dest.appendingPathExtension("tmp")
+        guard let dst = CGImageDestinationCreateWithURL(tmp as CFURL, UTType.png.identifier as CFString, 1, nil) else { return false }
+        CGImageDestinationAddImage(dst, cg, nil)
+        guard CGImageDestinationFinalize(dst) else { return false }
+        return (try? FileManager.default.replaceItemAt(dest, withItemAt: tmp)) != nil
+    }
+
+    /// One background pass at launch: a rendition for every crest that has none yet (a library imported before
+    /// renditions existed), so the first Team Library open never decodes full-size files on the main thread.
+    public func writeMissingThumbnails() {
+        let thumbs = crestsDirectory.appendingPathComponent(".thumbs")
+        for name in (try? FileManager.default.contentsOfDirectory(atPath: crestsDirectory.path)) ?? [] where !name.hasPrefix(".") {
+            let dest = thumbs.appendingPathComponent(name)
+            if !FileManager.default.fileExists(atPath: dest.path) { Store.writeThumbnail(source: crestsDirectory.appendingPathComponent(name), dest: dest) }
+        }
     }
 }
 

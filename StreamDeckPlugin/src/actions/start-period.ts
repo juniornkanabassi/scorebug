@@ -1,1 +1,23 @@
-// start-period action. Settings: slot (1|2) and, where relevant, side (home|away). Sends POST /api/match/{slot}/command.
+// start-period action: title shows the live phase, press starts the configured period. Settings: slot, period.
+import { action } from "@elgato/streamdeck";
+import type { KeyDownEvent, KeyAction } from "@elgato/streamdeck";
+import { PHASE_LABEL, StatefulAction, iconPath, server, slotOf } from "../lib/scorebug.js";
+import type { BaseSettings } from "../lib/scorebug.js";
+
+@action({ UUID: "com.juniornkanabassi.scorebug.start-period" })
+export class StartPeriod extends StatefulAction {
+	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
+		const settings = ev.payload.settings;
+		const period = typeof settings.period === "string" ? settings.period : "firstHalf";
+		await server.send(slotOf(settings), "startPeriod", { period });
+	}
+
+	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
+		const slot = slotOf(settings);
+		const match = server.match(slot);
+		const period = typeof settings.period === "string" ? settings.period : "firstHalf";
+		const known = period === "secondHalf" || period === "extraFirst" || period === "extraSecond" ? period : "firstHalf";
+		await a.setImage(iconPath("start-period", known, slot));
+		await a.setTitle(match ? (PHASE_LABEL[match.phase] ?? match.phase) : "OFFLINE");
+	}
+}

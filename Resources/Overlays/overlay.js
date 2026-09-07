@@ -22,9 +22,11 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     aggHome: q(".agg .home"), aggAway: q(".agg .away"),
     kicksHome: q(".kicks.home"), kicksAway: q(".kicks.away"),
     tallyHome: q(".tally .home"), tallyAway: q(".tally .away"),
+    shootoutLabel: q(".shootout .label"),
     scorersHome: q(".scorers .list.home"), scorersAway: q(".scorers .list.away"),
     themeCss: document.getElementById("theme-css"),
   };
+  el.shootoutLabel.textContent = "PENS";
 
   let state = null, match = null, theme = null, themeId = null;
   let renderedRevision = -1, lastGoalKey = null, skewMs = 0;
@@ -39,7 +41,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     if (!backdrop) { backdrop = document.createElement("div"); backdrop.id = "backdrop"; document.getElementById("stage").before(backdrop); }
     backdrop.innerHTML = ""; backdrop.className = "";
     if (!path) return;
-    if (path === "pitch") { backdrop.className = "pitch"; return; }
+    if (!path.includes("/")) { backdrop.className = path; return; } // a bare name is a preset class (pitch, streamer, ...)
     const isVideo = ["mp4", "mov", "webm", "m4v"].includes(path.split(".").pop().toLowerCase());
     const media = document.createElement(isVideo ? "video" : "img");
     if (isVideo) { media.autoplay = true; media.muted = true; media.loop = true; media.playsInline = true; }
@@ -151,6 +153,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       bug.style.setProperty("--" + side + "-primary", t.primaryColour);
       bug.style.setProperty("--" + side + "-secondary", t.secondaryColour);
       bug.style.setProperty("--" + side + "-text", t.textColour);
+      bug.style.setProperty("--" + side + "-code", JSON.stringify(t.code)); // a theme can print it with content: var(--home-code)
       // Stable per-club identifier for club-specific goal motifs: themes match [data-home-club="arsenal"].goal-home.
       bug.dataset[side + "Club"] = slug(t.name);
     }
@@ -165,8 +168,10 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     bug.classList.toggle("has-added", !!m.addedMinutes && !!PERIOD[m.phase]);
     bug.classList.toggle("has-agg", !!m.aggregate);
     if (m.aggregate) {
-      el.aggHome.textContent = m.homeScore + m.aggregate.firstLegHome;
-      el.aggAway.textContent = m.awayScore + m.aggregate.firstLegAway;
+      // The real feed updates the chip about 300 ms after the score; the first render and a swap write at once.
+      const aggHome = String(m.homeScore + m.aggregate.firstLegHome), aggAway = String(m.awayScore + m.aggregate.firstLegAway);
+      const write = () => { el.aggHome.textContent = aggHome; el.aggAway.textContent = aggAway; };
+      if (renderedRevision !== -1 && m.lastGoal && (el.aggHome.textContent !== aggHome || el.aggAway.textContent !== aggAway)) setTimeout(write, 300); else write();
     }
     bug.dataset.phase = m.phase;
     const s = m.shootout;
@@ -195,13 +200,20 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   function renderKicks(node, s, side) {
     const kicks = s.kicks.filter((k) => k.side === side), slots = Math.max(5, kicks.length);
     node.innerHTML = "";
-    for (let i = 0; i < slots; i++) { const d = document.createElement("span"); d.className = "kick " + (kicks[i] ? kicks[i].result : "pending"); node.appendChild(d); }
+    for (let i = 0; i < slots; i++) { const d = document.createElement("span"); d.className = "kick " + (kicks[i] ? kicks[i].result : "pending"); d.dataset.index = i + 1; node.appendChild(d); }
   }
   function renderScorers(node, goals) {
     node.innerHTML = "";
     const byName = new Map();
     goals.forEach((g) => { const n = g.scorer || "Goal"; const l = g.minuteLabel + (g.penalty ? " (pen)" : "") + (g.ownGoal ? " (og)" : ""); if (!byName.has(n)) byName.set(n, []); byName.get(n).push(l); });
-    byName.forEach((mins, name) => { const e = document.createElement("div"); e.className = "entry"; e.textContent = name + " " + mins.join(", "); node.appendChild(e); });
+    // One entry per scorer: <div class="entry"><span class="name">K. Mbappé</span><span class="mins">12', 45+2' (pen)</span></div>,
+    // so a theme can stack the two spans as rows (the UEFA card strap) or run them inline.
+    byName.forEach((mins, name) => {
+      const e = document.createElement("div"); e.className = "entry";
+      const n = document.createElement("span"); n.className = "name"; n.textContent = name;
+      const t = document.createElement("span"); t.className = "mins"; t.textContent = mins.join(", ");
+      e.append(n, " ", t); node.appendChild(e);
+    });
   }
   let demoForceScorers = false; // set by ?demo=scorers, for layout QA screenshots
   function frame() {
@@ -218,9 +230,10 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       bug.classList.toggle("extra-time", EXTRA_TIME_PHASES.has(match.phase));
       bug.classList.toggle("show-scorers", demoForceScorers || !!match.showScorers);
     }
-    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  // Clock text only changes once a second, so a 4Hz interval (not a 60Hz rAF loop) is enough for every OBS
+  // source and preview pane; accept() calls frame() once more so a command paints at once, not up to 250ms late.
+  setInterval(frame, 250);
   function accept(snapshot) {
     state = snapshot; skewMs = snapshot.serverTime - Date.now();
     applyBackdrop(snapshot.overlay && snapshot.overlay.previewBackdrop);
@@ -228,6 +241,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     if (!m) return;
     match = m;
     if (m.revision !== renderedRevision) { renderStatic(m); renderedRevision = m.revision; }
+    frame();
   }
   // Debug hook for screenshots and QA: /overlay/h/1?demo=goal:home:1200 fires a goal animation on first render and freezes it at 1200 ms.
   // /overlay/*/1?demo=show:600 replays the build-in from scratch and freezes it at 600 ms.

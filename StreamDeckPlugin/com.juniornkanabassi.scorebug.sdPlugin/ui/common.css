@@ -1,0 +1,5 @@
+body { font: 13px -apple-system, sans-serif; background: #2d2d2d; color: #ddd; margin: 0; padding: 8px 12px; }
+.row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #3c3c3c; }
+.row label { color: #969696; }
+.row select, .row input { background: #3c3c3c; color: #ddd; border: 1px solid #4a4a4a; border-radius: 4px; padding: 4px 6px; min-width: 140px; }
+.hint { color: #6b6b6b; font-size: 11px; padding: 6px 0 2px; }
