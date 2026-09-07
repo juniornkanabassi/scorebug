@@ -54,7 +54,7 @@ node capture.mjs --port 8620 --demo show --series 0,300,600,900 --sheet sheet.pn
   `getBoundingClientRect()` expanded by 8px on every side.
 - Every screenshot is at device scale factor 2 with a transparent background.
 
-A fresh page always plays the 820 ms build-in, so a steady capture needs `--demo show:900` (or later); a bare capture lands mid-wipe.
+A fresh page always plays the 1000 ms build-in, so a steady capture needs `--demo show:900` (or later); a bare capture lands mid-wipe.
 
 Waits for the overlay's first WebSocket state (`#bug`'s `data-phase` set) and `document.fonts.ready`
 before doing anything else. When `--demo` is given, also waits 1.3s past load: the `?demo=` hook fires

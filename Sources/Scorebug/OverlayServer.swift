@@ -145,6 +145,17 @@ final class OverlayServer: @unchecked Sendable {
             }
         })
 
+        // SCOREBUG_TEST_KEYS=1 only: synthesises a key event into the key window, so a capture script can drive
+        // the app (menu shortcuts, text fields) without real mouse or keyboard input. See rule 16.
+        await server.appendRoute("POST /api/test/key", handler: { request in
+            guard ProcessInfo.processInfo.environment["SCOREBUG_TEST_KEYS"] != nil else { return HTTPResponse(statusCode: .notFound) }
+            guard let req = try? JSONCoding.decoder().decode(TestKeyRequest.self, from: try await request.bodyData) else {
+                return HTTPResponse(statusCode: .badRequest, body: Data("invalid key JSON".utf8))
+            }
+            let sent = await MainActor.run { AppModel.sendTestKey(req) }
+            return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: Data(#"{"sent":\#(sent)}"#.utf8))
+        })
+
         let handler = StateSocketHandler(broadcaster: broadcaster) { [weak self] in
             String(decoding: await self?.stateJSON() ?? Data("{}".utf8), as: UTF8.self)
         }
@@ -155,6 +166,14 @@ final class OverlayServer: @unchecked Sendable {
     }
 
     func stop() async { await server?.stop(); task?.cancel() }
+}
+
+/// Body of POST /api/test/key: `{"keyCode":125,"characters":"","modifiers":[]}`. Modifier names match
+/// NSEvent.ModifierFlags: shift, command, option, control.
+struct TestKeyRequest: Decodable, Sendable {
+    var keyCode: UInt16
+    var characters: String?
+    var modifiers: [String]?
 }
 
 /// MIME for a preview backdrop file. Not the shared `MIME.type(for:)` (owned by another file): that one has

@@ -51,7 +51,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
 
   // Build-in/build-out: themes animate their own children under .bug.building-in / .bug.building-out (see overlay.css).
   // null means "never seen a state yet" so the very first appearance still plays the build-in once, per the page starting hidden.
-  const BUILD_MS = 820; // covers every theme's 0.5-0.8s choreography with a small buffer before the marker class is dropped
+  const BUILD_MS = 1000; // covers the wrapper's 900ms show transition and every theme's own choreography with a small buffer
   let visibleState = null, buildTimer = null;
   function setVisible(visible) {
     if (visibleState === visible) return;
@@ -200,6 +200,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   }
   function renderKicks(node, s, side) {
     const kicks = s.kicks.filter((k) => k.side === side), slots = Math.max(5, kicks.length);
+   
     node.innerHTML = "";
     for (let i = 0; i < slots; i++) { const d = document.createElement("span"); d.className = "kick " + (kicks[i] ? kicks[i].result : "pending"); d.dataset.index = i + 1; node.appendChild(d); }
   }

@@ -128,6 +128,14 @@ extension View {
     func scaledFont(size: CGFloat, weight: Font.Weight? = nil, design: Font.Design? = nil) -> some View {
         font(.system(size: size * ScaledFonts.scale, weight: weight ?? .regular, design: design ?? .default))
     }
+    /// A panel button's minimum size, scaled by interface zoom, so View > Bigger Text grows the button itself
+    /// and not only its label text (a `.controlSize` alone only affects AppKit's own default metrics, not a
+    /// custom minimum this codebase already sets). Pass `square: true` for a round or icon button so the
+    /// minimum width matches the height too.
+    func scaledControl(_ base: CGFloat = 44, square: Bool = false) -> some View {
+        let side = max(44, base * ScaledFonts.scale)
+        return frame(minWidth: square ? side : nil, minHeight: side)
+    }
 }
 
 enum CompetitionColours {

@@ -20,11 +20,15 @@ struct LibraryView: View {
     @AppStorage("libraryViewMode") private var viewMode: LibraryViewMode = .list
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().frame(width: 260).padding(10)
-            if mode == 1 { competitions } else { clubsSplit }
-        }
-        .navigationTitle("Team Library")
+        Group { if mode == 1 { competitions } else { clubsSplit } }
+            .navigationTitle("Team Library")
+    }
+
+    /// The Clubs/Competitions switch, now in the list column's own header (was a full-width bar above the
+    /// split view, wasting the width the detail pane could otherwise use at a wide window).
+    private var modePicker: some View {
+        Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }
+            .scaledFont(.body).pickerStyle(.segmented).labelsHidden().padding(10)
     }
 
     // MARK: Competitions tab
@@ -38,6 +42,7 @@ struct LibraryView: View {
     private var competitions: some View {
         HSplitView {
             VStack(spacing: 0) {
+                modePicker
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search competitions", text: $competitionSearch).scaledFont(.body).textFieldStyle(.plain)
@@ -111,6 +116,7 @@ struct LibraryView: View {
         let filtered = filteredClubs
         return HSplitView {
             VStack(spacing: 0) {
+                modePicker
                 toolbarRow
                 countsRow(filtered)
                 Divider()

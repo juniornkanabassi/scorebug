@@ -209,29 +209,32 @@ body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-ori
 /* Portrait's ~1.95x scale otherwise reads under-padded next to the plate above it. */
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { margin-top: 4.1px; padding-top: 6.5px; padding-bottom: 6.5px; }
 
-/* BUILD: clock plate drops in first, then the two plates wipe outward from the roundel. */
+/* BUILD, 0.9s total (0.9.0, FXC): clock plate drops in first, then the two plates wipe outward from the
+   roundel, landing at 0.9s; springs (pl-build-clock, pl-build-pop, and the wipe's own mild overshoot
+   .16,.9,.2,1.1) keep their curve, only the plain-ease fade swaps to the shared entrance curve. */
 body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home { transform-origin: right center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-in .team.away, body[data-theme="premier-league"] .bug.building-in .score.away { transform-origin: left center; will-change: transform; }
-body[data-theme="premier-league"] .bug.building-in .clock { animation: pl-build-clock 0.7s cubic-bezier(.34,1.56,.64,1) both; will-change: transform, opacity; }
+body[data-theme="premier-league"] .bug.building-in .clock { animation: pl-build-clock 0.9s cubic-bezier(.34,1.56,.64,1) both; will-change: transform, opacity; }
 body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home,
 body[data-theme="premier-league"] .bug.building-in .team.away, body[data-theme="premier-league"] .bug.building-in .score.away {
-  animation: pl-build-wipe 0.42s cubic-bezier(.16,.9,.2,1.1) both; animation-delay: 0.28s; }
-body[data-theme="premier-league"] .bug.building-in .sep span { animation: pl-build-pop 0.35s cubic-bezier(.34,1.56,.64,1) both; animation-delay: 0.32s; will-change: transform, opacity; }
+  animation: pl-build-wipe 0.54s cubic-bezier(.16,.9,.2,1.1) both; animation-delay: 0.36s; }
+body[data-theme="premier-league"] .bug.building-in .sep span { animation: pl-build-pop 0.45s cubic-bezier(.34,1.56,.64,1) both; animation-delay: 0.411s; will-change: transform, opacity; }
 /* .sep and .added paint a solid black/purple fill that isn't covered by any wipe or pop above --
    without their own fade they are the pieces left on screen after a take-off. */
-body[data-theme="premier-league"] .bug.building-in .sep, body[data-theme="premier-league"] .bug.building-in .added { animation: pl-build-fade 0.3s ease both; animation-delay: 0.3s; will-change: opacity; }
+body[data-theme="premier-league"] .bug.building-in .sep, body[data-theme="premier-league"] .bug.building-in .added { animation: pl-build-fade 0.386s cubic-bezier(.22,.9,.3,1) both; animation-delay: 0.386s; will-change: opacity; }
 @keyframes pl-build-fade { from { opacity: 0; } to { opacity: 1; } }
 /* A strap showing when take-off starts must not survive it, even though show-scorers is otherwise independent of building-out. */
 body[data-theme="premier-league"] .bug.building-out .scorers, body[data-theme="premier-league"] .bug.building-out .shootout { opacity: 0 !important; transition: opacity 200ms ease; }
 @keyframes pl-build-clock { from { transform: translateX(-50%) translateY(-100%); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
 @keyframes pl-build-wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes pl-build-pop { from { transform: translate(-50%,-50%) scale(0); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
-/* Take-off: the bar wipes into the roundel first, then the clock plate rises away. */
+/* Take-off, 0.7s total (0.9.0, FXC): the bar wipes into the roundel first, then the clock plate rises
+   away, landing at 0.7s; none of these were springs, so curve swaps to the shared exit curve throughout. */
 body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home { transform-origin: right center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme="premier-league"] .bug.building-out .score.away { transform-origin: left center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home,
 body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme="premier-league"] .bug.building-out .score.away {
-  animation: pl-build-wipe 0.36s cubic-bezier(.4,0,.2,1) reverse both; will-change: transform; }
-body[data-theme="premier-league"] .bug.building-out .sep span { animation: pl-build-pop 0.3s cubic-bezier(.4,0,.2,1) reverse both; will-change: transform, opacity; }
-body[data-theme="premier-league"] .bug.building-out .clock { animation: pl-build-clock 0.4s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.24s; will-change: transform, opacity; }
-body[data-theme="premier-league"] .bug.building-out .sep, body[data-theme="premier-league"] .bug.building-out .added { animation: pl-build-fade 0.3s ease reverse both; will-change: opacity; }
+  animation: pl-build-wipe 0.394s cubic-bezier(.5,0,.3,1) reverse both; will-change: transform; }
+body[data-theme="premier-league"] .bug.building-out .sep span { animation: pl-build-pop 0.328s cubic-bezier(.5,0,.3,1) reverse both; will-change: transform, opacity; }
+body[data-theme="premier-league"] .bug.building-out .clock { animation: pl-build-clock 0.438s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.263s; will-change: transform, opacity; }
+body[data-theme="premier-league"] .bug.building-out .sep, body[data-theme="premier-league"] .bug.building-out .added { animation: pl-build-fade 0.328s cubic-bezier(.5,0,.3,1) reverse both; will-change: opacity; }

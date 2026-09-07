@@ -135,7 +135,8 @@ public struct Shootout: Codable, Sendable, Equatable {
 
     public func tally(_ side: Side) -> Int { kicks.filter { $0.side == side && $0.result == .scored }.count }
     public func taken(_ side: Side) -> Int { kicks.filter { $0.side == side }.count }
-    public var nextSide: Side { kicks.count % 2 == 0 ? firstKicker : firstKicker.other }
+    // Taken counts, not kicks.count % 2: strict alternation breaks once removeKick takes a kick back out of order.
+    public var nextSide: Side { taken(firstKicker) <= taken(firstKicker.other) ? firstKicker : firstKicker.other }
 }
 
 /// A club as it appears in one match. Copied from the library so a later library edit does not change a live bug.

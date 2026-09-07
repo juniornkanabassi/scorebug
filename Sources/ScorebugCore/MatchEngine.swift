@@ -18,6 +18,10 @@ public enum Command: Sendable, Equatable {
     case startShootout(Side)
     case recordKick(Side?, KickResult)
     case undoKick
+    /// Edits one kick already taken, 0-based within that side's own kicks. Ignored outside a shootout or out of range.
+    case setKick(Side, index: Int, result: KickResult)
+    /// Removes one kick already taken, 0-based within that side's own kicks. Ignored outside a shootout or out of range.
+    case removeKick(Side, index: Int)
     case setTeam(Side, TeamEntry)
     case swapTeams
     case setCompetition(String)
@@ -52,9 +56,9 @@ public enum Command: Sendable, Equatable {
 /// Flat JSON shape accepted by POST /api/match/{slot}/command and sent by the Stream Deck.
 ///
 /// Commands: goal, setScorer, startPeriod, endPeriod, play, pause, playPause, setAddedMinutes,
-/// adjustAddedMinutes, setVisible, toggleVisible, startShootout, recordKick, undoKick, setTeam, swapTeams,
-/// setCompetition, setTheme, setAggregate, clearAggregate, setShowScorers, toggleScorers, setGoalMinute,
-/// removeGoal, reset, and the manual clock corrections below.
+/// adjustAddedMinutes, setVisible, toggleVisible, startShootout, recordKick, undoKick, setKick, removeKick,
+/// setTeam, swapTeams, setCompetition, setTheme, setAggregate, clearAggregate, setShowScorers, toggleScorers,
+/// setGoalMinute, removeGoal, reset, and the manual clock corrections below.
 ///
 ///   {"command":"setGoalMinute","goalId":"…","minute":45,"plus":2} -> Command.setGoalMinute(id, minute: 45, plus: 2)
 ///   {"command":"removeGoal","goalId":"…"}                         -> Command.removeGoal(id)
@@ -91,13 +95,15 @@ public struct CommandRequest: Codable, Sendable {
     /// "setGoalMinute" only.
     public var minute: Int?
     public var plus: Int?
+    /// "setKick"/"removeKick" only: 0-based within that side's own kicks.
+    public var index: Int?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil, index: Int? = nil) {
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
         self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
         self.competitionId = competitionId; self.team = team; self.themeId = themeId
         self.seconds = seconds; self.deltaSeconds = deltaSeconds; self.home = home; self.away = away; self.showScorers = showScorers
-        self.minute = minute; self.plus = plus
+        self.minute = minute; self.plus = plus; self.index = index
     }
 
     public func toCommand() throws -> Command {
@@ -126,6 +132,12 @@ public struct CommandRequest: Codable, Sendable {
             guard let r = result, let v = KickResult(rawValue: r), v != .pending else { throw EngineError.badRequest("result must be scored or missed") }
             return .recordKick(side == nil ? nil : try sideValue(), v)
         case "undoKick": return .undoKick
+        case "setKick":
+            guard let i = index, let r = result, let v = KickResult(rawValue: r), v != .pending else { throw EngineError.badRequest("side, index and result (scored or missed) required") }
+            return .setKick(try sideValue(), index: i, result: v)
+        case "removeKick":
+            guard let i = index else { throw EngineError.badRequest("side and index required") }
+            return .removeKick(try sideValue(), index: i)
         case "setTeam":
             guard let t = team else { throw EngineError.badRequest("team required") }
             return .setTeam(try sideValue(), t)
@@ -227,6 +239,16 @@ public enum MatchEngine {
             guard var s = m.shootout, !s.kicks.isEmpty else { return m }
             s.kicks.removeLast()
             m.shootout = s
+        case .setKick(let side, let index, let result):
+            // No phase guard: a period pill press can leave the match in another phase with m.shootout still set,
+            // and these edits should still apply then (undoKick already had no phase guard; this matches it).
+            guard var s = m.shootout, let i = kickIndex(s, side, index) else { return m }
+            s.kicks[i].result = result
+            m.shootout = s
+        case .removeKick(let side, let index):
+            guard var s = m.shootout, let i = kickIndex(s, side, index) else { return m }
+            s.kicks.remove(at: i)
+            m.shootout = s
         case .setTeam(let side, let entry):
             if side == .home { m.home = entry } else { m.away = entry }
         case .swapTeams:
@@ -299,6 +321,13 @@ public enum MatchEngine {
             return "\(period.endSeconds / 60)+\(extra)'"
         }
         return "\(minute)'"
+    }
+
+    /// The global index into `shootout.kicks` for the `index`-th kick (0-based) that side has taken, or nil if out of range.
+    private static func kickIndex(_ s: Shootout, _ side: Side, _ index: Int) -> Int? {
+        let matching = s.kicks.indices.filter { s.kicks[$0].side == side }
+        guard index >= 0, index < matching.count else { return nil }
+        return matching[index]
     }
 
     private static func setScore(_ m: inout Match, _ side: Side, _ value: Int) {

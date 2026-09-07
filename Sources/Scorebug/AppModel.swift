@@ -277,7 +277,7 @@ final class AppModel: ObservableObject {
     /// why nothing responded when zoomed. It also no longer maps to `DynamicTypeSize`, because on macOS the system
     /// text styles have fixed point sizes and ignore Dynamic Type, so that mapping changed nothing on screen either.
     @Published var zoomLevel: Int = {
-        let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 0
+        let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 1
         return min(3, max(-2, stored))
     }() {
         didSet {
@@ -299,6 +299,22 @@ final class AppModel: ObservableObject {
         // Settings (e.g. portraitTop) ride inside every state snapshot, so overlay clients need a fresh
         // broadcast on change, the same way a match edit does via persistAndBroadcast().
         broadcast()
+    }
+
+    /// Builds and sends a key down then a key up into the key window. See `TestKeyRequest` for the wire shape.
+    /// Posted, not sent: local key monitors only see events that pass through the run loop's dispatch.
+    @discardableResult static func sendTestKey(_ req: TestKeyRequest) -> Bool {
+        guard let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) else { return false }
+        window.makeKey()
+        let flagNames: [String: NSEvent.ModifierFlags] = ["shift": .shift, "command": .command, "option": .option, "control": .control]
+        let flags = (req.modifiers ?? []).compactMap { flagNames[$0] }.reduce(into: NSEvent.ModifierFlags()) { $0.formUnion($1) }
+        let characters = req.characters ?? ""
+        for type: NSEvent.EventType in [.keyDown, .keyUp] {
+            // No `continue` on nil: a build failure for either event must not still report {"sent":true}.
+            guard let event = NSEvent.keyEvent(with: type, location: .zero, modifierFlags: flags, timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil, characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: req.keyCode) else { return false }
+            NSApp.postEvent(event, atStart: false)
+        }
+        return true
     }
 
     // MARK: Server

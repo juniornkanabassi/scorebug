@@ -1,6 +1,6 @@
 {
   "Name": "Scorebug",
-  "Version": "0.8.0.0",
+  "Version": "0.9.0.0",
   "Author": "Junior Nkana Bassi",
   "Description": "Control the Scorebug live overlay from a Stream Deck.",
   "UUID": "com.juniornkanabassi.scorebug",
@@ -26,10 +26,19 @@
       "Name": "Play / Pause",
       "UUID": "com.juniornkanabassi.scorebug.play-pause",
       "Icon": "imgs/actions/play-pause/icon",
-      "Tooltip": "Start or pause the master clock.",
-      "PropertyInspectorPath": "ui/slot.html",
+      "Tooltip": "Mode toggle: start/pause the clock. Mode play or pause: a one-way key.",
+      "PropertyInspectorPath": "ui/play-pause.html",
       "Controllers": ["Keypad"],
       "States": [ { "Image": "imgs/actions/play-pause/play-1", "TitleAlignment": "bottom" } ]
+    },
+    {
+      "Name": "Clock Reset",
+      "UUID": "com.juniornkanabassi.scorebug.clock-reset",
+      "Icon": "imgs/actions/clock-reset/icon",
+      "Tooltip": "Reset the match clock to 0:00.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/clock-reset/key-1", "TitleAlignment": "middle" } ]
     },
     {
       "Name": "Start Period",
@@ -57,6 +66,15 @@
       "PropertyInspectorPath": "ui/added-time.html",
       "Controllers": ["Keypad"],
       "States": [ { "Image": "imgs/actions/added-time/plus-1", "TitleAlignment": "middle" } ]
+    },
+    {
+      "Name": "Toggle Added Time",
+      "UUID": "com.juniornkanabassi.scorebug.toggle-added",
+      "Icon": "imgs/actions/toggle-added/icon",
+      "Tooltip": "Show or hide the announced added time, remembering its value.",
+      "PropertyInspectorPath": "ui/slot.html",
+      "Controllers": ["Keypad"],
+      "States": [ { "Image": "imgs/actions/toggle-added/off-1", "TitleAlignment": "bottom" } ]
     },
     {
       "Name": "Toggle Bug",

@@ -18,8 +18,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.setFrameOrigin(NSPoint(x: f.minX + 40, y: f.maxY - size.height - 40))
         }
         NSApp.windows.forEach(place)
-        screenObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { note in
+        // Placed once more on the first didBecomeKey (the window often has no frame yet at launch), then never
+        // again, so a later drag to another display sticks instead of snapping back.
+        screenObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] note in
             if let w = note.object as? NSWindow, w.screen?.localizedName != wanted { place(w) }
+            if let observer = self?.screenObserver { NotificationCenter.default.removeObserver(observer) }
+            self?.screenObserver = nil
         }
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { true }
@@ -39,7 +43,7 @@ struct ScorebugApp: App {
 
     var body: some Scene {
         WindowGroup("Scorebug", id: "main") {
-            ContentView().environmentObject(model).frame(minWidth: 960, minHeight: 640)
+            ContentView().environmentObject(model).frame(minWidth: 1180, minHeight: 720)
                 .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
                 .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
@@ -119,7 +123,7 @@ struct ContentView: View {
                     Label("Settings", systemImage: "gearshape").scaledFont(.body).tag(SidebarSection.settings)
                 }
             }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 260)
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {

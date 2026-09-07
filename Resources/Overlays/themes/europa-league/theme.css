@@ -64,6 +64,11 @@ body[data-family="uefa"] .bug { --h: 53.33px;
   --uefa-added-navy: #0B0A58; --uefa-added-blue: #1C2FE9; --uefa-navy: #0B0A58;
   --kick-pending: #2333C8; --kick-scored: #2ED46A; --kick-missed: #E0263D; --kick-ring: #0B5A2B;
   --uefa-pens-cyan: #38E0FF;
+  /* Chevron divider vertex offset (score.home::before, team.away::before): a "V" clip-path ribbon,
+     restored from v0.7.0 (0.9.0 round, D2) -- border-radius is what drew the curve Junior complained
+     about, so the vertex is cut with a polygon, never a radius (rule 20 handover note: an elliptical
+     border-radius pseudo blanked the whole bug in WebKit). */
+  --uefa-chevron-w: calc(var(--h) * 0.05);
   font-family: "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-weight: 600; letter-spacing: 0.04em; }
 body[data-theme="europa-league"] .bug { --uefa-sq: #F26A21; --uefa-plate-a: #3A1E05; --uefa-plate-b: #170B02; --uefa-bracket: #FF9A57; --uefa-navy: #4A2607; }
 body[data-theme="conference-league"] .bug { --uefa-sq: #00A86B; --uefa-plate-a: #04241A; --uefa-plate-b: #020F09; --uefa-bracket: #33C98C; --uefa-navy: #04241A; }
@@ -90,7 +95,9 @@ body[data-family="uefa"] .clock { width: calc(var(--h) * 2.77); background: var(
    in that left-to-right order, though the counter is the second DOM child (shell.html), hence the
    row-reverse. No red or gold anywhere in the real footage. */
 body[data-family="uefa"] .added { grid-area: added; flex-direction: row-reverse; height: calc(var(--h) * 0.94); gap: 0; padding: 0; border: 0; font-family: "UEFA Champions", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; }
-body[data-family="uefa"] .added .counter { width: calc(var(--h) * 2.21); height: 100%; display: flex; align-items: center; justify-content: center; background: var(--uefa-added-navy); color: #fff; font-size: calc(var(--h) * 0.5); }
+/* Width 2.39H (0.9.0, FXC): the counter+plus row (2.21H+1.36H=3.57H) fell short of the crest+clock span
+   (0.98H+2.77H=3.75H) it should line up under; 2.39H closes that to 3.75H exactly. */
+body[data-family="uefa"] .added .counter { width: calc(var(--h) * 2.39); height: 100%; display: flex; align-items: center; justify-content: center; background: var(--uefa-added-navy); color: #fff; font-size: calc(var(--h) * 0.5); }
 body[data-family="uefa"] .added .plus { width: calc(var(--h) * 1.36); height: 100%; display: flex; align-items: center; justify-content: center; background: var(--uefa-added-blue); color: #fff; font-size: calc(var(--h) * 0.5); }
 body[data-family="uefa"] .added .counter:empty { width: 0; }
 
@@ -105,7 +112,10 @@ body[data-family="uefa"] .team.home::before { content: ""; position: absolute; i
 body[data-family="uefa"] .team { font-family: "UEFA Champions", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: calc(var(--h) * 0.76); letter-spacing: 0; }
 /* Every three-letter code gets the same cell, so the plate below is one fixed width whatever the glyphs (AWY is a third wider than INT). */
 body[data-family="uefa"] .team .code { display: inline-block; min-width: calc(var(--h) * 2.0); text-align: center; }
-body[data-family="uefa"] .score { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 400; font-size: calc(var(--h) * 0.9); letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: visible; }
+/* One typeface (0.9.0 round, D2): Montserrat already covered codes/clock/chip/added/shootout, so the
+   score digits move off Inter to match -- the only cell left on a different family. */
+/* Weight 600 (0.9.0, FXC): 400 measured a 3.0px stroke against 3.3-3.7px on every other cell in the frames. */
+body[data-family="uefa"] .score { font-family: "UEFA Champions", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: calc(var(--h) * 0.9); letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: visible; }
 /* Score cells only slightly darker than the rest of the one continuous plate (a deliberate emphasis
    panel, not a separate fill), painted as each score cell's own background above the shared gradient. */
 body[data-family="uefa"] .score.home, body[data-family="uefa"] .score.away { background: var(--uefa-score-dark); }
@@ -117,16 +127,21 @@ body[data-family="uefa"] .score.home, body[data-family="uefa"] .score.away { bac
    video compression, not a design gap). */
 body[data-family="uefa"] .team.home { margin-left: 0; padding-left: calc(var(--h) * 0.82); padding-right: 0;
   background: linear-gradient(180deg, var(--home-primary, #1B2ACF) 50%, var(--home-secondary, #0C1262) 50%) no-repeat left center / calc(var(--h) * 0.47) 100%; }
-/* Curved, faint parenthesis-arc dividers, not the old sharp chevron ribbon: R5's 2026 final/semi
-   frames show a thin, low-opacity curve at every code/score seam. Drawn as an inline SVG stroke: the
-   earlier elliptical border-radius border blanked the whole bug in WebKit (the app's preview panes). */
+/* Sharp chevrons back (0.9.0 round, D2, Junior's ruling): the 0.8.0 curved SVG arcs read as a soft
+   bracket, not the "matched exactly" v0.7.0 ribbon. Restored verbatim as a filled clip-path "V" --
+   two straight segments meeting at a vertex, same technique v0.7.0 used, never a border-radius curve
+   (rule 20 handover: an elliptical border-radius pseudo blanked the whole bug in WebKit). Position,
+   width and height kept at 0.8.0's own box (left/width/height unchanged) since only the shape --
+   curve to chevron -- is what's being restored; everything else about the plate stays 0.8.0. */
 body[data-family="uefa"] .score.home { padding-left: calc(var(--h) * 0.56); padding-right: calc(var(--h) * 0.26); }
-body[data-family="uefa"] .score.home::before { content: ""; position: absolute; left: calc(var(--h) * 0.1); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.32); height: calc(var(--h) * 0.6); opacity: 0.4; pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 60'%3E%3Cpath d='M12 2 Q30 30 12 58' fill='none' stroke='%233050FF' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+body[data-family="uefa"] .score.home::before { content: ""; position: absolute; left: calc(var(--h) * 0.1); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.32); height: calc(var(--h) * 0.95); opacity: 0.75; pointer-events: none;
+  background: var(--uefa-bracket);
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 0 calc(100% - var(--uefa-chevron-w)), calc(100% - var(--uefa-chevron-w)) 50%, 0 var(--uefa-chevron-w)); }
 body[data-family="uefa"] .score.home::after { content: ""; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 2px; height: calc(var(--h) * 0.24); background: var(--uefa-tick); opacity: 0.4; }
 body[data-family="uefa"] .score.away { padding-left: calc(var(--h) * 0.26); padding-right: calc(var(--h) * 0.16); }
-body[data-family="uefa"] .team.away::before { content: ""; position: absolute; left: calc(var(--h) * 0.04); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.32); height: calc(var(--h) * 0.6); opacity: 0.4; pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 60'%3E%3Cpath d='M20 2 Q2 30 20 58' fill='none' stroke='%233050FF' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+body[data-family="uefa"] .team.away::before { content: ""; position: absolute; left: calc(var(--h) * 0.04); top: 50%; transform: translateY(-50%); width: calc(var(--h) * 0.32); height: calc(var(--h) * 0.95); opacity: 0.75; pointer-events: none;
+  background: var(--uefa-bracket);
+  clip-path: polygon(100% 0, 0 50%, 100% 100%, 100% calc(100% - var(--uefa-chevron-w)), var(--uefa-chevron-w) 50%, 100% var(--uefa-chevron-w)); }
 /* Away tab deleted (lead's decision 1: one team-colour tab only, the home club's, matching two of
    three real matches R5 sampled); the away code now sits flush with a small end margin only. */
 body[data-family="uefa"] .team.away { padding-left: calc(var(--h) * 0.46); padding-right: calc(var(--h) * 0.3); }
@@ -207,6 +222,7 @@ body[data-family="uefa"] .shootout .label::after {
 /* One row per team: the team-colour tab is the row's own background, split top/bottom like the main
    bug's home tab; the code is a flex-ordered ::after (order:-1 puts it before the kick spans) reading
    --home-code/--away-code straight off the bug's custom properties. */
+/* The real PENALTIES panel has no "kicks taken" cell: the pending square already carries the kick number. */
 body[data-family="uefa"] .shootout .kicks.home, body[data-family="uefa"] .shootout .kicks.away {
   display: flex; align-items: center; gap: calc(var(--h) * 0.1); background: var(--uefa-navy);
   padding: 0 calc(var(--h) * 0.14) 0 calc(var(--h) * 0.62); position: relative;
@@ -274,7 +290,9 @@ body[data-orientation="v"][data-family="uefa"] .bug.has-shootout .scorers { flex
    side's own height (its flex-wrap:row row2 can end up several lines longer than the other side's),
    which -- now that the card carries its own navy background -- painted as an ugly empty navy block
    under a short list instead of a card that ends where its own content ends. */
-body[data-family="uefa"] .scorers { margin-top: 5px; gap: calc(var(--h) * 0.16); padding: 0; background: none; align-items: flex-start; }
+/* One typeface (0.9.0 round, D2): the strap set no font-family of its own, so it fell back to the
+   base .bug stack (Barlow Condensed) -- the last cell not on Montserrat. */
+body[data-family="uefa"] .scorers { margin-top: 5px; gap: calc(var(--h) * 0.16); padding: 0; background: none; align-items: flex-start; font-family: "UEFA Champions", "Montserrat", "Helvetica Neue", Arial, sans-serif; }
 /* Compacted (G3c): one two-row card per side instead of one card per scorer -- five scorers used to
    stack to 4x the bug height. Row 1 (crest + club code, #0D0AA5) is generated content on .list itself,
    since shell.html has no per-side header node; row 2 (#1E225A) is the real .entry list -- unchanged
@@ -319,14 +337,26 @@ body[data-family="uefa"] .bug.has-agg .agg { display: flex; }
 /* Same specificity as the has-shootout hide list above, so source order decided it and the chip stayed up
    through a shootout on a two-legged tie. Restated here, after has-agg, so the shootout wins for .agg too. */
 body[data-family="uefa"] .bug.has-shootout .agg { display: none; }
-body[data-family="uefa"] .agg { margin-left: calc(var(--h) * 0.4); height: calc(var(--h) * 0.72); align-self: center;
+/* Chip rebuilt to the semi-final measurements (0.9.0 round, D2 -- measured with Pillow off
+   semi_normal_agg_00-25.png and semi_goal_psg_agg-updated_00-42.png, and cross-checked against the
+   sharper full-frame ucl/normal_time_0-26_2-0agg.png: bar H = 97-53 = 44px in those crops. Chip white
+   box top/bottom lands on the same two rows (53, 97) as the clock plate -- full bar height, not the
+   old 0.72H. Digit ink height measures ~23-24px = ~0.55H, close to the clock digit's own ~0.57H at
+   its 0.69H font-size, so font-size goes to 0.6H (was 0.46H). The pipe's ink is ~18px tall (~0.4H)
+   and 1-2px wide -- already about right, only the digits and box were undersized. Corners are near
+   flat in the corner crop (chip_corner_zoom.png), not the old half-height pill radius. Both crops
+   render "(" and ")" plainly round parens either side of the pipe -- the brief's "no parentheses" call
+   does not match either reference frame, so the parens stay; flagged in the report. */
+/* Weight 600, not 800 (0.9.0, FXC): 800 measured a 5.0px stroke, parentheses 4.7px, heavier than every
+   other cell on the bug; 600 matches the score and clock. */
+body[data-family="uefa"] .agg { margin-left: calc(var(--h) * 0.4); height: var(--h); align-self: center;
   align-items: center; justify-content: center; box-sizing: border-box;
-  padding: 0 calc(var(--h) * 0.24); border-radius: calc(var(--h) * 0.36); background: var(--uefa-ink); color: var(--uefa-chip-digit);
-  font-family: "UEFA Champions", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; font-size: calc(var(--h) * 0.46);
-  gap: calc(var(--h) * 0.1); font-variant-numeric: tabular-nums; }
+  padding: 0 calc(var(--h) * 0.22); border-radius: calc(var(--h) * 0.06); background: var(--uefa-ink); color: var(--uefa-chip-digit);
+  font-family: "UEFA Champions", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: calc(var(--h) * 0.6);
+  gap: calc(var(--h) * 0.14); font-variant-numeric: tabular-nums; }
 body[data-family="uefa"] .agg::before { content: "("; }
 body[data-family="uefa"] .agg::after { content: ")"; }
-body[data-family="uefa"] .agg .sep { display: inline-block; width: 2px; height: calc(var(--h) * 0.32); background: currentColor; opacity: 0.45; }
+body[data-family="uefa"] .agg .sep { display: inline-block; width: 2px; height: calc(var(--h) * 0.4); background: currentColor; opacity: 0.5; }
 /* Portrait scorers only now: the shootout panel is absolutely positioned off the same origin as the
    clock/plate in both orientations (theme.json's own v.scale shrinks it along with everything else),
    so it needs no portrait-specific width/margin override any more. */
@@ -345,15 +375,20 @@ body[data-orientation="v"][data-family="uefa"] .scorers { margin-top: 4.6px; pad
 @keyframes uefa-row-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes uefa-build-glow { 0% { opacity: 0; transform: translateX(0); } 12%, 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(calc(var(--h) * 11.4)); } }
 @keyframes uefa-agg-in { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
-body[data-family="uefa"] .bug.building-in .main { animation: uefa-row-wipe 0.5s cubic-bezier(.16,.9,.2,1) both; }
+/* Retimed (0.9.0 round, D2): build-in stretched to 0.9s total on cubic-bezier(.22,.9,.3,1), build-out
+   to 0.7s on cubic-bezier(.5,0,.3,1), matching CH3's BUILD_MS=1000 with margin to spare. Same
+   choreography as before -- row wipe, then the chip fades in after it lands; on the way out the chip
+   fades first, then the row wipes away -- just stretched: wipe 0.65s + 0.25s chip delay-in = 0.9s;
+   chip 0.2s + 0.5s wipe delay-out = 0.7s. */
+body[data-family="uefa"] .bug.building-in .main { animation: uefa-row-wipe 0.65s cubic-bezier(.22,.9,.3,1) both; }
 /* Shootout panel replaces .main's own row content during a shootout (rule above); it needs the same
    wipe so it doesn't sit fully opaque through the whole take-off/take-on while everything around it animates. */
-body[data-family="uefa"] .bug.building-in .shootout { animation: uefa-row-wipe 0.5s cubic-bezier(.16,.9,.2,1) both; }
+body[data-family="uefa"] .bug.building-in .shootout { animation: uefa-row-wipe 0.65s cubic-bezier(.22,.9,.3,1) both; }
 body[data-family="uefa"] .bug.building-in .main::after { content: ""; left: 0; right: auto; width: calc(var(--h) * 0.16); background: #fff; background-image: none;
-  filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.5s cubic-bezier(.16,.9,.2,1) both; }
-body[data-family="uefa"] .bug.building-in .agg { animation: uefa-agg-in 0.2s cubic-bezier(.2,.8,.2,1) both; animation-delay: 0.5s; }
-body[data-family="uefa"] .bug.building-out .agg { animation: uefa-agg-in 0.15s ease-in reverse both; }
-body[data-family="uefa"] .bug.building-out .main { animation: uefa-row-wipe 0.35s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.15s; }
-body[data-family="uefa"] .bug.building-out .shootout { animation: uefa-row-wipe 0.35s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.15s; }
+  filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.65s cubic-bezier(.22,.9,.3,1) both; }
+body[data-family="uefa"] .bug.building-in .agg { animation: uefa-agg-in 0.25s cubic-bezier(.22,.9,.3,1) both; animation-delay: 0.65s; }
+body[data-family="uefa"] .bug.building-out .agg { animation: uefa-agg-in 0.2s cubic-bezier(.5,0,.3,1) reverse both; }
+body[data-family="uefa"] .bug.building-out .main { animation: uefa-row-wipe 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; }
+body[data-family="uefa"] .bug.building-out .shootout { animation: uefa-row-wipe 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; }
 body[data-family="uefa"] .bug.building-out .main::after { content: ""; left: 0; right: auto; width: calc(var(--h) * 0.16); background: #fff; background-image: none;
-  filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.35s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.15s; }
+  filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; }

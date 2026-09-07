@@ -42,7 +42,6 @@ struct GoalPrompt: View {
                 .textFieldStyle(.roundedBorder)
                 .focused($searchFocused)
                 .padding(8)
-                .onSubmit(submitQuery)
             Divider()
             ScrollViewReader { proxy in
                 ScrollView {
@@ -50,7 +49,8 @@ struct GoalPrompt: View {
                         group(match.team(goal.side).shortName, filteredScoring, ownGoal: false, startIndex: 0)
                         group("Own goal", filteredOther, ownGoal: true, startIndex: filteredScoring.count)
                         if flatResults.isEmpty {
-                            Text("No match. Press Return to use \"\(query)\".").scaledFont(.caption).foregroundStyle(.secondary).padding(8)
+                            Text(query.isEmpty ? "No squad for this team. Type a name, then press Return." : "No match. Press Return to use \"\(query)\".")
+                                .scaledFont(.caption).foregroundStyle(.secondary).padding(8)
                         }
                     }
                 }.frame(maxHeight: 220)
@@ -66,9 +66,7 @@ struct GoalPrompt: View {
         .frame(width: 260)
         .onAppear { searchFocused = true }
         .onChange(of: query) { _, _ in highlighted = 0 }
-        .onKeyPress(.upArrow) { highlighted = max(0, highlighted - 1); return .handled }
-        .onKeyPress(.downArrow) { highlighted = min(max(0, flatResults.count - 1), highlighted + 1); return .handled }
-        .onKeyPress(.escape) { onPick(); return .handled }
+        .keyNavigation(count: flatResults.count, highlighted: $highlighted, onPick: submitQuery, onClose: onPick)
     }
 
     @ViewBuilder

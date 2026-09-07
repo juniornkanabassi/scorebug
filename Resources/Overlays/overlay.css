@@ -26,10 +26,12 @@ body { font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; -we
 body[data-orientation="h"] #stage { position: relative; width: 1920px; height: 1080px; }
 body[data-orientation="v"] #stage { position: relative; width: 1080px; height: 1920px; }
 
-.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 380ms cubic-bezier(.2,.8,.2,1), transform 480ms cubic-bezier(.2,.9,.25,1.15); }
-.bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; }
+.bug { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: top left; transition: opacity 900ms cubic-bezier(.22,.9,.3,1), transform 900ms cubic-bezier(.22,.9,.3,1); }
+/* This 700ms only plays on a page that starts hidden (or is hidden with no build-out under way); a normal
+   take-off is covered by .bug.building-out.hidden below, so its length is each theme's own build-out duration. */
+.bug.hidden { opacity: 0; transform: translateY(-14px); pointer-events: none; transition: opacity 700ms cubic-bezier(.5,0,.3,1), transform 700ms cubic-bezier(.5,0,.3,1); }
 /* A take-off (building-out) ends with .hidden added while .building-out is still on, so the fully collapsed
-   pieces snap invisible instead of a reassembled bar fading in over 380ms. */
+   pieces snap invisible instead of a reassembled bar fading in over the hide's 700ms. */
 .bug.building-out.hidden { transition: none; }
 body[data-orientation="h"] .bug { left: var(--bug-left, 58px); top: var(--bug-top, 53px); align-items: flex-start; transform: scale(var(--bug-scale, 1)); }
 body[data-orientation="h"] .bug.hidden { transform: scale(var(--bug-scale, 1)) translateY(-14px); }

@@ -2,6 +2,7 @@
 import streamDeck from "@elgato/streamdeck";
 
 import { AddedTime } from "./actions/added-time.js";
+import { ClockReset } from "./actions/clock-reset.js";
 import { EndPeriod } from "./actions/end-period.js";
 import { Goal } from "./actions/goal.js";
 import { Kick } from "./actions/kick.js";
@@ -11,6 +12,7 @@ import { SetCompetition } from "./actions/set-competition.js";
 import { StartPeriod } from "./actions/start-period.js";
 import { StartShootout } from "./actions/start-shootout.js";
 import { SwapTeams } from "./actions/swap-teams.js";
+import { ToggleAdded } from "./actions/toggle-added.js";
 import { ToggleBug } from "./actions/toggle-bug.js";
 import { ToggleScorers } from "./actions/toggle-scorers.js";
 import { UndoKick } from "./actions/undo-kick.js";
@@ -22,6 +24,8 @@ streamDeck.actions.registerAction(new PlayPause());
 streamDeck.actions.registerAction(new StartPeriod());
 streamDeck.actions.registerAction(new EndPeriod());
 streamDeck.actions.registerAction(new AddedTime());
+streamDeck.actions.registerAction(new ToggleAdded());
+streamDeck.actions.registerAction(new ClockReset());
 streamDeck.actions.registerAction(new ToggleBug());
 streamDeck.actions.registerAction(new ToggleScorers());
 streamDeck.actions.registerAction(new StartShootout());

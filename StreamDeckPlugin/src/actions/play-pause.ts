@@ -1,8 +1,14 @@
-// play-pause action: icon follows clock.running, title is the live clock. Settings: slot.
+// play-pause action: mode "toggle" (default) plays/pauses and its icon follows clock.running; mode
+// "play"/"pause" is a one-way key that always sends that command and shows a fixed icon.
+// Settings: slot, mode (play | pause | toggle, default toggle).
 import { action } from "@elgato/streamdeck";
 import type { KeyDownEvent, KeyAction } from "@elgato/streamdeck";
 import { StatefulAction, elapsedSeconds, formatClock, iconPath, server, slotOf } from "../lib/scorebug.js";
 import type { BaseSettings } from "../lib/scorebug.js";
+
+function modeOf(settings: BaseSettings): "play" | "pause" | "toggle" {
+	return settings.mode === "play" || settings.mode === "pause" ? settings.mode : "toggle";
+}
 
 @action({ UUID: "com.juniornkanabassi.scorebug.play-pause" })
 export class PlayPause extends StatefulAction {
@@ -16,18 +22,17 @@ export class PlayPause extends StatefulAction {
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
-		await server.send(slotOf(ev.payload.settings), "playPause");
+		const settings = ev.payload.settings;
+		const mode = modeOf(settings);
+		await server.send(slotOf(settings), mode === "toggle" ? "playPause" : mode);
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		const match = server.match(slot);
-		if (!match) {
-			await a.setImage(iconPath("play-pause", "play", slot));
-			await a.setTitle("OFFLINE");
-			return;
-		}
-		await a.setImage(iconPath("play-pause", match.clock.running ? "pause" : "play", slot));
-		await a.setTitle(formatClock(elapsedSeconds(match.clock, Date.now())));
+		const mode = modeOf(settings);
+		const variant = mode === "toggle" ? (match?.clock.running ? "pause" : "play") : mode;
+		await a.setImage(iconPath("play-pause", variant, slot));
+		await a.setTitle(match ? formatClock(elapsedSeconds(match.clock, Date.now())) : "OFFLINE");
 	}
 }

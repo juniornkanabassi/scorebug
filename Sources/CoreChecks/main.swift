@@ -39,6 +39,11 @@ check(ClockEngine.display(match: m, style: .freezeAndCount, now: at(9999)).state
 m = MatchEngine.apply(.startPeriod(.secondHalf), to: m, now: at(5000))
 check(m.addedMinutes == nil && Int(m.clock.elapsed(at: at(5000))) == 2700, "second half starts at 45:00 with added time cleared")
 
+// startPeriod works from any phase, not just the break that leads into it
+var backToFirst = MatchEngine.apply(.startPeriod(.secondHalf), to: Match(slot: 1), now: at(0))
+backToFirst = MatchEngine.apply(.startPeriod(.firstHalf), to: backToFirst, now: at(100))
+check(backToFirst.phase == .firstHalf && Int(backToFirst.clock.elapsed(at: at(100))) == 0, "startPeriod(.firstHalf) from .secondHalf resets the clock base to 0 and the phase to firstHalf")
+
 // Manual clock control (setClock / adjustClock)
 // setClock/adjustClock work in period-local seconds: periodBaseSeconds is never touched, so the on-screen
 // cumulative reading (what elapsed(at:) and ClockEngine.display show) is periodBaseSeconds + the local value.
@@ -141,6 +146,34 @@ m = MatchEngine.apply(.undoKick, to: m, now: at(0))
 check(m.shootout?.kicks.count == 2, "undo removes the last kick")
 for _ in 0..<10 { m = MatchEngine.apply(.recordKick(nil, .scored), to: m, now: at(0)) }
 check(m.shootout?.kicks.count == 12, "sudden death has no cap")
+
+// Editable kicks: setKick and removeKick
+var kickM = MatchEngine.apply(.startShootout(.home), to: live, now: at(0))
+for _ in 0..<3 { kickM = MatchEngine.apply(.recordKick(.home, .scored), to: kickM, now: at(0)) }
+for _ in 0..<3 { kickM = MatchEngine.apply(.recordKick(.away, .scored), to: kickM, now: at(0)) }
+kickM = MatchEngine.apply(.setKick(.home, index: 1, result: .missed), to: kickM, now: at(0))
+check(kickM.shootout?.tally(.home) == 2 && kickM.shootout?.taken(.home) == 3, "setKick edits home kick 2 to missed")
+kickM = MatchEngine.apply(.removeKick(.away, index: 0), to: kickM, now: at(0))
+check(kickM.shootout?.taken(.away) == 2 && kickM.shootout?.tally(.away) == 2, "removeKick removes away kick 1")
+let kicksBefore = kickM.shootout?.kicks.count
+kickM = MatchEngine.apply(.setKick(.home, index: 99, result: .missed), to: kickM, now: at(0))
+kickM = MatchEngine.apply(.removeKick(.home, index: -1), to: kickM, now: at(0))
+check(kickM.shootout?.kicks.count == kicksBefore, "setKick and removeKick ignore an out-of-range index")
+let liveNoShootout = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
+let outsideShootout = MatchEngine.apply(.setKick(.home, index: 0, result: .missed), to: liveNoShootout, now: at(0))
+check(outsideShootout == liveNoShootout, "setKick outside a shootout is ignored")
+check((try? CommandRequest(command: "setKick", side: "home", result: "missed", index: 1).toCommand()) == .setKick(.home, index: 1, result: .missed), "setKick request decodes")
+check((try? CommandRequest(command: "removeKick", side: "away", index: 0).toCommand()) == .removeKick(.away, index: 0), "removeKick request decodes")
+var pillKickM = MatchEngine.apply(.startPeriod(.secondHalf), to: kickM, now: at(0))
+check(pillKickM.phase == .secondHalf && pillKickM.shootout != nil, "a period pill press leaves the shootout in place while changing phase")
+pillKickM = MatchEngine.apply(.setKick(.home, index: 0, result: .missed), to: pillKickM, now: at(0))
+check(pillKickM.shootout?.tally(.home) == 1, "setKick still applies once a period pill press has left .shootout, since the kick cells must not go dead")
+
+var nextSideM = MatchEngine.apply(.startShootout(.home), to: live, now: at(0))
+nextSideM = MatchEngine.apply(.recordKick(nil, .scored), to: nextSideM, now: at(0))
+nextSideM = MatchEngine.apply(.recordKick(nil, .scored), to: nextSideM, now: at(0))
+nextSideM = MatchEngine.apply(.removeKick(.home, index: 0), to: nextSideM, now: at(0))
+check(nextSideM.shootout?.nextSide == .home, "nextSide rebalances from taken counts after removeKick instead of strict alternation")
 
 // Swap and reset
 m = MatchEngine.apply(.swapTeams, to: m, now: at(0))
