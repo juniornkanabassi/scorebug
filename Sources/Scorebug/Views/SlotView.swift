@@ -47,17 +47,21 @@ struct SlotView: View {
             GeometryReader { geo in ScrollView {
                 VStack(spacing: 16) {
                     // `.equatable()` is what actually makes SwiftUI skip a block's diff when its inputs compare
-                    // equal; conforming the view to Equatable alone does not opt it into that shortcut.
+                    // equal; conforming the view to Equatable alone does not opt it into that shortcut. None of
+                    // these blocks' own fields mention zoom, so `zoomGeneration` (read fresh here, since this
+                    // body itself is not equatable-gated) is threaded through purely so a zoom change is seen
+                    // as a change too, not swallowed by the same shortcut.
+                    let zoomGeneration = ScaledFonts.generation
                     MatchCardSection(home: m.home, away: m.away, homeScore: m.homeScore, awayScore: m.awayScore,
                                       competitionId: m.competitionId, phase: m.phase, aggregate: m.aggregate,
-                                      hasKnockouts: hasKnockouts, slot: slot, model: model).equatable()
+                                      hasKnockouts: hasKnockouts, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     ClockSection(phase: m.phase, clock: m.clock, addedMinutes: m.addedMinutes, clockStyle: clockStyle,
-                                  hasKnockouts: hasKnockouts, slot: slot, model: model).equatable()
-                    StoppageSection(addedMinutes: m.addedMinutes, slot: slot, model: model).equatable()
+                                  hasKnockouts: hasKnockouts, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
+                    StoppageSection(addedMinutes: m.addedMinutes, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     GoalsSection(goals: m.goals, homeCode: m.home.code, awayCode: m.away.code, showScorers: m.showScorers,
-                                  homeColour: m.home.primaryColour, awayColour: m.away.primaryColour, slot: slot, model: model).equatable()
+                                  homeColour: m.home.primaryColour, awayColour: m.away.primaryColour, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     if hasKnockouts || m.phase == .shootout {
-                        ShootoutSection(shootout: m.shootout, phase: m.phase, homeShortName: m.home.shortName, awayShortName: m.away.shortName, slot: slot, model: model).equatable()
+                        ShootoutSection(shootout: m.shootout, phase: m.phase, homeShortName: m.home.shortName, awayShortName: m.away.shortName, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     }
                 }
                 .padding(16)
@@ -139,11 +143,12 @@ struct MatchCardSection: View, Equatable {
     let hasKnockouts: Bool
     let slot: Int
     let model: AppModel
+    let zoomGeneration: Int
 
     static func == (l: Self, r: Self) -> Bool {
         l.home == r.home && l.away == r.away && l.homeScore == r.homeScore && l.awayScore == r.awayScore
             && l.competitionId == r.competitionId && l.phase == r.phase && l.aggregate == r.aggregate
-            && l.hasKnockouts == r.hasKnockouts && l.slot == r.slot
+            && l.hasKnockouts == r.hasKnockouts && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
     }
 
     private var competition: Competition? { model.library.competitions.first { $0.id == competitionId } }
@@ -173,13 +178,12 @@ struct MatchCardSection: View, Equatable {
                     .scaledFont(size: 22, design: .rounded).foregroundStyle(.secondary)
             }
             // Both buttons are now the same large size: the plus is pressed live, over and over, and the
-            // minus undoes a misclick just as urgently, so a 28 pt target beside a 56 pt one (Junior's UX
-            // critic) is gone.
+            // minus undoes a misclick just as urgently, so a 28 pt target beside a 56 pt one is gone.
             HStack(spacing: 16) {
                 Button { model.apply(.goal(side, -1), slot: slot) } label: {
-                    Image(systemName: "minus").scaledFont(.title, weight: .bold).frame(width: 56, height: 56)
+                    Image(systemName: "minus").scaledFont(.title, weight: .bold).frame(width: 56, height: 56).scaledControl(56, square: true)
                 }
-                .buttonStyle(.bordered).controlSize(.extraLarge).scaledControl(56, square: true)
+                .buttonStyle(.bordered).controlSize(.extraLarge)
                 .disabled(score == 0)
                 .help(score == 0 ? "No \(team.shortName) goals to remove" : "Remove the last \(team.shortName) goal")
                 PlusGoalButton(side: side, team: team, phase: phase, slot: slot, model: model).equatable()
@@ -218,11 +222,20 @@ struct MatchCardSection: View, Equatable {
                 }
             }
             Spacer(minLength: 0)
-            // Swapping ends is rare and deliberate, so it stays small and secondary rather than sharing
-            // weight with the primary controls now living in the Clock block.
-            Button("Swap", systemImage: "arrow.left.arrow.right") { model.apply(.swapTeams, slot: slot) }
-                .scaledFont(.body).controlSize(.small).buttonStyle(.plain).foregroundStyle(.secondary)
-                .help("Swap home and away")
+            // Swapping ends is rare and deliberate, so it stays visually small and secondary rather than
+            // sharing weight with the primary controls now living in the Clock block; the hit target is
+            // still brought up to 44 pt. A `.plain` button has no AppKit bezel to size it, so (like the
+            // shootout kick cells below) the frame that actually grows the hit area sits on the `Button`
+            // itself, not inside the label.
+            Button {
+                model.apply(.swapTeams, slot: slot)
+            } label: {
+                Label("Swap", systemImage: "arrow.left.arrow.right").scaledFont(.body)
+            }
+            .buttonStyle(.plain).foregroundStyle(.secondary)
+            .scaledControl()
+            .contentShape(Rectangle())
+            .help("Swap home and away")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
@@ -272,8 +285,8 @@ struct PlusGoalButton: View, Equatable {
         Button {
             model.apply(.goal(side, 1), slot: slot)
             plusPromptGoalId = model.match(slot).lastGoal?.goalId
-        } label: { Image(systemName: "plus").scaledFont(.title, weight: .bold).frame(width: 56, height: 56) }
-            .buttonStyle(.borderedProminent).controlSize(.extraLarge).scaledControl(56, square: true)
+        } label: { Image(systemName: "plus").scaledFont(.title, weight: .bold).frame(width: 56, height: 56).scaledControl(56, square: true) }
+            .buttonStyle(.borderedProminent).controlSize(.extraLarge)
             .keyboardShortcut(side == .home ? "h" : "a", modifiers: [.command, .shift])
             .disabled(phase == .shootout).help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
             .lazyPopover(isPresented: plusPromptBinding) {
@@ -304,15 +317,14 @@ struct ClockSection: View, Equatable {
     let hasKnockouts: Bool
     let slot: Int
     let model: AppModel
+    let zoomGeneration: Int
     @State private var confirmResetClock = false
-    // Owned here, not by ClockReadout and ClockFieldsRow individually: both used to run their own quarter-second
-    // Timer.publish side by side for the same purpose, so one timer now feeds both through `tick`.
-    @State private var tick = Date()
-    private let timer = Timer.publish(every: 0.25, on: .main, in: .common).autoconnect()
+    private static let unavailableHelp = "Only available while a period is live, not before kick-off or during a shootout"
 
     static func == (l: Self, r: Self) -> Bool {
         l.phase == r.phase && l.clock == r.clock && l.addedMinutes == r.addedMinutes
             && l.clockStyle == r.clockStyle && l.hasKnockouts == r.hasKnockouts && l.slot == r.slot
+            && l.zoomGeneration == r.zoomGeneration
     }
 
     private var periods: [Period] { Period.allCases.filter { hasKnockouts || ($0 != .extraFirst && $0 != .extraSecond) } }
@@ -320,26 +332,30 @@ struct ClockSection: View, Equatable {
     var body: some View {
         Panel("Clock") {
             VStack(spacing: 16) {
-                HStack(spacing: 24) {
-                    ClockReadout(clock: clock, phase: phase, addedMinutes: addedMinutes, style: clockStyle ?? .runOn, tick: tick)
-                    ClockFieldsRow(slot: slot, tick: tick)
-                    Spacer()
+                // The readout and the editable fields are the only part that changes four times a second, so
+                // only this row sits inside the periodic timeline; the rest of the panel never re-diffs for a tick.
+                TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                    HStack(spacing: 24) {
+                        ClockReadout(clock: clock, phase: phase, addedMinutes: addedMinutes, style: clockStyle ?? .runOn, tick: context.date)
+                        ClockFieldsRow(slot: slot, tick: context.date)
+                        Spacer()
+                    }
                 }
                 HStack(spacing: 10) {
                     playPauseButton
                     resetClockButton
                     Button { model.apply(.adjustClock(deltaSeconds: -10), slot: slot) } label: {
-                        Text("−10 s").frame(maxWidth: .infinity, minHeight: 44)
-                    }.scaledControl().disabled(phase.period == nil)
+                        Text("−10 s").frame(maxWidth: .infinity).scaledControl(64)
+                    }.disabled(phase.period == nil).help(Self.unavailableHelp)
                     Button { model.apply(.adjustClock(deltaSeconds: 10), slot: slot) } label: {
-                        Text("+10 s").frame(maxWidth: .infinity, minHeight: 44)
-                    }.scaledControl().disabled(phase.period == nil)
+                        Text("+10 s").frame(maxWidth: .infinity).scaledControl(64)
+                    }.disabled(phase.period == nil).help(Self.unavailableHelp)
                     Button {
                         model.apply(.endPeriod, slot: slot)
                     } label: {
-                        Text("End half").frame(maxWidth: .infinity, minHeight: 44)
+                        Text("End half").frame(maxWidth: .infinity).scaledControl(64)
                     }
-                    .scaledControl().disabled(phase.period == nil)
+                    .disabled(phase.period == nil)
                     .keyboardShortcut("e", modifiers: [.command, .shift]).help("End the current period (⇧⌘E)")
                 }
                 .buttonStyle(.bordered).controlSize(.extraLarge).scaledFont(.body, weight: .semibold)
@@ -348,7 +364,6 @@ struct ClockSection: View, Equatable {
                 HStack(spacing: 8) { ForEach(periods, id: \.self) { p in periodPill(p) } }
             }
         }
-        .onReceive(timer) { tick = $0 }
     }
 
     private var playPauseButton: some View {
@@ -356,13 +371,13 @@ struct ClockSection: View, Equatable {
             model.apply(.playPause, slot: slot)
         } label: {
             Label(clock.running ? "Pause" : "Play", systemImage: clock.running ? "pause.fill" : "play.fill")
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .frame(maxWidth: .infinity).scaledControl(64)
                 // A plain `.tint` on a borderedProminent button can read as grey once the window is no longer
                 // key (the streamer has OBS focused), so the green while running is also painted as our own
                 // background layer, which stays visible regardless of key-window state.
                 .background(clock.running ? Color.green.opacity(0.35) : .clear, in: RoundedRectangle(cornerRadius: 8))
         }
-        .buttonStyle(.borderedProminent).tint(clock.running ? .green : .accentColor).scaledControl()
+        .buttonStyle(.borderedProminent).tint(clock.running ? .green : .accentColor)
         .keyboardShortcut(.space, modifiers: [])
         .disabled(phase.period == nil).help("Play or pause the clock (Space)")
     }
@@ -371,10 +386,10 @@ struct ClockSection: View, Equatable {
         Button {
             if clock.running { confirmResetClock = true } else { model.apply(.setClock(seconds: 0), slot: slot) }
         } label: {
-            Text("Reset clock").frame(maxWidth: .infinity, minHeight: 44)
+            Text("Reset clock").frame(maxWidth: .infinity).scaledControl(64)
         }
-        .scaledControl()
         .disabled(phase.period == nil)
+        .help(Self.unavailableHelp)
         .confirmationDialog("Reset the clock to zero?", isPresented: $confirmResetClock) {
             Button("Reset clock", role: .destructive) { model.apply(.setClock(seconds: 0), slot: slot) }
         }
@@ -385,9 +400,9 @@ struct ClockSection: View, Equatable {
         let button = Button {
             model.apply(.startPeriod(p), slot: slot)
         } label: {
-            Text(p.shortLabel).scaledFont(.body, weight: .semibold).frame(maxWidth: .infinity, minHeight: 44)
+            Text(p.shortLabel).scaledFont(.body, weight: .semibold).frame(maxWidth: .infinity).scaledControl(64)
         }
-        .controlSize(.extraLarge).scaledControl().help(p.title)
+        .controlSize(.extraLarge).help(p.title)
         if phase.period == p {
             // Borders read clearly in a key window's own accent colour, but a borderedProminent fill can look
             // washed out once the window is not key (the streamer has OBS focused); the stroke is our own
@@ -407,9 +422,12 @@ struct StoppageSection: View, Equatable {
     let addedMinutes: Int?
     let slot: Int
     let model: AppModel
+    let zoomGeneration: Int
     @State private var lastValue = 1
 
-    static func == (l: Self, r: Self) -> Bool { l.addedMinutes == r.addedMinutes && l.slot == r.slot }
+    static func == (l: Self, r: Self) -> Bool {
+        l.addedMinutes == r.addedMinutes && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
+    }
 
     /// Remembers the last non-zero value per slot, so switching slots (or reopening the app) does not forget
     /// a "+3" that was switched off with "Show on bug".
@@ -418,16 +436,16 @@ struct StoppageSection: View, Equatable {
     var body: some View {
         Panel("Stoppage") {
             HStack(spacing: 20) {
-                Button { adjust(-1) } label: { Image(systemName: "minus").scaledFont(.title2, weight: .semibold).frame(minHeight: 44) }
-                    .buttonStyle(.bordered).controlSize(.extraLarge).scaledControl()
+                Button { adjust(-1) } label: { Image(systemName: "minus").scaledFont(.title2, weight: .semibold).scaledControl(square: true) }
+                    .buttonStyle(.bordered).controlSize(.extraLarge)
                     .disabled((addedMinutes ?? 0) <= 0)
                 HStack(spacing: 12) {
                     Text(addedMinutes.map { "+\($0)" } ?? "Off").scaledFont(size: 28, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 80)
                     // Beside the value it governs, not off at the far end of the row.
                     Toggle("Show on bug", isOn: showBinding).toggleStyle(.switch).scaledFont(.body)
                 }
-                Button { adjust(1) } label: { Image(systemName: "plus").scaledFont(.title2, weight: .semibold).frame(minHeight: 44) }
-                    .buttonStyle(.bordered).controlSize(.extraLarge).scaledControl()
+                Button { adjust(1) } label: { Image(systemName: "plus").scaledFont(.title2, weight: .semibold).scaledControl(square: true) }
+                    .buttonStyle(.bordered).controlSize(.extraLarge)
                     .disabled((addedMinutes ?? 0) >= 15)
                 Spacer()
             }
@@ -462,10 +480,12 @@ struct GoalsSection: View, Equatable {
     let awayColour: String
     let slot: Int
     let model: AppModel
+    let zoomGeneration: Int
 
     static func == (l: Self, r: Self) -> Bool {
         l.goals == r.goals && l.homeCode == r.homeCode && l.awayCode == r.awayCode
-            && l.showScorers == r.showScorers && l.homeColour == r.homeColour && l.awayColour == r.awayColour && l.slot == r.slot
+            && l.showScorers == r.showScorers && l.homeColour == r.homeColour && l.awayColour == r.awayColour
+            && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
     }
 
     var body: some View {
@@ -486,9 +506,11 @@ struct GoalsSection: View, Equatable {
                         GoalRow(goal: goal, slot: slot)
                         Spacer()
                         Button { model.apply(.removeGoal(goal.id), slot: slot) } label: {
-                            Image(systemName: "minus").scaledFont(.callout, weight: .semibold).frame(width: 32, height: 32)
+                            // scaledControl(32, square: true) used to differ from the default here; now that
+                            // the modifier floors at 44 regardless of a smaller base, the two are the same.
+                            Image(systemName: "minus").scaledFont(.callout, weight: .semibold).frame(width: 32, height: 32).scaledControl(square: true)
                         }
-                        .buttonStyle(.bordered).controlSize(.small).scaledControl(32, square: true)
+                        .buttonStyle(.bordered)
                         .help("Remove this goal")
                     }
                     .frame(height: 44)
@@ -541,10 +563,11 @@ struct ShootoutSection: View, Equatable {
     let awayShortName: String
     let slot: Int
     let model: AppModel
+    let zoomGeneration: Int
 
     static func == (l: Self, r: Self) -> Bool {
         l.shootout == r.shootout && l.phase == r.phase && l.homeShortName == r.homeShortName
-            && l.awayShortName == r.awayShortName && l.slot == r.slot
+            && l.awayShortName == r.awayShortName && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
     }
 
     private var beforeKickoff: Bool { phase == .preMatch }
@@ -572,16 +595,19 @@ struct ShootoutSection: View, Equatable {
                     Button {
                         model.apply(.undoKick, slot: slot)
                     } label: {
-                        Text("Undo last").frame(maxWidth: .infinity, minHeight: 44)
+                        Text("Undo last").frame(maxWidth: .infinity).scaledControl(64)
                     }
-                    .buttonStyle(.bordered).controlSize(.extraLarge).scaledControl().disabled(s.kicks.isEmpty)
+                    .buttonStyle(.bordered).controlSize(.extraLarge).disabled(s.kicks.isEmpty)
                 } else {
                     Button {
                         model.apply(.startShootout(.home), slot: slot)
                     } label: {
-                        Text("Start shootout").frame(maxWidth: .infinity, minHeight: 44)
+                        // Painted as our own layer, same as the Play/Pause tint, so it still reads once the
+                        // window is not key (the streamer has OBS focused).
+                        Text("Start shootout").frame(maxWidth: .infinity).scaledControl(64)
+                            .background(Color.accentColor.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.extraLarge).scaledControl()
+                    .buttonStyle(.borderedProminent).controlSize(.extraLarge)
                     .disabled(beforeKickoff)
                 }
             }
@@ -593,10 +619,13 @@ struct ShootoutSection: View, Equatable {
         Button {
             model.apply(.recordKick(side, result), slot: slot)
         } label: {
-            Text(title).frame(maxWidth: .infinity, minHeight: 44)
+            Text(title).frame(maxWidth: .infinity).scaledControl(64)
+                .background(tint.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
         }
-        .buttonStyle(.borderedProminent).controlSize(.extraLarge).tint(tint).scaledControl()
-        .disabled(phase != .shootout)
+        .buttonStyle(.borderedProminent).controlSize(.extraLarge).tint(tint)
+        // The engine takes kicks whenever a shootout exists, not only while `phase == .shootout` (a kick can
+        // land after full time or extra time too), so the buttons follow the shootout's existence, not the phase.
+        .disabled(shootout == nil)
     }
 
     /// This side's kicks in order, each a round cell that cycles scored → missed → removed on a press
@@ -668,7 +697,7 @@ struct ClockReadout: View {
 
 /// The editable minutes/seconds pair in the Clock block: shows the cumulative on-screen time (period
 /// base + elapsed, the same value `ClockReadout` derives via `Clock.elapsed(at:)`), flanked by round −/+
-/// buttons that nudge the clock directly. `tick` comes from `ClockSection`'s shared quarter-second timer.
+/// buttons that nudge the clock directly. `tick` comes from `ClockSection`'s shared periodic `TimelineView`.
 /// Typing a value only takes effect on Return (`onSubmit`), and the text mirrors re-sync on every tick
 /// *unless* a field is focused, so a running clock never overwrites what the owner is mid-typing.
 struct ClockFieldsRow: View {
@@ -699,6 +728,7 @@ struct ClockFieldsRow: View {
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.secondary.opacity(0.35)))
         .disabled(match.currentPeriod == nil)
+        .help(match.currentPeriod == nil ? "Only available while a period is live, not before kick-off or during a shootout" : "")
         .onChange(of: tick) { _, _ in resyncIfIdle() }
         .onAppear { resyncIfIdle(force: true) }
     }
@@ -733,12 +763,17 @@ struct GoalRow: View {
     }
 
     var body: some View {
-        Button(label) { isOpen = true }
-            .scaledFont(.body).controlSize(.large)
-            .frame(maxWidth: 280, alignment: .leading)
-            .lazyPopover(isPresented: $isOpen) {
-                GoalPrompt(goal: goal, slot: slot, onPick: { isOpen = false })
-            }
+        // `Button(String)` ignores an outer `.scaledFont`, so the title is a Text inside the label closure
+        // instead; the frame carries the 44 pt minimum row height, scaled by zoom like every other control.
+        Button {
+            isOpen = true
+        } label: {
+            Text(label).scaledFont(.body).frame(maxWidth: 280, alignment: .leading).scaledControl()
+        }
+        .controlSize(.large)
+        .lazyPopover(isPresented: $isOpen) {
+            GoalPrompt(goal: goal, slot: slot, onPick: { isOpen = false })
+        }
     }
 }
 
@@ -800,9 +835,12 @@ struct ClubPickerButton: View, Equatable {
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.down").scaledFont(.caption2).foregroundStyle(.secondary)
             }
-            // Fixed, not maxWidth: a short name (e.g. "Inter") must not leave this button narrower than the
-            // other side's, which is what threw the two pickers out of alignment (Junior's screenshot).
-            .frame(width: 220)
+            // A minimum, not maxWidth: a short name (e.g. "Inter") must not leave this button narrower than
+            // the other side's, which is what threw the two pickers out of alignment. Both dimensions scale
+            // with interface zoom like every other panel control, the width base carried directly since it
+            // is not the usual 44/56/64 pt shape.
+            .frame(minWidth: 220 * ScaledFonts.scale, alignment: .leading)
+            .scaledControl()
         }
         .buttonStyle(.bordered)
         .lazyPopover(isPresented: $isOpen) {
@@ -826,6 +864,7 @@ struct ClubPickerButton: View, Equatable {
                             }
                         }
                     }.frame(maxHeight: 320)
+                        .onAppear { proxy.scrollTo(highlighted, anchor: .center) }
                         .onChange(of: highlighted) { _, new in proxy.scrollTo(new, anchor: .center) }
                 }
             }

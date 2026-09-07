@@ -96,7 +96,13 @@ enum CrestImage {
 // init) now write the current scale into this plain static instead, so each call site is just a `.font(_:)`
 // with a value computed from that static, no environment plumbing, no custom modifier type, of its own.
 enum ScaledFonts {
-    static var scale: CGFloat = 1
+    static var scale: CGFloat = 1 { didSet { generation &+= 1 } }
+    /// Bumped whenever `scale` changes. `SlotView`'s panel blocks are each wrapped in `.equatable()` so a
+    /// command that leaves a block's own fields untouched skips its diff; none of those fields mention zoom,
+    /// so without this a zoom change published nothing changed and every scaled control stayed exactly the
+    /// size it opened at. Each block adds a `zoomGeneration` field (read fresh at construction, in `SlotView`'s
+    /// body, which itself is not equatable-gated) purely so its own `==` can see a zoom change too.
+    private(set) static var generation = 0
 }
 
 /// Maps a SwiftUI text style to the AppKit text style whose preferred point size drives that style's scaling.
@@ -130,10 +136,12 @@ extension View {
     }
     /// A panel button's minimum size, scaled by interface zoom, so View > Bigger Text grows the button itself
     /// and not only its label text (a `.controlSize` alone only affects AppKit's own default metrics, not a
-    /// custom minimum this codebase already sets). Pass `square: true` for a round or icon button so the
-    /// minimum width matches the height too.
+    /// custom minimum this codebase already sets). Scales from the button's real base size, so applied inside
+    /// a `Button`'s label (never on the `Button` itself, which an AppKit-backed control size such as
+    /// `.extraLarge` already pins to a fixed height that an outer frame cannot grow). Pass `square: true` for
+    /// a round or icon button so the minimum width matches the height too.
     func scaledControl(_ base: CGFloat = 44, square: Bool = false) -> some View {
-        let side = max(44, base * ScaledFonts.scale)
+        let side = max(44, base) * ScaledFonts.scale
         return frame(minWidth: square ? side : nil, minHeight: side)
     }
 }

@@ -40,33 +40,40 @@ struct LibraryView: View {
     }
 
     private var competitions: some View {
-        HSplitView {
-            VStack(spacing: 0) {
-                modePicker
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search competitions", text: $competitionSearch).scaledFont(.body).textFieldStyle(.plain)
-                    if !competitionSearch.isEmpty {
-                        Button { competitionSearch = "" } label: { Image(systemName: "xmark.circle.fill") }
-                            .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
+        // The reader keeps the whole split's ideal width tiny, same reason as `SlotView`'s lower panel: an
+        // `HSplitView` not wrapped this way reports the sum of both panes' natural (unclipped) widths as its
+        // own ideal size to whatever hosts it, which becomes the outer `NavigationSplitView`'s detail-column
+        // minimum and clips the whole pane at 1180 pt with the list sitting off to one side of its own space.
+        GeometryReader { geo in
+            HSplitView {
+                VStack(spacing: 0) {
+                    modePicker
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                        TextField("Search competitions", text: $competitionSearch).scaledFont(.body).textFieldStyle(.plain)
+                        if !competitionSearch.isEmpty {
+                            Button { competitionSearch = "" } label: { Image(systemName: "xmark.circle.fill") }
+                                .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
+                        }
                     }
+                    .padding(6)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
+                    .padding(10)
+                    Divider()
+                    List(filteredCompetitions, selection: $selectedCompetition) { c in
+                        HStack { CachedCompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
+                            .scaledFont(.body)
+                            .tag(c.id)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .padding(6)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
-                .padding(10)
-                Divider()
-                List(filteredCompetitions, selection: $selectedCompetition) { c in
-                    HStack { CachedCompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
-                        .scaledFont(.body)
-                        .tag(c.id)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
+                Group {
+                    if let id = selectedCompetition, let c = model.library.competitions.first(where: { $0.id == id }) { CompetitionEditor(competition: c).id(id) }
+                    else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
+                }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
-            Group {
-                if let id = selectedCompetition, let c = model.library.competitions.first(where: { $0.id == id }) { CompetitionEditor(competition: c).id(id) }
-                else { ContentUnavailableView("Choose a competition", systemImage: "trophy") }
-            }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         // Each pane's own root view needs maxHeight: .infinity too, or NSSplitView sizes it to the
         // content's ideal height instead of the pane's real height (see clubsSplit).
@@ -114,28 +121,35 @@ struct LibraryView: View {
         // Computed once per body evaluation and threaded through, rather than each of countsRow/clubList/
         // clubGrid calling the filteredClubs property itself and re-filtering the same 229 rows three times.
         let filtered = filteredClubs
-        return HSplitView {
-            VStack(spacing: 0) {
-                modePicker
-                toolbarRow
-                countsRow(filtered)
-                Divider()
-                Group { if viewMode == .list { clubList(filtered) } else { clubGrid(filtered) } }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                Divider()
-                addRemoveRow
-            }
-            // This pane's own root view must carry maxHeight: .infinity, or NSSplitView sizes the pane
-            // to the VStack's ideal height and the list renders at zero height instead of filling it.
-            .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
-            .background(shortcutButtons)
-            Group {
-                if let id = selected, let club = model.library.clubs.first(where: { $0.id == id }) {
-                    ClubEditor(club: club).id(id)
-                } else {
-                    ContentUnavailableView("Choose a club", systemImage: "shield")
+        // The reader keeps the whole split's ideal width tiny, same reason as `SlotView`'s lower panel: an
+        // `HSplitView` not wrapped this way reports the sum of both panes' natural (unclipped) widths as its
+        // own ideal size to whatever hosts it, which becomes the outer `NavigationSplitView`'s detail-column
+        // minimum and clips the whole pane at 1180 pt with the list sitting off to one side of its own space.
+        return GeometryReader { geo in
+            HSplitView {
+                VStack(spacing: 0) {
+                    modePicker
+                    toolbarRow
+                    countsRow(filtered)
+                    Divider()
+                    Group { if viewMode == .list { clubList(filtered) } else { clubGrid(filtered) } }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    Divider()
+                    addRemoveRow
                 }
-            }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+                // This pane's own root view must carry maxHeight: .infinity, or NSSplitView sizes the pane
+                // to the VStack's ideal height and the list renders at zero height instead of filling it.
+                .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
+                .background(shortcutButtons)
+                Group {
+                    if let id = selected, let club = model.library.clubs.first(where: { $0.id == id }) {
+                        ClubEditor(club: club).id(id)
+                    } else {
+                        ContentUnavailableView("Choose a club", systemImage: "shield")
+                    }
+                }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         // Greedy frame on purpose: an HSplitView inside a VStack otherwise sizes to its content and the list collapses.
         .frame(maxWidth: .infinity, maxHeight: .infinity)

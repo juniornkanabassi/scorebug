@@ -24,6 +24,12 @@ struct GoalPrompt: View {
         _penalty = State(initialValue: goal.penalty)
     }
 
+    /// The goal's current scorer's row, so the popover opens with it highlighted instead of always row 0.
+    private func initialHighlight() -> Int {
+        guard let scorer = goal.scorer else { return 0 }
+        return flatResults.firstIndex { $0.name == scorer } ?? 0
+    }
+
     /// Read live rather than passed in: this view only exists while its popover is open, so the cost of a
     /// section elsewhere in `SlotView` skipping its own diff (the whole point of the Equatable sections in
     /// `SlotView.swift`) never applies here.
@@ -54,6 +60,7 @@ struct GoalPrompt: View {
                         }
                     }
                 }.frame(maxHeight: 220)
+                    .onAppear { proxy.scrollTo(highlighted, anchor: .center) }
                     .onChange(of: highlighted) { _, new in proxy.scrollTo(new, anchor: .center) }
             }
             Divider()
@@ -64,7 +71,7 @@ struct GoalPrompt: View {
             .scaledFont(.body).toggleStyle(.checkbox).padding(8)
         }
         .frame(width: 260)
-        .onAppear { searchFocused = true }
+        .onAppear { searchFocused = true; highlighted = initialHighlight() }
         .onChange(of: query) { _, _ in highlighted = 0 }
         .keyNavigation(count: flatResults.count, highlighted: $highlighted, onPick: submitQuery, onClose: onPick)
     }
@@ -76,14 +83,19 @@ struct GoalPrompt: View {
                 .padding(.horizontal, 8).padding(.top, 6).padding(.bottom, 2)
             ForEach(Array(names.enumerated()), id: \.element) { i, name in
                 let index = startIndex + i
-                Button(name) { pick(name, ownGoal: og) }
-                    .scaledFont(.body)
-                    .buttonStyle(.plain)
-                    .padding(.vertical, 4).padding(.horizontal, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .background(index == highlighted ? Color.accentColor.opacity(0.2) : .clear)
-                    .id(index)
+                // `Button(String)` ignores an outer `.scaledFont`, so the name is a Text inside the label
+                // closure instead.
+                Button {
+                    pick(name, ownGoal: og)
+                } label: {
+                    Text(name).scaledFont(.body)
+                        .padding(.vertical, 4).padding(.horizontal, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .background(index == highlighted ? Color.accentColor.opacity(0.2) : .clear)
+                .id(index)
             }
         }
     }
