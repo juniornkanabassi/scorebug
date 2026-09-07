@@ -39,6 +39,12 @@ struct OverlayWebView: NSViewRepresentable {
     /// Every SwiftUI body evaluation calls this, most with nothing actually different, so each of the three
     /// AppKit side effects (frame, magnification, scroll position) is gated on its own value having changed;
     /// touching the scroll view on every re-render was fighting the user's own drag-to-resize.
+    /// Without this the representable reports the scroll view's fitting size (the 1920 pt document), which
+    /// becomes the detail column's minimum width and pushes the sidebar off a 1180 pt window.
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSScrollView, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? size.width, height: proposal.height ?? size.height)
+    }
+
     func updateNSView(_ scroll: NSScrollView, context: Context) {
         guard let web = scroll.documentView as? WKWebView else { return }
         var changed = false

@@ -88,7 +88,7 @@ enum CrestImage {
 // Interface zoom (View > Bigger/Smaller/Actual Size) scales font point sizes, not layout: on macOS the system
 // text styles (.body, .caption, .title2 ...) have fixed point sizes and ignore Dynamic Type, and scaling the
 // whole window with scaleEffect breaks hit-testing on AppKit-backed views (VSplitView, HSplitView, a grouped
-// Form, List, WKWebView) — see the comment above `AppModel.zoomLevel`. `scaledFont` used to read the scale
+// Form, List, WKWebView), see the comment above `AppModel.zoomLevel`. `scaledFont` used to read the scale
 // from a custom `ViewModifier`'s own `@Environment`, which meant a distinct generic `ModifiedContent`
 // specialisation and a live environment lookup at every one of this codebase's 120-odd call sites, on every
 // view-graph update (this is what `sample` shows as `find1`/`EnvironmentValues.subscript.getter` and generic

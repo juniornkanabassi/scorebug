@@ -168,6 +168,9 @@ var pillKickM = MatchEngine.apply(.startPeriod(.secondHalf), to: kickM, now: at(
 check(pillKickM.phase == .secondHalf && pillKickM.shootout != nil, "a period pill press leaves the shootout in place while changing phase")
 pillKickM = MatchEngine.apply(.setKick(.home, index: 0, result: .missed), to: pillKickM, now: at(0))
 check(pillKickM.shootout?.tally(.home) == 1, "setKick still applies once a period pill press has left .shootout, since the kick cells must not go dead")
+let takenBeforePillKick = pillKickM.shootout?.taken(.home)
+pillKickM = MatchEngine.apply(.recordKick(.home, .scored), to: pillKickM, now: at(0))
+check(pillKickM.shootout?.taken(.home) == (takenBeforePillKick ?? 0) + 1, "recordKick still appends once a period pill press has left .shootout, since the Stream Deck Kick key must not go dead")
 
 var nextSideM = MatchEngine.apply(.startShootout(.home), to: live, now: at(0))
 nextSideM = MatchEngine.apply(.recordKick(nil, .scored), to: nextSideM, now: at(0))

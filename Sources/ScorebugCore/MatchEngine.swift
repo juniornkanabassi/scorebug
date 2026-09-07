@@ -37,7 +37,7 @@ public enum Command: Sendable, Equatable {
     case removeGoal(UUID)
     /// Manual clock correction, for when play was pressed late and the bug needs to line up with the broadcast.
     ///
-    /// `seconds` is the elapsed time **within the current period** — the same period-local quantity
+    /// `seconds` is the elapsed time **within the current period**, the same period-local quantity
     /// `Clock.accumulated` (plus any running delta) already tracks, counted from that period's own zero.
     /// `Clock.periodBaseSeconds` is left untouched, so the cumulative reading the overlay derives via
     /// `Clock.elapsed(at:)` is `periodBaseSeconds + seconds`: setting 47:00 (2820s) during the second half
@@ -46,7 +46,7 @@ public enum Command: Sendable, Equatable {
     /// outside a live period (no current period means no clock to set).
     case setClock(seconds: Int)
     /// Nudges the clock by `deltaSeconds` (negative to wind it back), using the same period-local accounting
-    /// as `setClock` — so the effect on the on-screen cumulative reading is identical regardless of period.
+    /// as `setClock`, so the effect on the on-screen cumulative reading is identical regardless of period.
     /// Clamps at 0 for the period (never carries a period's elapsed below its own start). A no-op outside a
     /// live period.
     case adjustClock(deltaSeconds: Int)
@@ -232,7 +232,9 @@ public enum MatchEngine {
             m.addedMinutes = nil
             m.shootout = Shootout(firstKicker: first)
         case .recordKick(let side, let result):
-            guard m.phase == .shootout, var s = m.shootout else { return m }
+            // No phase guard: a period pill press can leave the match in another phase with m.shootout still set,
+            // and this should still append then (setKick, removeKick and undoKick already had no phase guard).
+            guard var s = m.shootout else { return m }
             s.kicks.append(Kick(side: side ?? s.nextSide, result: result))
             m.shootout = s
         case .undoKick:
@@ -340,8 +342,8 @@ public enum MatchEngine {
         clock.periodStart = nil
     }
 
-    /// Sets the clock's period-local elapsed time — what `accumulated` plus any running delta represents,
-    /// i.e. `elapsed(at:) - periodBaseSeconds` — to `local` at `now`, preserving running vs paused. Used by
+    /// Sets the clock's period-local elapsed time, what `accumulated` plus any running delta represents,
+    /// i.e. `elapsed(at:) - periodBaseSeconds`, to `local` at `now`, preserving running vs paused. Used by
     /// `setClock` and `adjustClock`; `periodBaseSeconds` itself is never touched here.
     private static func setLocalElapsed(_ clock: inout Clock, to local: TimeInterval, now: Date) {
         clock.accumulated = local

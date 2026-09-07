@@ -209,7 +209,7 @@ body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-ori
 /* Portrait's ~1.95x scale otherwise reads under-padded next to the plate above it. */
 body[data-orientation="v"][data-theme="premier-league"] .shootout, body[data-orientation="v"][data-theme="premier-league"] .scorers { margin-top: 4.1px; padding-top: 6.5px; padding-bottom: 6.5px; }
 
-/* BUILD, 0.9s total (0.9.0, FXC): clock plate drops in first, then the two plates wipe outward from the
+/* BUILD, 0.9s total: clock plate drops in first, then the two plates wipe outward from the
    roundel, landing at 0.9s; springs (pl-build-clock, pl-build-pop, and the wipe's own mild overshoot
    .16,.9,.2,1.1) keep their curve, only the plain-ease fade swaps to the shared entrance curve. */
 body[data-theme="premier-league"] .bug.building-in .team.home, body[data-theme="premier-league"] .bug.building-in .score.home { transform-origin: right center; will-change: transform; }
@@ -228,7 +228,7 @@ body[data-theme="premier-league"] .bug.building-out .scorers, body[data-theme="p
 @keyframes pl-build-clock { from { transform: translateX(-50%) translateY(-100%); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
 @keyframes pl-build-wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes pl-build-pop { from { transform: translate(-50%,-50%) scale(0); opacity: 0; } to { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
-/* Take-off, 0.7s total (0.9.0, FXC): the bar wipes into the roundel first, then the clock plate rises
+/* Take-off, 0.7s total: the bar wipes into the roundel first, then the clock plate rises
    away, landing at 0.7s; none of these were springs, so curve swaps to the shared exit curve throughout. */
 body[data-theme="premier-league"] .bug.building-out .team.home, body[data-theme="premier-league"] .bug.building-out .score.home { transform-origin: right center; will-change: transform; }
 body[data-theme="premier-league"] .bug.building-out .team.away, body[data-theme="premier-league"] .bug.building-out .score.away { transform-origin: left center; will-change: transform; }

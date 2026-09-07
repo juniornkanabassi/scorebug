@@ -33,3 +33,12 @@ body[data-orientation="v"][data-theme="stealth"] .clock { padding: 0 8px; min-wi
 body[data-orientation="v"][data-theme="stealth"] .added { padding: 0 8px 0 0; gap: 6px; }
 /* Portrait only: 8px visual gap and a 12px vertical padding floor at 1.75x scale; landscape (the rule two blocks up) is untouched. */
 body[data-orientation="v"][data-theme="stealth"] .shootout, body[data-orientation="v"][data-theme="stealth"] .scorers { margin-top: 4.6px; padding-top: 7px; padding-bottom: 7px; }
+
+/* BUILD, 0.9s total: the bar wipes open left to right, then the PENS panel and scorer strap fade in. */
+body[data-theme="stealth"] .bug.building-in .main { animation: stealth-build-wipe 0.65s cubic-bezier(.22,.9,.3,1) both; will-change: clip-path; }
+body[data-theme="stealth"] .bug.building-in .shootout, body[data-theme="stealth"] .bug.building-in .scorers { animation: stealth-build-fade 0.25s cubic-bezier(.22,.9,.3,1) both; animation-delay: 0.65s; }
+@keyframes stealth-build-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes stealth-build-fade { from { opacity: 0; } to { opacity: 1; } }
+/* Take-off, 0.7s total: strap fades first, then the bar wipes closed. */
+body[data-theme="stealth"] .bug.building-out .shootout, body[data-theme="stealth"] .bug.building-out .scorers { animation: stealth-build-fade 0.2s cubic-bezier(.5,0,.3,1) reverse both; }
+body[data-theme="stealth"] .bug.building-out .main { animation: stealth-build-wipe 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; will-change: clip-path; }

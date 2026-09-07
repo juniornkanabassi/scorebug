@@ -51,7 +51,8 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
 
   // Build-in/build-out: themes animate their own children under .bug.building-in / .bug.building-out (see overlay.css).
   // null means "never seen a state yet" so the very first appearance still plays the build-in once, per the page starting hidden.
-  const BUILD_MS = 1000; // covers the wrapper's 900ms show transition and every theme's own choreography with a small buffer
+  const BUILD_IN_MS = 1000; // covers the wrapper's 900ms show transition and every theme's own choreography with a small buffer
+  const BUILD_OUT_MS = 750; // the wrapper's take-off finishes at 700ms, so .hidden lands soon after, not a full second later
   let visibleState = null, buildTimer = null;
   function setVisible(visible) {
     if (visibleState === visible) return;
@@ -63,7 +64,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       bug.classList.remove("hidden", "building-out");
       void bug.offsetWidth; // restart animations even if building-in was already mid-flight
       bug.classList.add("building-in");
-      buildTimer = setTimeout(() => { bug.classList.remove("building-in"); buildTimer = null; }, BUILD_MS);
+      buildTimer = setTimeout(() => { bug.classList.remove("building-in"); buildTimer = null; }, BUILD_IN_MS);
     } else if (isFirstEver) {
       bug.classList.add("hidden"); // never shown yet: nothing to take apart, just stay off
     } else {
@@ -72,7 +73,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       // reassembled bar back in.
       bug.classList.remove("building-in");
       bug.classList.add("building-out");
-      buildTimer = setTimeout(() => { bug.classList.add("hidden"); buildTimer = null; }, BUILD_MS);
+      buildTimer = setTimeout(() => { bug.classList.add("hidden"); buildTimer = null; }, BUILD_OUT_MS);
     }
   }
 
@@ -200,7 +201,6 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
   }
   function renderKicks(node, s, side) {
     const kicks = s.kicks.filter((k) => k.side === side), slots = Math.max(5, kicks.length);
-   
     node.innerHTML = "";
     for (let i = 0; i < slots; i++) { const d = document.createElement("span"); d.className = "kick " + (kicks[i] ? kicks[i].result : "pending"); d.dataset.index = i + 1; node.appendChild(d); }
   }

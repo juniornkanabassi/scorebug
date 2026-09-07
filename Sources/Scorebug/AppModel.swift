@@ -277,7 +277,7 @@ final class AppModel: ObservableObject {
     /// why nothing responded when zoomed. It also no longer maps to `DynamicTypeSize`, because on macOS the system
     /// text styles have fixed point sizes and ignore Dynamic Type, so that mapping changed nothing on screen either.
     @Published var zoomLevel: Int = {
-        let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 1
+        let stored = UserDefaults.standard.object(forKey: "zoomLevel") as? Int ?? 0
         return min(3, max(-2, stored))
     }() {
         didSet {
@@ -285,8 +285,10 @@ final class AppModel: ObservableObject {
             ScaledFonts.scale = zoomScale
         }
     }
-    /// Level 0 is 1.0, the system default point size. The clamp of -2...3 reaches from 0.85x up to 1.5x.
-    private static let zoomScales: [CGFloat] = [0.85, 0.92, 1.0, 1.15, 1.3, 1.5]
+    /// Level 0 is 1.15x, one step bigger than the system default point size (now level -1, at 1.0x), so the
+    /// interface opens a step bigger while "Actual Size" (Command-0) still resets to level 0. The clamp of
+    /// -2...3 reaches from 0.92x up to 1.7x.
+    private static let zoomScales: [CGFloat] = [0.92, 1.0, 1.15, 1.3, 1.5, 1.7]
     var zoomScale: CGFloat {
         let index = zoomLevel + 2
         return AppModel.zoomScales[min(max(index, 0), AppModel.zoomScales.count - 1)]

@@ -40,7 +40,7 @@ body[data-orientation="v"][data-theme="ligue1"] .shootout, body[data-orientation
 /* Official mark, when imported, shown white on the blue square. */
 body[data-theme="ligue1"] .bug.has-comp-logo .comp .mark { width: calc(var(--h) * 1.05); height: calc(var(--h) * 1.05); filter: brightness(0) invert(1); }
 
-/* BUILD, 0.9s total (0.9.0, FXC): the blue square scales in, the club rows wipe right, the white clock
+/* BUILD, 0.9s total: the blue square scales in, the club rows wipe right, the white clock
    plate drops in last, landing at 0.9s; springs (l1-build-comp, l1-build-drop) keep their overshoot
    curve, the wipe's ease-out swaps to the shared entrance curve. */
 body[data-theme="ligue1"] .bug.building-in .comp { animation: l1-build-comp 0.42s cubic-bezier(.34,1.56,.64,1) both; will-change: transform, opacity; }
@@ -51,10 +51,15 @@ body[data-theme="ligue1"] .bug.building-in .clock, body[data-theme="ligue1"] .bu
 @keyframes l1-build-comp { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes l1-build-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes l1-build-drop { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-/* Take-off, 0.7s total (0.9.0, FXC): clock retracts first, rows wipe closed, square shrinks last,
+/* Take-off, 0.7s total: clock retracts first, rows wipe closed, square shrinks last,
    landing at 0.7s; curve swaps to the shared exit curve throughout (none of these were springs). */
 body[data-theme="ligue1"] .bug.building-out .clock, body[data-theme="ligue1"] .bug.building-out .added {
   animation: l1-build-drop 0.28s cubic-bezier(.5,0,.3,1) reverse both; will-change: transform, opacity; }
 body[data-theme="ligue1"] .bug.building-out .team, body[data-theme="ligue1"] .bug.building-out .score {
   animation: l1-build-wipe 0.327s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.187s; will-change: clip-path; }
 body[data-theme="ligue1"] .bug.building-out .comp { animation: l1-build-comp 0.28s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.42s; will-change: transform, opacity; }
+/* PENS panel and scorer strap sit outside the wipe/drop pieces above, so without their own fade they were
+   left on screen opaque through a take-off then snapped away with .hidden. */
+body[data-theme="ligue1"] .bug.building-in .shootout, body[data-theme="ligue1"] .bug.building-in .scorers { animation: l1-build-fade 0.36s cubic-bezier(.22,.9,.3,1) both; }
+body[data-theme="ligue1"] .bug.building-out .shootout, body[data-theme="ligue1"] .bug.building-out .scorers { opacity: 0; transition: opacity 280ms cubic-bezier(.5,0,.3,1); }
+@keyframes l1-build-fade { from { opacity: 0; } to { opacity: 1; } }

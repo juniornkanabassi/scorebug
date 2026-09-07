@@ -31,7 +31,7 @@ body[data-theme="la-liga"] .added .counter { color: #bbb; font-size: calc(var(--
 body[data-theme="la-liga"] .added .counter:empty { display: none; }
 /* Goal: red plate slides out from the block to the right with the crest and GOOOOL!, then retracts.
    Text starts at 2.05h: the crest sits at 0.35h and is sized auto 72% of the 2h-tall plate (1.44h tall), so a
-   square-ish badge can run up to ~1.7h wide before it would touch the "G" — 2.05h clears every crest shape in the
+   square-ish badge can run up to ~1.7h wide before it would touch the "G", 2.05h clears every crest shape in the
    library (round badges like Real Madrid's and taller shields like Barcelona's alike) instead of the 1.6h the
    plate shipped with, which let wide shields crowd or overlap the first letter. */
 body[data-theme="la-liga"] .main::after { content: "GOOOOL!"; left: 100%; right: auto; top: 0; height: calc(var(--h) * 2); width: calc(var(--h) * 6.2); display: flex; align-items: center; justify-content: flex-start; padding-left: calc(var(--h) * 2.05); box-sizing: border-box;
@@ -39,7 +39,7 @@ body[data-theme="la-liga"] .main::after { content: "GOOOOL!"; left: 100%; right:
   clip-path: inset(0 100% 0 0); }
 /* will-change hints the browser to promote the plate to its own compositor layer before the clip-path wipe starts.
    Without it, the "GOOOOL!" glyphs sat inside the same filtered (.bug's drop-shadow) subtree being repainted every
-   animation frame, and the text was re-rasterised from scratch each time instead of being cached — the letterforms
+   animation frame, and the text was re-rasterised from scratch each time instead of being cached, the letterforms
    visibly shimmered/wobbled for the full 3.2s at the 1.5-2x scale this bug renders at. Promoting the layer once
    fixes it: the clip mask then moves on the compositor without touching the text raster underneath. */
 body[data-theme="la-liga"] .bug.goal .main::after { opacity: 1; animation: ll-plate 3.2s cubic-bezier(.3,.8,.2,1) forwards; will-change: clip-path; transform: translateZ(0); }
@@ -75,7 +75,7 @@ body[data-theme="la-liga"] .bug.has-comp-logo .comp .mark { width: calc(var(--h)
    reveals as a flat wipe of its own final colour rather than fading up, matching how the Rive cards resolve
    (a cell appears as a solid plate an instant before its text/crest content does) and echoing this theme's own
    goal-plate wipe (ll-plate above) instead of inventing a second motion language. */
-/* 0.9s total (0.9.0, FXC): none of these curves ever exceed y=1 (no overshoot), so all four swap to the
+/* 0.9s total: none of these curves ever exceed y=1 (no overshoot), so all four swap to the
    shared entrance curve; durations and delays scale uniformly so the score cells still land last, at 0.9s. */
 body[data-theme="la-liga"] .bug.building-in .comp { animation: ll-build-mark 0.284s cubic-bezier(.22,.9,.3,1) both; will-change: transform, opacity; }
 body[data-theme="la-liga"] .bug.building-in .clock { animation: ll-build-wipe 0.332s cubic-bezier(.22,.9,.3,1) both; animation-delay: 0.166s; will-change: clip-path; }
@@ -88,8 +88,8 @@ body[data-theme="la-liga"] .bug.building-in .score.home, body[data-theme="la-lig
 @keyframes ll-build-mark { 0% { transform: scale(1.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes ll-build-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 /* Take-off: the Rive demo has no exit (the scoreboard is built once and left up), so this mirrors the entrance in
-   reverse — score cells first, mark last — the same convention the rest of the app's themes use for building-out. */
-/* 0.7s total (0.9.0, FXC): curve swaps to the shared exit curve, durations and delays scale uniformly
+   reverse, score cells first, mark last, the same convention the rest of the app's themes use for building-out. */
+/* 0.7s total: curve swaps to the shared exit curve, durations and delays scale uniformly
    so the mark still shrinks last, at 0.7s. */
 body[data-theme="la-liga"] .bug.building-out .score.home, body[data-theme="la-liga"] .bug.building-out .score.away {
   animation: ll-build-wipe 0.248s cubic-bezier(.5,0,.3,1) reverse both; will-change: clip-path; }
@@ -97,3 +97,8 @@ body[data-theme="la-liga"] .bug.building-out .team.away { animation: ll-build-wi
 body[data-theme="la-liga"] .bug.building-out .clock { animation: ll-build-wipe 0.271s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.226s; will-change: clip-path; }
 body[data-theme="la-liga"] .bug.building-out .team.home { animation: ll-build-wipe 0.271s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.339s; will-change: clip-path; }
 body[data-theme="la-liga"] .bug.building-out .comp { animation: ll-build-mark 0.248s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.452s; will-change: transform, opacity; }
+/* PENS panel and scorer strap sit outside the wipe/mark pieces above, so without their own fade they were
+   left on screen opaque through a take-off then snapped away with .hidden. */
+body[data-theme="la-liga"] .bug.building-in .shootout, body[data-theme="la-liga"] .bug.building-in .scorers { animation: ll-build-fade 0.36s cubic-bezier(.22,.9,.3,1) both; }
+body[data-theme="la-liga"] .bug.building-out .shootout, body[data-theme="la-liga"] .bug.building-out .scorers { opacity: 0; transition: opacity 280ms cubic-bezier(.5,0,.3,1); }
+@keyframes ll-build-fade { from { opacity: 0; } to { opacity: 1; } }
