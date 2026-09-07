@@ -1,12 +1,13 @@
 // goal action: short press scores, long press undoes the last goal for that side. Settings: slot, side.
 import { action } from "@elgato/streamdeck";
-import type { KeyDownEvent, KeyUpEvent, KeyAction } from "@elgato/streamdeck";
+import type { KeyDownEvent, KeyUpEvent, KeyAction, WillDisappearEvent } from "@elgato/streamdeck";
 import { LONG_PRESS_MS, StatefulAction, iconPath, server, sideOf, slotOf } from "../lib/scorebug.js";
 import type { BaseSettings } from "../lib/scorebug.js";
 
 @action({ UUID: "com.juniornkanabassi.scorebug.goal" })
 export class Goal extends StatefulAction {
 	#pressedAt = new Map<string, number>();
+	override onWillDisappear(ev: WillDisappearEvent<BaseSettings>): void { this.#pressedAt.delete(ev.action.id); super.onWillDisappear(ev); }
 
 	override onKeyDown(ev: KeyDownEvent<BaseSettings>): void {
 		this.#pressedAt.set(ev.action.id, Date.now());

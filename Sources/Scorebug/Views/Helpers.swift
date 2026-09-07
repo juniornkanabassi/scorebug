@@ -41,7 +41,8 @@ enum CrestImage {
         if !haveThumb, pendingRenditions.insert(file).inserted {
             Task.detached(priority: .utility) {
                 _ = Store.writeThumbnail(source: fullFile, dest: thumbFile)
-                _ = await MainActor.run { pendingRenditions.remove(file) }
+                // invalidate(file:) removes the pending mark; a write that lands after it is stale and is discarded.
+                await MainActor.run { if pendingRenditions.remove(file) == nil { try? FileManager.default.removeItem(at: thumbFile) } }
             }
         }
         return img
@@ -77,6 +78,7 @@ enum CrestImage {
     /// Drops this file's cached sizes and its persisted rendition, so a re-imported crest is decoded afresh.
     static func invalidate(file: String) {
         for key in keysByFile.removeValue(forKey: file) ?? [] { cache.removeObject(forKey: key as NSString) }
+        pendingRenditions.remove(file)
         if let dir = directory { try? FileManager.default.removeItem(at: dir.appendingPathComponent(".thumbs").appendingPathComponent(file)) }
     }
 }

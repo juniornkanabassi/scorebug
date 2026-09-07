@@ -26,8 +26,8 @@ body[data-family="uefa"] .comp::after {
   opacity: 0; pointer-events: none; z-index: 2;
 }
 /* Same 1.2s duration as theme.css's uefa-goal-band/-word, so the motif's own timeline lines up with them. */
-body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.2s linear forwards; }
-body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.2s linear forwards; }
+body[data-family="uefa"] .bug.goal-home .comp::after { background-image: var(--motif-home, none); animation: ucl-motif-in 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
+body[data-family="uefa"] .bug.goal-away .comp::after { background-image: var(--motif-away, none); animation: ucl-motif-in 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
 /* Reveal at 32% (384ms), just after the GOAL word's own reveal cue (30%/360ms in theme.css): the
    reference order is band wipe, then GOAL, then the motif riding on top of it. */
 @keyframes ucl-motif-in {

@@ -148,9 +148,9 @@ body[data-family="uefa"] .main::after { content: "GOAL"; display: flex; align-it
   color: #fff; font-style: italic; font-weight: 700; font-family: "UEFA Champions", "Barlow Condensed", Arial, sans-serif; letter-spacing: 0;
   font-size: calc(var(--h) * 1.3); transform-origin: right center;
   filter: drop-shadow(0 0 2px rgba(0,0,0,0.55)) drop-shadow(0 0 4px rgba(0,0,0,0.35)); }
-body[data-family="uefa"] .bug.goal .main::before { opacity: 1; animation: uefa-goal-band 1.2s linear forwards; }
-body[data-family="uefa"] .bug.goal .main::after { opacity: 0; animation: uefa-goal-word 1.2s linear forwards; }
-body[data-family="uefa"] .bug.goal .team .code, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.2s linear forwards; }
+body[data-family="uefa"] .bug.goal .main::before { opacity: 1; animation: uefa-goal-band 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
+body[data-family="uefa"] .bug.goal .main::after { opacity: 0; animation: uefa-goal-word 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
+body[data-family="uefa"] .bug.goal .team .code, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
 @keyframes uefa-goal-band {
   0%   { clip-path: inset(0 100% 0 0); }
   20%  { clip-path: inset(0 0 0 0); }
@@ -268,51 +268,45 @@ body[data-orientation="v"][data-family="uefa"] .bug.has-shootout .scorers { flex
    between them); .entry as a column flex splits them into the two rows below, and that whitespace
    text node generates no anonymous flex item (Flexbox's rule for a run that would collapse in block
    layout) so no empty third row appears. */
-body[data-family="uefa"] .scorers { margin-top: 5px; gap: calc(var(--h) * 0.16); padding: 0; background: none; }
-/* align-items:flex-start, not the flex default (stretch): stretch would size every card to the
-   list's own shrink-to-fit width, and that width is computed from the cards' UNclamped content --
-   circular, and it is why a very long name otherwise blew straight through .entry's own 11H
-   max-width instead of clipping. flex-start (flex-end for away) lets each card size and clamp
-   itself independently, the same as any other block box, before the list wraps around them. */
-body[data-family="uefa"] .scorers .list { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--h) * 0.14); }
-body[data-family="uefa"] .scorers .list.away { align-items: flex-end; }
-body[data-family="uefa"] .scorers .entry {
-  position: relative; display: flex; flex-direction: column;
-  min-width: calc(var(--h) * 6); max-width: calc(var(--h) * 11);
+/* align-items:flex-start: the default stretch would force the shorter side's card to the taller
+   side's own height (its flex-wrap:row row2 can end up several lines longer than the other side's),
+   which -- now that the card carries its own navy background -- painted as an ugly empty navy block
+   under a short list instead of a card that ends where its own content ends. */
+body[data-family="uefa"] .scorers { margin-top: 5px; gap: calc(var(--h) * 0.16); padding: 0; background: none; align-items: flex-start; }
+/* Compacted (G3c): one two-row card per side instead of one card per scorer -- five scorers used to
+   stack to 4x the bug height. Row 1 (crest + club code, #0D0AA5) is generated content on .list itself,
+   since shell.html has no per-side header node; row 2 (#1E225A) is the real .entry list -- unchanged
+   name/mins spans, rule 13 -- flowed as a flex-wrap run of "Name mins" pairs instead of stacked cards,
+   wrapping to a further row2 line only once the card's own 6.7H width runs out. */
+body[data-family="uefa"] .scorers .list {
+  width: calc(var(--h) * 6.7); box-sizing: border-box;
+  display: flex; flex-flow: row wrap; align-content: flex-start;
+  gap: calc(var(--h) * 0.08) calc(var(--h) * 0.3);
+  padding: calc(var(--h) * 0.1);
+  background: #1E225A;
   box-shadow: 0 1px 3px rgba(0,0,0,0.35);
 }
-/* Crest badge: row 1's left gutter, ~0.9H square, vertically centred in the 1.23H name row. Home and
-   away entries read their own club's crest off the bug's shared custom properties (rule 11). */
-body[data-family="uefa"] .scorers .list.home .entry::before { background-image: var(--home-crest, none); }
-body[data-family="uefa"] .scorers .list.away .entry::before { background-image: var(--away-crest, none); }
-body[data-family="uefa"] .scorers .entry::before {
-  content: ""; position: absolute; left: calc(var(--h) * 0.12); top: calc(var(--h) * 0.165);
-  width: calc(var(--h) * 0.9); height: calc(var(--h) * 0.9);
-  background-size: contain; background-repeat: no-repeat; background-position: center;
+/* Row 1 header: crest as a background-image, club code as `content` (rule 5 -- codes follow the
+   competition, never hard-coded). Negative-margin bleed to the card's true edges, the simplest way to
+   keep row 1 edge-to-edge while row 2's entries still sit inset from .list's own padding. */
+body[data-family="uefa"] .scorers .list::before {
+  content: var(--home-code); flex: 0 0 calc(100% + var(--h) * 0.2);
+  margin: calc(var(--h) * -0.1) calc(var(--h) * -0.1) 0; width: calc(100% + var(--h) * 0.2);
+  box-sizing: border-box; display: flex; align-items: center;
+  height: calc(var(--h) * 1.0); background: #0D0AA5;
+  background-image: var(--home-crest, none); background-repeat: no-repeat;
+  background-position: calc(var(--h) * 0.14) center; background-size: calc(var(--h) * 0.75) calc(var(--h) * 0.75);
+  padding-left: calc(var(--h) * 1.05);
+  color: #fff; font-weight: 800; font-size: calc(var(--h) * 0.5); text-transform: uppercase; letter-spacing: 0.04em;
 }
-/* Both rows share the crest's gutter width as their left padding, so "GOAL 12'" lines up under the
-   name above it exactly as the reference card does. nowrap + ellipsis: a long name or a long run of
-   minutes never wraps to a second line inside its own row, it clips at the card's own 11H max-width. */
-/* Block, not flex: .mins holds a "GOAL " ::before immediately followed by the minutes text node with
-   no element between them, and flexbox would wrap that pseudo and that text node into two separate
-   anonymous flex items -- each its own atomic box, so the trailing space baked into the pseudo's own
-   content sits at that box's trailing edge and gets trimmed as line-end whitespace, printing
-   "GOAL1'" with the space silently eaten. Plain block flow keeps them in one inline run instead, so
-   the space survives; line-height (not align-items) centres the single line vertically. */
-body[data-family="uefa"] .scorers .name, body[data-family="uefa"] .scorers .mins {
-  display: block; box-sizing: border-box;
-  padding-left: calc(var(--h) * 1.16); padding-right: calc(var(--h) * 0.28);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff;
-}
-body[data-family="uefa"] .scorers .name {
-  height: calc(var(--h) * 1.23); line-height: calc(var(--h) * 1.23); background: #0D0AA5;
-  font-weight: 800; font-size: calc(var(--h) * 0.46); text-transform: uppercase; letter-spacing: 0.02em;
-}
-body[data-family="uefa"] .scorers .mins {
-  height: calc(var(--h) * 1.06); line-height: calc(var(--h) * 1.06); background: #1E225A;
-  font-weight: 700; font-size: calc(var(--h) * 0.38); letter-spacing: 0.03em;
-}
-body[data-family="uefa"] .scorers .mins::before { content: "GOAL "; font-weight: 800; }
+body[data-family="uefa"] .scorers .list.away::before { content: var(--away-code); background-image: var(--away-crest, none); }
+/* Row 2: each scorer's own entry as one flex item, white-space:nowrap so a wrap only ever falls
+   between entries, never inside one scorer's own "Name mins". A thin dot marks every entry after the
+   first (theme.css owns the separator; the name/mins spans themselves are unchanged, rule 13). */
+body[data-family="uefa"] .scorers .entry { white-space: nowrap; }
+body[data-family="uefa"] .scorers .entry:not(:first-child)::before { content: "\2022"; display: inline-block; margin: 0 calc(var(--h) * 0.16); color: #fff; opacity: 0.5; }
+body[data-family="uefa"] .scorers .name { font-weight: 800; font-size: calc(var(--h) * 0.42); color: #fff; }
+body[data-family="uefa"] .scorers .mins { font-weight: 500; font-size: calc(var(--h) * 0.42); color: rgba(255,255,255,0.85); }
 body[data-family="uefa"] .bug.show-scorers .scorers { animation: uefa-scorers-in 420ms cubic-bezier(.2,.8,.2,1) both; }
 @keyframes uefa-scorers-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
@@ -352,10 +346,14 @@ body[data-orientation="v"][data-family="uefa"] .scorers { margin-top: 4.6px; pad
 @keyframes uefa-build-glow { 0% { opacity: 0; transform: translateX(0); } 12%, 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(calc(var(--h) * 11.4)); } }
 @keyframes uefa-agg-in { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
 body[data-family="uefa"] .bug.building-in .main { animation: uefa-row-wipe 0.5s cubic-bezier(.16,.9,.2,1) both; }
+/* Shootout panel replaces .main's own row content during a shootout (rule above); it needs the same
+   wipe so it doesn't sit fully opaque through the whole take-off/take-on while everything around it animates. */
+body[data-family="uefa"] .bug.building-in .shootout { animation: uefa-row-wipe 0.5s cubic-bezier(.16,.9,.2,1) both; }
 body[data-family="uefa"] .bug.building-in .main::after { content: ""; left: 0; right: auto; width: calc(var(--h) * 0.16); background: #fff; background-image: none;
   filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.5s cubic-bezier(.16,.9,.2,1) both; }
 body[data-family="uefa"] .bug.building-in .agg { animation: uefa-agg-in 0.2s cubic-bezier(.2,.8,.2,1) both; animation-delay: 0.5s; }
 body[data-family="uefa"] .bug.building-out .agg { animation: uefa-agg-in 0.15s ease-in reverse both; }
 body[data-family="uefa"] .bug.building-out .main { animation: uefa-row-wipe 0.35s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.15s; }
+body[data-family="uefa"] .bug.building-out .shootout { animation: uefa-row-wipe 0.35s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.15s; }
 body[data-family="uefa"] .bug.building-out .main::after { content: ""; left: 0; right: auto; width: calc(var(--h) * 0.16); background: #fff; background-image: none;
   filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.35s cubic-bezier(.4,0,.2,1) reverse both; animation-delay: 0.15s; }

@@ -26,10 +26,10 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
     scorersHome: q(".scorers .list.home"), scorersAway: q(".scorers .list.away"),
     themeCss: document.getElementById("theme-css"),
   };
-  el.shootoutLabel.textContent = "PENS";
+  if (el.shootoutLabel) el.shootoutLabel.textContent = "PENS"; // absent in a user-overridden 0.7.0 shell
 
   let state = null, match = null, theme = null, themeId = null;
-  let renderedRevision = -1, lastGoalKey = null, skewMs = 0;
+  let renderedRevision = -1, lastGoalKey = null, skewMs = 0, aggTimer = null;
 
   // Preview backdrop: only the app's own preview panes load with ?preview=1, so OBS's browser source (no
   // query) never creates #backdrop and its canvas stays exactly as before.
@@ -171,7 +171,8 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       // The real feed updates the chip about 300 ms after the score; the first render and a swap write at once.
       const aggHome = String(m.homeScore + m.aggregate.firstLegHome), aggAway = String(m.awayScore + m.aggregate.firstLegAway);
       const write = () => { el.aggHome.textContent = aggHome; el.aggAway.textContent = aggAway; };
-      if (renderedRevision !== -1 && m.lastGoal && (el.aggHome.textContent !== aggHome || el.aggAway.textContent !== aggAway)) setTimeout(write, 300); else write();
+      clearTimeout(aggTimer);
+      if (renderedRevision !== -1 && m.lastGoal && (el.aggHome.textContent !== aggHome || el.aggAway.textContent !== aggAway)) aggTimer = setTimeout(write, 300); else write();
     }
     bug.dataset.phase = m.phase;
     const s = m.shootout;

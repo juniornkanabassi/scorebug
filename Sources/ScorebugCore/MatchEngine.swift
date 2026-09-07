@@ -260,11 +260,12 @@ public enum MatchEngine {
             m.showScorers.toggle()
         case .setGoalMinute(let id, let minute, let plus):
             guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
-            let extra = plus ?? 0
+            let minute = min(130, max(1, minute)), extra = min(30, max(0, plus ?? 0))
             m.goals[idx].minuteLabel = extra > 0 ? "\(minute)+\(extra)'" : "\(minute)'"
-            m.goals[idx].elapsedSeconds = max(0, (minute + extra - 1) * 60)
+            m.goals[idx].elapsedSeconds = (minute + extra - 1) * 60
+            m.goals.sort { $0.elapsedSeconds < $1.elapsedSeconds }
         case .removeGoal(let id):
-            guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
+            guard m.phase != .shootout, let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
             let goal = m.goals.remove(at: idx)
             setScore(&m, goal.side, max(0, m.score(goal.side) - 1))
             if m.lastGoal?.goalId == id { m.lastGoal = nil }

@@ -208,11 +208,11 @@ public final class Store: @unchecked Sendable {
         ]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, options as CFDictionary) else { return false }
         try? FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let tmp = dest.appendingPathExtension("tmp")
+        let tmp = dest.appendingPathExtension(UUID().uuidString)
         guard let dst = CGImageDestinationCreateWithURL(tmp as CFURL, UTType.png.identifier as CFString, 1, nil) else { return false }
         CGImageDestinationAddImage(dst, cg, nil)
-        guard CGImageDestinationFinalize(dst) else { return false }
-        return (try? FileManager.default.replaceItemAt(dest, withItemAt: tmp)) != nil
+        guard CGImageDestinationFinalize(dst), (try? FileManager.default.replaceItemAt(dest, withItemAt: tmp)) != nil else { try? FileManager.default.removeItem(at: tmp); return false }
+        return true
     }
 
     /// One background pass at launch: a rendition for every crest that has none yet (a library imported before

@@ -213,6 +213,7 @@ private struct AggregateField: View {
             .focused($focused)
             .onAppear { text = "\(value)" }
             .onChange(of: value) { _, new in if !focused { text = "\(new)" } }
+            .onChange(of: focused) { _, now in if !now { text = "\(value)" } }
             .onSubmit {
                 if let n = Int(text) { onChange(max(0, n)) } else { text = "\(value)" }
             }
@@ -243,8 +244,7 @@ struct PlusGoalButton: View, Equatable {
         } label: { Image(systemName: "plus").scaledFont(.title2, weight: .bold) }
             .buttonStyle(.borderedProminent).frame(width: 44, height: 44)
             .keyboardShortcut(side == .home ? "h" : "a", modifiers: [.command, .shift])
-            .help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
-            .disabled(phase == .shootout).help("Goal for \(team.shortName)")
+            .disabled(phase == .shootout).help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
             .lazyPopover(isPresented: plusPromptBinding) {
                 if let id = plusPromptGoalId, let g = model.match(slot).goals.first(where: { $0.id == id }) {
                     GoalPrompt(goal: g, slot: slot, onPick: { plusPromptGoalId = nil })
@@ -403,6 +403,7 @@ struct GoalMinuteField: View {
             .focused($focused)
             .onAppear { text = strip(goal.minuteLabel) }
             .onChange(of: goal.minuteLabel) { _, new in if !focused { text = strip(new) } }
+            .onChange(of: focused) { _, now in if !now { text = strip(goal.minuteLabel) } }
             .onSubmit(apply)
     }
 

@@ -1,5 +1,4 @@
-/* Preview-only backdrops behind the bug (?preview=1 in the app's own preview panes; OBS never loads this
-   file). Moved out of overlay.css (CH2) so preview design lives on its own. Base #backdrop rules kept
+/* Preview-only backdrops behind the bug (?preview=1 in the app's own preview panes; OBS fetches this stylesheet too but never gets a #backdrop element, so nothing here paints for it). Moved out of overlay.css (CH2) so preview design lives on its own. Base #backdrop rules kept
    verbatim: it sits behind #stage (z-index -1) and stays transparent until a preset or file backdrop is set.
    Presets are drawn entirely here as inline SVG data URIs, no image files, no fonts. */
 #backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: transparent; }
