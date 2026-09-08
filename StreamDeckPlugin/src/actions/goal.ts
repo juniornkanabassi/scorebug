@@ -1,4 +1,5 @@
-// goal action: short press scores, long press undoes the last goal for that side. Settings: slot, side.
+// goal action: short press applies settings.delta (+1 by default), long press applies the opposite, so a
+// page can carry a dedicated minus key beside a plus key. Settings: slot, side, delta.
 import { action } from "@elgato/streamdeck";
 import type { KeyDownEvent, KeyUpEvent, KeyAction, WillDisappearEvent } from "@elgato/streamdeck";
 import { LONG_PRESS_MS, StatefulAction, iconPath, server, sideOf, slotOf } from "../lib/scorebug.js";
@@ -19,14 +20,15 @@ export class Goal extends StatefulAction {
 		const longPress = Date.now() - start >= LONG_PRESS_MS;
 		const settings = ev.payload.settings;
 		const side = sideOf(settings);
-		await server.send(slotOf(settings), "goal", longPress ? { side, delta: -1 } : { side });
+		const delta = settings.delta === -1 ? -1 : 1;
+		await server.send(slotOf(settings), "goal", { side, delta: longPress ? -delta : delta });
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		const side = sideOf(settings);
 		const match = server.match(slot);
-		await a.setImage(iconPath("goal", side, slot));
+		await a.setImage(iconPath("goal", `${side}-${settings.delta === -1 ? "minus" : "plus"}`, slot));
 		await a.setTitle(match ? `${match[side === "home" ? "homeScore" : "awayScore"]}` : "OFFLINE");
 	}
 }

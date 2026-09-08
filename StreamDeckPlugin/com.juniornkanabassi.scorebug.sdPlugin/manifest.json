@@ -1,15 +1,25 @@
 {
   "Name": "Scorebug",
-  "Version": "0.9.0.0",
+  "Version": "0.10.0.0",
   "Author": "Junior Nkana Bassi",
   "Description": "Control the Scorebug live overlay from a Stream Deck.",
   "UUID": "com.juniornkanabassi.scorebug",
   "Icon": "imgs/plugin/marketplace",
   "CodePath": "bin/plugin.js",
-  "Nodejs": { "Version": "20", "Debug": "enabled" },
+  "Nodejs": {
+    "Version": "20",
+    "Debug": "enabled"
+  },
   "SDKVersion": 2,
-  "Software": { "MinimumVersion": "6.4" },
-  "OS": [ { "Platform": "mac", "MinimumVersion": "12" } ],
+  "Software": {
+    "MinimumVersion": "6.4"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "12"
+    }
+  ],
   "Category": "Scorebug",
   "CategoryIcon": "imgs/plugin/category-icon",
   "Actions": [
@@ -17,10 +27,17 @@
       "Name": "Goal",
       "UUID": "com.juniornkanabassi.scorebug.goal",
       "Icon": "imgs/actions/goal/icon",
-      "Tooltip": "Press to score for the chosen side. Hold to undo its last goal.",
-      "PropertyInspectorPath": "ui/slot-side.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/goal/home-1", "TitleAlignment": "middle" } ]
+      "Tooltip": "Press to add or remove a goal for the chosen side. Hold for the opposite.",
+      "PropertyInspectorPath": "ui/goal.html",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/goal/home-plus-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Play / Pause",
@@ -28,8 +45,15 @@
       "Icon": "imgs/actions/play-pause/icon",
       "Tooltip": "Mode toggle: start/pause the clock. Mode play or pause: a one-way key.",
       "PropertyInspectorPath": "ui/play-pause.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/play-pause/play-1", "TitleAlignment": "bottom" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/play-pause/play-1",
+          "TitleAlignment": "bottom"
+        }
+      ]
     },
     {
       "Name": "Clock Reset",
@@ -37,8 +61,15 @@
       "Icon": "imgs/actions/clock-reset/icon",
       "Tooltip": "Reset the match clock to 0:00.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/clock-reset/key-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/clock-reset/key-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Start Period",
@@ -46,8 +77,15 @@
       "Icon": "imgs/actions/start-period/icon",
       "Tooltip": "Start the configured period.",
       "PropertyInspectorPath": "ui/start-period.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/start-period/firstHalf-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/start-period/firstHalf-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "End Period",
@@ -55,8 +93,15 @@
       "Icon": "imgs/actions/end-period/icon",
       "Tooltip": "End the current period.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/end-period/key-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/end-period/key-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Added Time",
@@ -64,8 +109,15 @@
       "Icon": "imgs/actions/added-time/icon",
       "Tooltip": "Announce added time, or nudge it by a delta.",
       "PropertyInspectorPath": "ui/added-time.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/added-time/plus-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/added-time/plus-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Toggle Added Time",
@@ -73,8 +125,15 @@
       "Icon": "imgs/actions/toggle-added/icon",
       "Tooltip": "Show or hide the announced added time, remembering its value.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/toggle-added/off-1", "TitleAlignment": "bottom" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/toggle-added/off-1",
+          "TitleAlignment": "bottom"
+        }
+      ]
     },
     {
       "Name": "Toggle Bug",
@@ -82,8 +141,15 @@
       "Icon": "imgs/actions/toggle-bug/icon",
       "Tooltip": "Show or hide the score bug.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/toggle-bug/off-1", "TitleAlignment": "bottom" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/toggle-bug/off-1",
+          "TitleAlignment": "bottom"
+        }
+      ]
     },
     {
       "Name": "Toggle Scorers",
@@ -91,8 +157,15 @@
       "Icon": "imgs/actions/toggle-scorers/icon",
       "Tooltip": "Show or hide the scorer strap.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/toggle-scorers/off-1", "TitleAlignment": "bottom" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/toggle-scorers/off-1",
+          "TitleAlignment": "bottom"
+        }
+      ]
     },
     {
       "Name": "Start Shootout",
@@ -100,8 +173,15 @@
       "Icon": "imgs/actions/start-shootout/icon",
       "Tooltip": "Start the penalty shootout; the chosen side kicks first.",
       "PropertyInspectorPath": "ui/slot-side.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/start-shootout/home-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/start-shootout/home-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Kick",
@@ -109,8 +189,15 @@
       "Icon": "imgs/actions/kick/icon",
       "Tooltip": "Record a penalty kick for the chosen side.",
       "PropertyInspectorPath": "ui/kick.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/kick/home-scored-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/kick/home-scored-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Undo Kick",
@@ -118,8 +205,15 @@
       "Icon": "imgs/actions/undo-kick/icon",
       "Tooltip": "Undo the last penalty kick.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/undo-kick/key-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/undo-kick/key-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Swap Teams",
@@ -127,8 +221,15 @@
       "Icon": "imgs/actions/swap-teams/icon",
       "Tooltip": "Swap home and away.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/swap-teams/key-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/swap-teams/key-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Reset Match",
@@ -136,8 +237,15 @@
       "Icon": "imgs/actions/reset-match/icon",
       "Tooltip": "Hold for 1 second to reset the match. A short press does nothing.",
       "PropertyInspectorPath": "ui/slot.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/reset-match/key-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/reset-match/key-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     },
     {
       "Name": "Set Competition",
@@ -145,8 +253,15 @@
       "Icon": "imgs/actions/set-competition/icon",
       "Tooltip": "Switch the match to another competition.",
       "PropertyInspectorPath": "ui/set-competition.html",
-      "Controllers": ["Keypad"],
-      "States": [ { "Image": "imgs/actions/set-competition/default-1", "TitleAlignment": "middle" } ]
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/actions/set-competition/default-1",
+          "TitleAlignment": "middle"
+        }
+      ]
     }
   ]
 }
