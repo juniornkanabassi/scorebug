@@ -24,6 +24,6 @@ export class AddedTime extends StatefulAction {
 		const value = typeof settings.minutes === "number" ? settings.minutes : (typeof settings.delta === "number" ? settings.delta : 1);
 		const variant = value === 0 ? "off" : value < 0 ? "minus" : "plus";
 		await a.setImage(iconPath("added-time", variant, slot));
-		await a.setTitle(match ? `+${match.addedMinutes ?? 0}` : "OFFLINE");
+		await a.setTitle(match ? undefined : "OFFLINE");
 	}
 }

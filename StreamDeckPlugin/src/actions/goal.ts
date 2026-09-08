@@ -29,6 +29,6 @@ export class Goal extends StatefulAction {
 		const side = sideOf(settings);
 		const match = server.match(slot);
 		await a.setImage(iconPath("goal", `${side}-${settings.delta === -1 ? "minus" : "plus"}`, slot));
-		await a.setTitle(match ? `${match[side === "home" ? "homeScore" : "awayScore"]}` : "OFFLINE");
+		await a.setTitle(match ? undefined : "OFFLINE");
 	}
 }

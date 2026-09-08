@@ -23,6 +23,6 @@ export class Kick extends StatefulAction {
 			return;
 		}
 		const scored = match.shootout?.kicks.filter((k) => k.side === side && k.result === "scored").length ?? 0;
-		await a.setTitle(match.phase === "shootout" ? `${scored}` : undefined);
+		await a.setTitle(undefined);
 	}
 }

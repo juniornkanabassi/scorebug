@@ -15,6 +15,6 @@ export class StartShootout extends StatefulAction {
 		const slot = slotOf(settings);
 		const match = server.match(slot);
 		await a.setImage(iconPath("start-shootout", sideOf(settings), slot));
-		await a.setTitle(match ? (match.phase === "shootout" ? "LIVE" : undefined) : "OFFLINE");
+		await a.setTitle(match ? undefined : "OFFLINE");
 	}
 }

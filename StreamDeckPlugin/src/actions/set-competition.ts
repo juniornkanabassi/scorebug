@@ -34,6 +34,6 @@ export class SetCompetition extends StatefulAction {
 			return;
 		}
 		const known = server.competitions().find((c) => c.id === competitionId);
-		await a.setTitle(known?.shortName ?? competitionId ?? undefined);
+		await a.setTitle(undefined);
 	}
 }

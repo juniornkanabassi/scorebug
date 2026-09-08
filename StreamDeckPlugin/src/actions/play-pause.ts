@@ -1,9 +1,9 @@
-// play-pause action: mode "toggle" (default) plays/pauses and its icon follows clock.running; mode
+// play-pause action: settings.mode picks a one-way play, a one-way pause, or a toggle that follows the clock. Settings: slot, mode.
 // "play"/"pause" is a one-way key that always sends that command and shows a fixed icon.
 // Settings: slot, mode (play | pause | toggle, default toggle).
 import { action } from "@elgato/streamdeck";
 import type { KeyDownEvent, KeyAction } from "@elgato/streamdeck";
-import { StatefulAction, elapsedSeconds, formatClock, iconPath, server, slotOf } from "../lib/scorebug.js";
+import { StatefulAction, iconPath, server, slotOf } from "../lib/scorebug.js";
 import type { BaseSettings } from "../lib/scorebug.js";
 
 function modeOf(settings: BaseSettings): "play" | "pause" | "toggle" {
@@ -33,6 +33,6 @@ export class PlayPause extends StatefulAction {
 		const mode = modeOf(settings);
 		const variant = mode === "toggle" ? (match?.clock.running ? "pause" : "play") : mode;
 		await a.setImage(iconPath("play-pause", variant, slot));
-		await a.setTitle(match ? formatClock(elapsedSeconds(match.clock, Date.now())) : "OFFLINE");
+		await a.setTitle(match ? undefined : "OFFLINE");
 	}
 }
