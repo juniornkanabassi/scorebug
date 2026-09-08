@@ -1,5 +1,18 @@
 # Scripts
 
+`setup-match.mjs` puts a fixture on a running app from plain team names, so a stream can be set up
+from a chat message instead of the window:
+
+```sh
+node Scripts/setup-match.mjs --home "Real Madrid" --away Inter --competition ucl --first-leg 2-1
+node Scripts/setup-match.mjs --list "real"     # what the library holds, changes nothing
+```
+
+It fuzzy matches clubs against `/api/library` (competition membership breaks ties), sets the
+competition first so codes follow it, copies the club's colours, crest and squad into the slot,
+resets unless `--keep-score`, and prints the resulting slot. `--dry-run` prints without sending.
+The `stream-setup` skill in `.agents/skills/` is what tells an assistant when to reach for it.
+
 Node ESM harness for the overlay pages: `capture.mjs` screenshots a bug (steady, a demo freeze, or a series
 tiled into one sheet); `latency.mjs` measures command and paint latency. Both talk to a running Scorebug
 instance over HTTP; neither builds or launches the app.
