@@ -405,5 +405,29 @@ do {
     check((try? FixtureDecoder.espn(Data("[]".utf8))) == nil, "ESPN: a wrong shape throws rather than crashes")
 } catch { check(false, "ESPN decoder threw: \(error)") }
 
+
+// Stage 4 slice 3: fetch tries football-data first, then ESPN, with a stub loader (no network)
+do {
+    struct Down: Error {}
+    let espnSample = """
+    {"leagues":[{"abbreviation":"ENG.1","name":"Premier League"}],"events":[{"date":"2026-09-27T15:00Z","competitions":[{"competitors":[
+      {"homeAway":"home","team":{"displayName":"Arsenal","abbreviation":"ARS"}},{"homeAway":"away","team":{"displayName":"Chelsea","abbreviation":"CHE"}}]}]}]}
+    """
+    final class Calls: @unchecked Sendable { var hosts: [String] = []; var token: String? }
+    let calls = Calls()
+    let loader: FixtureService.Loader = { request in
+        calls.hosts.append(request.url!.host!)
+        if request.url!.host!.contains("football-data") { calls.token = request.value(forHTTPHeaderField: "X-Auth-Token"); throw Down() }
+        return Data(espnSample.utf8)
+    }
+    let semaphore = DispatchSemaphore(value: 0)
+    var result: [Fixture] = []
+    Task { result = (try? await FixtureService.fetch(date: at(0), apiKey: "k", loader: loader)) ?? []; semaphore.signal() }
+    semaphore.wait()
+    check(calls.hosts == ["api.football-data.org", "site.api.espn.com"], "fetch tries football-data then ESPN (got \(calls.hosts))")
+    check(calls.token == "k", "fetch sends the API key as X-Auth-Token")
+    check(result.count == 1 && result[0].home.code == "ARS", "fetch answers from ESPN when football-data fails")
+}
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)

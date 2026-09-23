@@ -62,3 +62,25 @@ extension FixtureDecoder {
         }
     }
 }
+
+public enum FixtureService {
+    public typealias Loader = @Sendable (URLRequest) async throws -> Data
+
+    public static let urlSessionLoader: Loader = { try await URLSession.shared.data(for: $0).0 }
+
+    /// Fixtures on one day: football-data.org first (needs the API key), ESPN as fallback. Throws only when both fail.
+    public static func fetch(date: Date, apiKey: String?, loader: Loader = urlSessionLoader) async throws -> [Fixture] {
+        var day = Calendar(identifier: .gregorian); day.timeZone = TimeZone(identifier: "UTC")!
+        let c = day.dateComponents([.year, .month, .day], from: date)
+        let iso = String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
+        var firstError: Error?
+        if let apiKey {
+            var request = URLRequest(url: URL(string: "https://api.football-data.org/v4/matches?date=\(iso)")!)
+            request.setValue(apiKey, forHTTPHeaderField: "X-Auth-Token")
+            do { return try FixtureDecoder.footballData(try await loader(request)) } catch { firstError = error }
+        }
+        let compact = iso.replacingOccurrences(of: "-", with: "")
+        let request = URLRequest(url: URL(string: "https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=\(compact)")!)
+        do { return try FixtureDecoder.espn(try await loader(request)) } catch { throw firstError ?? error }
+    }
+}
