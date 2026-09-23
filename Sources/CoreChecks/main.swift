@@ -387,5 +387,23 @@ do {
     check((try? FixtureDecoder.footballData(Data("{\"nope\":1}".utf8))) == nil, "a wrong shape throws rather than crashes")
 } catch { check(false, "fixture decoder threw: \(error)") }
 
+
+// Stage 4 slice 2: ESPN scoreboard decoder against a canned sample (no network)
+do {
+    let sample = """
+    {"leagues":[{"abbreviation":"UEFA.CHAMPIONS","name":"UEFA Champions League"}],
+     "events":[{"date":"2026-09-27T15:00Z","competitions":[{"competitors":[
+        {"homeAway":"away","team":{"displayName":"Internazionale","shortDisplayName":"Inter","abbreviation":"INT","logo":"https://a.espncdn.com/i/teamlogos/soccer/500/110.png"}},
+        {"homeAway":"home","team":{"displayName":"Real Madrid","abbreviation":"RMA"}}]}]},
+      {"date":"not a date","competitions":[{"competitors":[{"homeAway":"home","team":{"displayName":"X"}},{"homeAway":"away","team":{"displayName":"Y"}}]}]}]}
+    """
+    let fixtures = try FixtureDecoder.espn(Data(sample.utf8))
+    check(fixtures.count == 1, "ESPN: one fixture decoded, the undated event dropped")
+    check(fixtures[0].home.code == "RMA" && fixtures[0].away.shortName == "Inter", "ESPN: home and away picked by homeAway regardless of order")
+    check(fixtures[0].kickoff == ISO8601DateFormatter().date(from: "2026-09-27T15:00:00Z"), "ESPN: date without seconds decoded")
+    check(fixtures[0].competitionCode == "UEFA.CHAMPIONS" && fixtures[0].home.crestURL == nil && fixtures[0].away.crestURL != nil, "ESPN: league code and optional logos")
+    check((try? FixtureDecoder.espn(Data("[]".utf8))) == nil, "ESPN: a wrong shape throws rather than crashes")
+} catch { check(false, "ESPN decoder threw: \(error)") }
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)
