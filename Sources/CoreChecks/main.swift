@@ -368,5 +368,24 @@ if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
     check(missingCode.isEmpty, "every five-league club has a code for each of its competitions (missing: \(missingCode))")
 }
 
+
+// Stage 4 slice 1: football-data.org fixture decoder against a canned sample (no network)
+do {
+    let sample = """
+    {"matches":[{"utcDate":"2026-09-27T15:00:00Z","competition":{"code":"CL","name":"UEFA Champions League"},
+      "homeTeam":{"name":"Real Madrid CF","shortName":"Real Madrid","tla":"RMA","crest":"https://crests.football-data.org/86.png"},
+      "awayTeam":{"name":"FC Internazionale Milano","shortName":"Inter","tla":"INT","crest":"https://crests.football-data.org/108.png"}},
+     {"utcDate":"2026-09-28T19:00:00Z","competition":{"code":"PL","name":"Premier League"},
+      "homeTeam":{"name":"Coventry City FC"},"awayTeam":{"name":"Arsenal FC","shortName":"Arsenal","tla":"ARS","crest":null}}]}
+    """
+    let fixtures = try FixtureDecoder.footballData(Data(sample.utf8))
+    check(fixtures.count == 2, "decodes two fixtures from the canned sample")
+    check(fixtures[0].home.code == "RMA" && fixtures[0].away.shortName == "Inter", "codes and short names come from tla and shortName")
+    check(fixtures[0].competitionCode == "CL" && fixtures[0].kickoff == ISO8601DateFormatter().date(from: "2026-09-27T15:00:00Z"), "competition code and ISO 8601 kick-off decoded")
+    check(fixtures[0].home.crestURL?.absoluteString == "https://crests.football-data.org/86.png", "crest URL kept")
+    check(fixtures[1].home.shortName == "Coventry City FC" && fixtures[1].home.code == "COV" && fixtures[1].home.crestURL == nil, "missing shortName, tla and crest fall back")
+    check((try? FixtureDecoder.footballData(Data("{\"nope\":1}".utf8))) == nil, "a wrong shape throws rather than crashes")
+} catch { check(false, "fixture decoder threw: \(error)") }
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)
