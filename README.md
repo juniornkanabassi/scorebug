@@ -7,11 +7,11 @@ Build and check:
 ```sh
 swift build --scratch-path /private/tmp/scorebug-build
 swift run --scratch-path /private/tmp/scorebug-build CoreChecks
-zsh install.sh    # builds, ad hoc signs and installs at /Applications/Scorebug.app, then opens it
+zsh install.sh    # builds, ad hoc signs and installs at "/Applications/JuniorOS Apps/Scorebug.app", then opens it
 zsh build.sh      # writes ../Outputs/Scorebug <version>.zip, for handing the app to someone else
 ```
 
-`install.sh` is the everyday path: it replaces whatever is at `/Applications/Scorebug.app` and opens the fresh build, no zip step, no application data touched. `build.sh` writes `../Outputs/Scorebug <version>.zip` and refuses to overwrite; it does not install anything. Version in `Resources/Info.plist`, tagged `v<version>` here.
+`install.sh` is the everyday path: it replaces whatever is at `/Applications/JuniorOS Apps/Scorebug.app` and opens the fresh build, no zip step, no application data touched. `build.sh` writes `../Outputs/Scorebug <version>.zip` and refuses to overwrite; it does not install anything. Version in `Resources/Info.plist`, tagged `v<version>` here.
 
 Run without installing, on a disposable data folder:
 
