@@ -429,5 +429,38 @@ do {
     check(result.count == 1 && result[0].home.code == "ARS", "fetch answers from ESPN when football-data fails")
 }
 
+
+// Stage 4 slice 4: crest download cached by team slug, monogram when it fails (stub loader, no network)
+do {
+    struct Down: Error {}
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-crests-\(UUID().uuidString)")
+    final class Calls: @unchecked Sendable { var n = 0 }
+    let calls = Calls()
+    let loader: FixtureService.Loader = { request in
+        calls.n += 1
+        if request.url!.path.hasSuffix("down.png") { throw Down() }
+        return Data([0x89, 0x50, 0x4E, 0x47])
+    }
+    let inter = FixtureTeam(name: "FC Internazionale Milano", shortName: "Inter", code: "INT", crestURL: URL(string: "https://crests.football-data.org/108.png"))
+    let down = FixtureTeam(name: "Down FC", shortName: "Down", code: "DOW", crestURL: URL(string: "https://crests.football-data.org/down.png"))
+    let none = FixtureTeam(name: "No Crest", shortName: "No Crest", code: "NOC", crestURL: nil)
+    let semaphore = DispatchSemaphore(value: 0)
+    var results: [FixtureCrest] = []
+    Task {
+        results.append(await FixtureService.crest(for: inter, in: folder, loader: loader))
+        results.append(await FixtureService.crest(for: inter, in: folder, loader: loader))
+        results.append(await FixtureService.crest(for: down, in: folder, loader: loader))
+        results.append(await FixtureService.crest(for: none, in: folder, loader: loader))
+        semaphore.signal()
+    }
+    semaphore.wait()
+    let expected = folder.appendingPathComponent("fc-internazionale-milano.png")
+    check(results[0] == .file(expected) && FileManager.default.fileExists(atPath: expected.path), "crest downloaded to <slug>.png under the folder")
+    check(results[1] == .file(expected) && calls.n == 2, "second request served from the cache, loader called once for Inter and once for Down")
+    check(results[2] == .monogram("DO") && calls.n == 2, "failed download falls back to the monogram")
+    check(results[3] == .monogram("NO") && calls.n == 2, "no crest URL gives the monogram without a request")
+    try? FileManager.default.removeItem(at: folder)
+}
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)

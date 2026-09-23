@@ -7,6 +7,9 @@ public struct FixtureTeam: Equatable, Sendable {
     public var shortName: String
     public var code: String
     public var crestURL: URL?
+    public init(name: String, shortName: String, code: String, crestURL: URL? = nil) {
+        self.name = name; self.shortName = shortName; self.code = code; self.crestURL = crestURL
+    }
 }
 
 public struct Fixture: Equatable, Sendable {
@@ -82,5 +85,30 @@ public enum FixtureService {
         let compact = iso.replacingOccurrences(of: "-", with: "")
         let request = URLRequest(url: URL(string: "https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=\(compact)")!)
         do { return try FixtureDecoder.espn(try await loader(request)) } catch { throw firstError ?? error }
+    }
+}
+
+public enum FixtureCrest: Equatable, Sendable {
+    case file(URL)
+    /// Two letters on the club colour when there is no crest or the download failed.
+    case monogram(String)
+}
+
+extension FixtureService {
+    /// The crest for a fixture team, cached under `folder` as `<slug>.<ext>` so a repeat fetch never touches the network.
+    public static func crest(for team: FixtureTeam, in folder: URL, loader: Loader = urlSessionLoader) async -> FixtureCrest {
+        let monogram = FixtureCrest.monogram(String(team.shortName.filter(\.isLetter).prefix(2)).uppercased())
+        guard let url = team.crestURL else { return monogram }
+        let slug = team.name.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "-" }.reduce(into: "") { if !($0.last == "-" && $1 == "-") { $0.append($1) } }
+        let ext = url.pathExtension.isEmpty ? "png" : url.pathExtension
+        let file = folder.appendingPathComponent("\(slug).\(ext)")
+        if FileManager.default.fileExists(atPath: file.path) { return .file(file) }
+        do {
+            let data = try await loader(URLRequest(url: url))
+            guard !data.isEmpty else { return monogram }
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try data.write(to: file, options: .atomic)
+            return .file(file)
+        } catch { return monogram }
     }
 }
