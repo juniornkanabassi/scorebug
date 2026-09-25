@@ -285,7 +285,7 @@ if let bundled = OverlayResolver.locateBundledOverlays(explicit: nil) {
 
 // Seed file, theme override, crest matching
 if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
-    check(seed.clubs.count >= 165 && seed.competitions.count == 10, "seed-library.json loads with clubs, nations and competitions")
+    check(seed.clubs.count >= 165 && seed.competitions.count == 11, "seed-library.json loads with clubs, nations and competitions")
     check(seed.clubs.first { $0.shortName == "Marseille" }?.code(for: "champions-league") == "MAR", "seed keeps per-competition codes")
     let fiveLeagues = ["premier-league", "ligue1", "la-liga", "serie-a", "bundesliga"]
     let leagueCounts = [20, 18, 20, 20, 18]

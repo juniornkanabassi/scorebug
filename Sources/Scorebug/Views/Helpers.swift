@@ -153,6 +153,7 @@ enum CompetitionColours {
         case "champions-league": return Color(hex: "#0C1E96")
         case "europa-league": return Color(hex: "#F26A21")
         case "conference-league": return Color(hex: "#00A86B")
+        case "nations-league": return Color(hex: "#3D5566")
         case "ligue1": return Color(hex: "#0A5CFF")
         case "la-liga": return Color(hex: "#FF4B44")
         case "serie-a": return Color(hex: "#024494")

@@ -72,6 +72,7 @@ body[data-family="uefa"] .bug { --h: 53.33px;
   font-family: "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-weight: 600; letter-spacing: 0.04em; }
 body[data-theme="europa-league"] .bug { --uefa-sq: #F26A21; --uefa-plate-a: #3A1E05; --uefa-plate-b: #170B02; --uefa-bracket: #FF9A57; --uefa-navy: #4A2607; }
 body[data-theme="conference-league"] .bug { --uefa-sq: #00A86B; --uefa-plate-a: #04241A; --uefa-plate-b: #020F09; --uefa-bracket: #33C98C; --uefa-navy: #04241A; }
+body[data-theme="nations-league"] .bug { --uefa-sq: #0A1628; --uefa-plate-a: #1B2E4B; --uefa-plate-b: #0A1628; --uefa-bracket: #3AA0FF; --uefa-navy: #0A1628; --uefa-added-navy: #0A1628; --uefa-added-blue: #1B2E4B; --uefa-chip-digit: #0A1628; --kick-pending: #2A3F5F; }
 
 /* .agg joins the grid's own column list (not absolutely positioned) so .main's own overflow:hidden,
    which the shared bar background and goal cover rely on to crop at the bar's true right edge,
@@ -391,3 +392,7 @@ body[data-family="uefa"] .bug.building-out .main { animation: uefa-row-wipe 0.5s
 body[data-family="uefa"] .bug.building-out .shootout { animation: uefa-row-wipe 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; }
 body[data-family="uefa"] .bug.building-out .main::after { content: ""; left: 0; right: auto; width: calc(var(--h) * 0.16); background: #fff; background-image: none;
   filter: blur(3px); opacity: 0; animation: uefa-build-glow 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; }
+
+/* Nations League (0.11.0): scorer cards in the UNL navy instead of the Champions League blues. */
+body[data-theme="nations-league"] .scorers .list { background-color: #0A1628; }
+body[data-theme="nations-league"] .scorers .list::before { background-color: #1B2E4B; }

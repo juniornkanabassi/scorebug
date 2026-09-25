@@ -1,0 +1,21 @@
+{
+  "id": "nations-league",
+  "name": "Nations League",
+  "clockStyle": "freezeAndCount",
+  "verified": false,
+  "geometry": {
+    "h": {
+      "left": 40,
+      "top": 36,
+      "scale": 1.5
+    },
+    "v": {
+      "top": 260,
+      "maxWidth": 800,
+      "scale": 1.02,
+      "top2": 342
+    }
+  },
+  "family": "uefa",
+  "clockFormat": "m:ss"
+}

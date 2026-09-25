@@ -97,6 +97,15 @@
         "footballData": "WC",
         "espn": "fifa.world"
       }
+    },
+    {
+      "id": "nations-league",
+      "name": "Nations League",
+      "shortName": "UNL",
+      "themeId": "nations-league",
+      "sourceIds": {
+        "espn": "uefa.nations"
+      }
     }
   ],
   "clubs": [
@@ -972,7 +981,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Albania.png",
       "confederation": "UEFA"
@@ -1000,7 +1010,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Austria.png",
       "confederation": "UEFA"
@@ -1014,7 +1025,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Belgium.png",
       "confederation": "UEFA"
@@ -1042,7 +1054,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Bosnia and Herzegovina.png",
       "confederation": "UEFA"
@@ -1112,7 +1125,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Croatia.png",
       "confederation": "UEFA"
@@ -1126,7 +1140,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Czechia.png",
       "confederation": "UEFA"
@@ -1140,7 +1155,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Denmark.png",
       "confederation": "UEFA"
@@ -1168,7 +1184,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#000000",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "England.png",
       "confederation": "UEFA"
@@ -1182,7 +1199,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "France 1.png",
       "confederation": "UEFA"
@@ -1196,7 +1214,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Georgia.png",
       "confederation": "UEFA"
@@ -1210,7 +1229,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#000000",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Germany.png",
       "confederation": "UEFA"
@@ -1224,7 +1244,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Hungary.png",
       "confederation": "UEFA"
@@ -1238,7 +1259,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Iceland.png",
       "confederation": "UEFA"
@@ -1266,7 +1288,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Israel.png",
       "confederation": "UEFA"
@@ -1280,7 +1303,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Italy.png",
       "confederation": "UEFA"
@@ -1336,7 +1360,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Netherlands.png",
       "confederation": "UEFA"
@@ -1350,7 +1375,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Norway.png",
       "confederation": "UEFA"
@@ -1406,7 +1432,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#000000",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Poland.png",
       "confederation": "UEFA"
@@ -1420,7 +1447,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Portugal.png",
       "confederation": "UEFA"
@@ -1434,7 +1462,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#000000",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Romania.png",
       "confederation": "UEFA"
@@ -1448,7 +1477,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Scotland.png",
       "confederation": "UEFA"
@@ -1476,7 +1506,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Serbia.png",
       "confederation": "UEFA"
@@ -1490,7 +1521,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Slovakia.png",
       "confederation": "UEFA"
@@ -1504,7 +1536,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Slovenia.png",
       "confederation": "UEFA"
@@ -1532,7 +1565,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Spain.png",
       "confederation": "UEFA"
@@ -1546,7 +1580,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Sweden.png",
       "confederation": "UEFA"
@@ -1560,7 +1595,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Switzerland.png",
       "confederation": "UEFA"
@@ -1574,7 +1610,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Türkiye.png",
       "confederation": "UEFA"
@@ -1602,7 +1639,8 @@
       "secondaryColour": "#FFFFFF",
       "textColour": "#FFFFFF",
       "competitionIds": [
-        "international"
+        "international",
+        "nations-league"
       ],
       "crestSource": "Ukraine.png",
       "confederation": "UEFA"
