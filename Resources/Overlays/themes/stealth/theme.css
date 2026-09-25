@@ -42,3 +42,17 @@ body[data-theme="stealth"] .bug.building-in .shootout, body[data-theme="stealth"
 /* Take-off, 0.7s total: strap fades first, then the bar wipes closed. */
 body[data-theme="stealth"] .bug.building-out .shootout, body[data-theme="stealth"] .bug.building-out .scorers { animation: stealth-build-fade 0.2s cubic-bezier(.5,0,.3,1) reverse both; }
 body[data-theme="stealth"] .bug.building-out .main { animation: stealth-build-wipe 0.5s cubic-bezier(.5,0,.3,1) reverse both; animation-delay: 0.2s; will-change: clip-path; }
+
+/* GOAL, 4s (overlay.js drops .goal at 4.2s): the scorer's colour wipes across the whole bar with GOAL and their crest,
+   holds, then wipes off to reveal the rolled score. Used for every stealth competition, internationals included. */
+body[data-theme="stealth"] .main::before { z-index: 4; background: var(--goal-primary, #000); clip-path: inset(0 100% 0 0); }
+body[data-theme="stealth"] .main::after { z-index: 5; content: "GOAL"; display: flex; align-items: center; justify-content: center;
+  color: var(--goal-text, #fff); font-size: calc(var(--h) * 0.62); font-weight: 800; letter-spacing: 0.34em; text-indent: 0.34em;
+  background: var(--goal-crest, none) no-repeat calc(var(--h) * 0.3) center / auto 70%; }
+body[data-theme="stealth"] .bug.goal .main::before { animation: stealth-goal-wipe 4s cubic-bezier(.22,.9,.3,1) both; }
+body[data-theme="stealth"] .bug.goal .main::after { animation: stealth-goal-word 4s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes stealth-goal-wipe { 0% { opacity: 1; clip-path: inset(0 100% 0 0); } 12% { clip-path: inset(0 0 0 0); } 84% { clip-path: inset(0 0 0 0); } 97% { opacity: 1; clip-path: inset(0 0 0 100%); } 100% { opacity: 0; clip-path: inset(0 0 0 100%); } }
+@keyframes stealth-goal-word { 0%, 8% { opacity: 0; transform: scale(1.25); letter-spacing: 0.7em; } 20% { opacity: 1; transform: none; letter-spacing: 0.34em; } 80% { opacity: 1; transform: none; } 90%, 100% { opacity: 0; transform: translateX(4%); } }
+
+/* Scorer strap spans the bar and pins each side's scorers under that side, so an away-only strap never sits under home. */
+body[data-theme="stealth"] .scorers, body[data-orientation="v"][data-theme="stealth"] .scorers { align-self: stretch; justify-content: space-between; }

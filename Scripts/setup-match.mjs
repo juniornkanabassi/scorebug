@@ -7,14 +7,14 @@
 //   node setup-match.mjs --home "Real Madrid" --away Inter --competition ucl --first-leg 2-1
 //   node setup-match.mjs --list "real"        # what the library knows, no changes
 //
-// Flags: --home --away --competition --slot (1) --first-leg H-A --kickoff HH:MM --show --hide
+// Flags: --home --away --competition --slot (1) --first-leg H-A --show --hide
 //        --keep-score (skip the reset) --port (8600) --dry-run --list <query>
 import { parseArgs } from "node:util";
 
 const { values } = parseArgs({
 	options: {
 		home: { type: "string" }, away: { type: "string" }, competition: { type: "string" },
-		slot: { type: "string", default: "1" }, "first-leg": { type: "string" }, kickoff: { type: "string" },
+		slot: { type: "string", default: "1" }, "first-leg": { type: "string" },
 		show: { type: "boolean" }, hide: { type: "boolean" }, "keep-score": { type: "boolean" },
 		port: { type: "string", default: "8600" }, "dry-run": { type: "boolean" }, list: { type: "string" },
 	},
@@ -126,13 +126,6 @@ if (values["first-leg"]) {
 	if (!Number.isInteger(h) || !Number.isInteger(a)) throw new Error(`--first-leg wants a score like 2-1`);
 	await send("setAggregate", { home: h, away: a });
 	console.log(`first leg ${h}-${a}`);
-}
-if (values.kickoff) {
-	const [hh, mm] = values.kickoff.split(":").map((n) => Number.parseInt(n, 10));
-	const when = new Date(); when.setHours(hh, mm ?? 0, 0, 0);
-	if (when.getTime() < Date.now() - 6 * 3600e3) when.setDate(when.getDate() + 1);
-	await send("setKickoff", { kickoff: when.toISOString() });
-	console.log(`kick-off ${when.toLocaleString("en-GB")}`);
 }
 if (values.show || values.hide) await send("setVisible", { visible: !!values.show });
 
