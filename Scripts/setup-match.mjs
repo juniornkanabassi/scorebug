@@ -57,9 +57,9 @@ function pickCompetition(comps, query) {
 	const alias = {
 		ucl: "champions-league", cl: "champions-league", ecl: "conference-league", uel: "europa-league",
 		el: "europa-league", pl: "premier-league", epl: "premier-league", laliga: "la-liga",
-		ligue1: "ligue1", l1: "ligue1", seriea: "serie-a", bundesliga: "bundesliga",
+		ligue1: "ligue1", l1: "ligue1", seriea: "serie-a", bundesliga: "bundesliga", unl: "nations-league",
 	}[q.replace(/\s+/g, "")];
-	return comps.find((c) => c.id === (alias ?? q)) ??
+	return comps.find((c) => c.id === (alias ?? q) || fold(c.id) === q) ??
 		comps.find((c) => fold(c.name) === q || fold(c.shortName) === q) ??
 		comps.find((c) => fold(c.name).includes(q));
 }
