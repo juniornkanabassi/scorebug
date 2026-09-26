@@ -396,3 +396,7 @@ body[data-family="uefa"] .bug.building-out .main::after { content: ""; left: 0; 
 /* Nations League (0.11.0): scorer cards in the UNL navy instead of the Champions League blues. */
 body[data-theme="nations-league"] .scorers .list { background-color: #0A1628; }
 body[data-theme="nations-league"] .scorers .list::before { background-color: #1B2E4B; }
+/* Nations League (0.11.1): national sides often share primary and secondary (England white on white),
+   so the goal band is one solid team colour and GOAL takes the team's own text colour, never white on white. */
+body[data-theme="nations-league"] .main::before { background: var(--goal-primary, var(--uefa-plate-b)); }
+body[data-theme="nations-league"] .main::after { color: var(--goal-text, #fff); }
