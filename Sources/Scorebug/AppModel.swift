@@ -21,6 +21,8 @@ struct LaunchOptions {
     var port: Int?
     /// `--import-crests <folder>`: import a crest folder once at launch (the launch-time default import only runs on a first run).
     var importCrests: String?
+    /// `--background`: keep the server and menu bar item alive without presenting the main window.
+    var background = false
     /// `--screen <name>`: open the window on that display (by its name in System Settings) and do not steal focus.
     /// Agents' test instances use `--screen "Agent Screen"` so nothing lands on Junior's monitors.
     var screenName: String?
@@ -30,6 +32,7 @@ struct LaunchOptions {
         var i = 0
         while i < args.count {
             switch args[i] {
+            case "--background": opts.background = true
             case "--data-directory" where i + 1 < args.count: opts.dataDirectory = URL(fileURLWithPath: args[i + 1], isDirectory: true); i += 1
             case "--overlays-directory" where i + 1 < args.count: opts.overlaysDirectory = args[i + 1]; i += 1
             case "--port" where i + 1 < args.count: opts.port = Int(args[i + 1]); i += 1

@@ -15,7 +15,7 @@ export class SetCompetition extends StatefulAction {
 		const settings = ev.payload.settings;
 		const competitionId = typeof settings.competitionId === "string" ? settings.competitionId : undefined;
 		if (!competitionId) return;
-		await server.send(slotOf(settings), "setCompetition", { competitionId });
+		await server.send(slotOf(settings), "setCompetition", { competitionId }, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
@@ -25,7 +25,7 @@ export class SetCompetition extends StatefulAction {
 		const variant = competitionId && ART_COMPETITIONS.has(competitionId) ? competitionId : "default";
 		await a.setImage(iconPath("set-competition", variant, slot));
 		if (!match) {
-			await a.setTitle("OFFLINE");
+			await a.setTitle(server.offlineTitle);
 			return;
 		}
 		// The art already carries the code and full name; only the "default" tile needs a text fallback.

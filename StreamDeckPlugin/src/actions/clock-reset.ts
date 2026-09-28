@@ -7,12 +7,12 @@ import type { BaseSettings } from "../lib/scorebug.js";
 @action({ UUID: "com.juniornkanabassi.scorebug.clock-reset" })
 export class ClockReset extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
-		await server.send(slotOf(ev.payload.settings), "setClock", { seconds: 0 });
+		await server.send(slotOf(ev.payload.settings), "setClock", { seconds: 0 }, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		await a.setImage(iconPath("clock-reset", "key", slot));
-		await a.setTitle(server.match(slot) ? undefined : "OFFLINE");
+		await a.setTitle(server.match(slot) ? undefined : server.offlineTitle);
 	}
 }

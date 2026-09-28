@@ -16,8 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        let wanted = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).screenName
-        guard let wanted else { NSApp.activate(ignoringOtherApps: true); return }
+        let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        if !options.background, options.screenName == nil { NSApp.activate(ignoringOtherApps: true) }
+        guard let wanted = options.screenName else { return }
         // `--screen`: every window this process opens goes to the named display, and the app never takes focus,
         // so agents' test instances stay off Junior's monitors. Falls back to normal behaviour if the screen is absent.
         let place: (NSWindow) -> Void = { window in
@@ -42,9 +43,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct ScorebugApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model: AppModel
+    private let launchOptions: LaunchOptions
 
     init() {
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
         model.startServer()
@@ -57,7 +60,7 @@ struct ScorebugApp: App {
                 .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
         .defaultSize(width: 1180, height: 820)
-        .defaultLaunchBehavior(.presented)
+        .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
         .restorationBehavior(.disabled)
         .commands {
             CommandGroup(after: .toolbar) {
@@ -68,6 +71,19 @@ struct ScorebugApp: App {
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
         }
+        MenuBarExtra("Scorebug", systemImage: "sportscourt") {
+            MenuBarCommands()
+        }
+    }
+}
+
+private struct MenuBarCommands: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Open Scorebug") { openWindow(id: "main") }
+        Divider()
+        Button("Quit Scorebug") { NSApp.terminate(nil) }
     }
 }
 

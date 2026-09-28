@@ -6,6 +6,7 @@ import type { JsonValue } from "@elgato/utils";
 // Node 20 (what the manifest pins the plugin to) has no global WebSocket; `ws` is already a dependency
 // of @elgato/streamdeck, so this just imports it directly instead of relying on a global that isn't there.
 import WebSocket, { type MessageEvent } from "ws";
+import { launchAndWait } from "./launch.js";
 
 export type Side = "home" | "away";
 
@@ -56,13 +57,14 @@ interface Snapshot {
 const HOST = "127.0.0.1";
 const PORT = 8600;
 
-type StateListener = (online: boolean) => void;
+type StateListener = (online: boolean, starting: boolean) => void;
 
 class ServerClient {
 	#snapshot: Snapshot | null = null;
 	#listeners = new Set<StateListener>();
 	#backoff = 1000;
 	#reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+	#starting = 0;
 
 	constructor() {
 		this.#connect();
@@ -111,13 +113,13 @@ class ServerClient {
 
 	#notify(): void {
 		const online = this.#snapshot !== null;
-		for (const listener of this.#listeners) listener(online);
+		for (const listener of this.#listeners) listener(online, this.#starting > 0);
 	}
 
-	/** Fires on every online/offline transition and every state broadcast; fires once immediately. */
+	/** Fires on every online/offline transition, startup transition and state broadcast; fires once immediately. */
 	onState(listener: StateListener): () => void {
 		this.#listeners.add(listener);
-		listener(this.#snapshot !== null);
+		listener(this.#snapshot !== null, this.#starting > 0);
 		return () => {
 			this.#listeners.delete(listener);
 		};
@@ -135,17 +137,44 @@ class ServerClient {
 		return this.#snapshot !== null;
 	}
 
-	async send(slot: number, command: string, body: Record<string, unknown> = {}): Promise<void> {
-		try {
-			const res = await fetch(`http://${HOST}:${PORT}/api/match/${slot}/command`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ command, ...body })
-			});
-			if (!res.ok) streamDeck.logger.warn(`scorebug: ${command} rejected (${res.status})`);
-		} catch (err) {
-			streamDeck.logger.warn(`scorebug: ${command} failed, server unreachable`, err);
+	get offlineTitle(): string {
+		return this.#starting > 0 ? "OFFLINE\nSTARTING" : "OFFLINE";
+	}
+
+	async send(slot: number, command: string, body: Record<string, unknown> = {}, onUnavailable?: () => Promise<unknown>): Promise<void> {
+		// "refused" means the request never reached a server (the app isn't running), so it is safe to launch and
+		// resend. Any other failure (timeout, reset) may have been applied already: never resend it, or a goal
+		// could count twice on air (review of 28 Sep).
+		const sendCommand = async (): Promise<"sent" | "refused" | "unknown"> => {
+			try {
+				const res = await fetch(`http://${HOST}:${PORT}/api/match/${slot}/command`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ command, ...body }),
+					signal: AbortSignal.timeout(3000)
+				});
+				if (!res.ok) streamDeck.logger.warn(`scorebug: ${command} rejected (${res.status})`);
+				return "sent";
+			} catch (err) {
+				const code = (err as { cause?: { code?: string } })?.cause?.code;
+				streamDeck.logger.warn(`scorebug: ${command} failed (${code ?? "unknown"})`, err);
+				return code === "ECONNREFUSED" ? "refused" : "unknown";
+			}
+		};
+
+		let result: "sent" | "refused" | "unknown" = this.online ? await sendCommand() : "refused";
+		if (result === "refused") {
+			this.#starting++;
+			this.#notify();
+			try {
+				if (await launchAndWait(PORT)) result = await sendCommand();
+			} finally {
+				this.#starting--;
+				this.#notify();
+			}
 		}
+		const delivered = result === "sent";
+		if (!delivered) await onUnavailable?.();
 	}
 }
 

@@ -24,7 +24,7 @@ export class PlayPause extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
 		const settings = ev.payload.settings;
 		const mode = modeOf(settings);
-		await server.send(slotOf(settings), mode === "toggle" ? "playPause" : mode);
+		await server.send(slotOf(settings), mode === "toggle" ? "playPause" : mode, {}, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
@@ -33,6 +33,6 @@ export class PlayPause extends StatefulAction {
 		const mode = modeOf(settings);
 		const variant = mode === "toggle" ? (match?.clock.running ? "pause" : "play") : mode;
 		await a.setImage(iconPath("play-pause", variant, slot));
-		await a.setTitle(match ? undefined : "OFFLINE");
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }

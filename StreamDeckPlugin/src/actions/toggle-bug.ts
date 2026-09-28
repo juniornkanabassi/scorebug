@@ -7,13 +7,13 @@ import type { BaseSettings } from "../lib/scorebug.js";
 @action({ UUID: "com.juniornkanabassi.scorebug.toggle-bug" })
 export class ToggleBug extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
-		await server.send(slotOf(ev.payload.settings), "toggleVisible");
+		await server.send(slotOf(ev.payload.settings), "toggleVisible", {}, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		const match = server.match(slot);
 		await a.setImage(iconPath("toggle-bug", match?.visible ? "on" : "off", slot));
-		await a.setTitle(match ? undefined : "OFFLINE");
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }

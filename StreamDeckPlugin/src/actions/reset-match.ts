@@ -19,7 +19,7 @@ export class ResetMatch extends StatefulAction {
 		const start = this.#pressedAt.get(ev.action.id) ?? Date.now();
 		this.#pressedAt.delete(ev.action.id);
 		if (Date.now() - start >= HOLD_MS) {
-			await server.send(slotOf(ev.payload.settings), "reset");
+			await server.send(slotOf(ev.payload.settings), "reset", {}, () => ev.action.showAlert());
 		} else {
 			await ev.action.showAlert();
 		}
@@ -28,6 +28,6 @@ export class ResetMatch extends StatefulAction {
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		await a.setImage(iconPath("reset-match", "key", slot));
-		await a.setTitle(server.match(slot) ? undefined : "OFFLINE");
+		await a.setTitle(server.match(slot) ? undefined : server.offlineTitle);
 	}
 }
