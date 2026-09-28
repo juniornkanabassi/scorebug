@@ -120,6 +120,7 @@ if (values.competition && !competition) throw new Error(`No competition matching
 const compId = competition?.id;
 
 const picks = {};
+let weak = false;
 for (const side of ["home", "away"]) {
 	const query = values[side];
 	const { best, alternatives, top } = pickClub(library.clubs, query, compId);
@@ -127,7 +128,10 @@ for (const side of ["home", "away"]) {
 	picks[side] = best;
 	const note = top < 60 ? `  (weak match${alternatives.length ? `, also considered ${alternatives.join(", ")}` : ""}, check this)` : "";
 	console.log(`${side.padEnd(4)} ${query} -> ${best.name}${note}`);
+	if (note) weak = true;
 }
+// A weak match stops unless --force: a wrong crest on air is worse than a stopped script (28 Sep, Burnley became Arsenal).
+if (weak && !values.force && !values["dry-run"]) { console.error("Stopped: a club matched weakly. Check with --list, or rerun with --force."); process.exit(3); }
 
 // Competition first: codes follow it, and the engine clears an aggregate when the competition has no knockouts.
 if (compId) { console.log(`comp ${compId}`); await send("setCompetition", { competitionId: compId }); }

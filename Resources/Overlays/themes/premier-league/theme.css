@@ -15,7 +15,7 @@
    camera-relative crop -- Junior's own broadcast size is H about 69px on the 1920 canvas, so
    46 * 1.5 = 69 (theme.json geometry.h.scale). No drop shadow anywhere in the reference. */
 body[data-theme="premier-league"] .bug { --h: 46px; --pl-purple: #37003C; --pl-green: #00FF85; --pl-pink: #E90052; --pl-dark: #0E0E1A;
-  --pl-centre-text: #fff; --pl-away-plate: #EEF0F2; --pl-away-text: var(--away-primary);
+  --pl-centre-text: var(--home-secondary-ink, #fff); --pl-away-plate: #EEF0F2; --pl-away-text: var(--away-primary);
   --kick-pending: #5b3a5e; --kick-scored: #00FF85; --kick-missed: #E90052; --r-top: calc(var(--h) * 0.12); --r-clock: calc(var(--h) * 0.055);
   font-family: "Premier Sans", "Montserrat", "Helvetica Neue", Arial, sans-serif; font-weight: 800; letter-spacing: -0.02em; }
 body[data-theme="premier-league"] .main { grid-template-areas: "home hs sep as away added"; height: var(--h); margin-bottom: calc(var(--h) * 2.02);
