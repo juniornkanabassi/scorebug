@@ -129,7 +129,10 @@ public enum LiveDataLogic {
             let goals = recorded[live.side, default: []]
             guard goals.indices.contains(index) else { return LiveGoalAssignment(goalId: nil, liveGoal: live, shouldAdd: true, shouldUpdate: false) }
             let goal = goals[index]
-            let shouldUpdate = goal.scorer == nil || goal.scorer?.isEmpty == true || goal.autoFilled
+            // The feed has fewer goals for this side than recorded (VAR overturn or a correction): positions no longer
+            // line up, so leave that side alone rather than rewrite the wrong row (review of 28 Sep).
+            let feedCount = liveGoals.filter { $0.side == live.side }.count
+            let shouldUpdate = feedCount >= goals.count && (goal.scorer == nil || goal.scorer?.isEmpty == true || goal.autoFilled)
             return LiveGoalAssignment(goalId: goal.id, liveGoal: live, shouldAdd: false, shouldUpdate: shouldUpdate)
         }
     }

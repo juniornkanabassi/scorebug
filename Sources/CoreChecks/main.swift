@@ -499,6 +499,12 @@ do {
     check(assignments.count == 3 && assignments[0].goalId == m.goals[0].id && !assignments[0].shouldUpdate
         && assignments[1].goalId == m.goals[1].id && assignments[1].shouldUpdate && assignments[2].shouldAdd,
         "kth live goal leaves a manual scorer alone, fills the next goal and marks the surplus for addition")
+    var overturned = Match(slot: 1)
+    var first = Goal(side: .home, elapsedSeconds: 1200, minuteLabel: "20'"), second = Goal(side: .home, elapsedSeconds: 4500, minuteLabel: "75'")
+    first.autoFilled = true; second.autoFilled = true
+    overturned.goals = [first, second]
+    let afterVAR = LiveDataLogic.assignments(match: overturned, liveGoals: [LiveGoal(side: .home, minute: 75)])
+    check(afterVAR.count == 1 && !afterVAR[0].shouldUpdate && !afterVAR[0].shouldAdd, "a goal dropped from the feed leaves that side's recorded goals untouched")
 
     check(LiveDataLogic.displayScorer("Lamine Yamal") == "L. Yamal" && LiveDataLogic.displayScorer("Kevin De Bruyne") == "K. De Bruyne", "full scorer names display as initial and surname with particles")
     check(LiveDataLogic.displayScorer("Fermín") == "Fermín", "mononyms remain unchanged")

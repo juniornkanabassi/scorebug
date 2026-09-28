@@ -303,7 +303,6 @@ final class AppModel: ObservableObject {
                             // No scores in notices: they show at once and would spoil the 5 minute delay (28 Sep).
                             let message = "ESPN and FotMob disagree, so live updates are paused"
                             if m.liveDataNotice != message { apply(.setLiveNotice(message), slot: slot) }
-                            if live.isFinished { stoppedLiveEvents.insert(eventKey) }
                             return
                         }
                     } else { liveSourceStatus["FotMob"] = "No matching fixture" }
@@ -317,8 +316,8 @@ final class AppModel: ObservableObject {
             let assignments = LiveDataLogic.assignments(match: m, liveGoals: all)
             for (idx, assignment) in assignments.enumerated() {
                 let goal = assignment.liveGoal
-                let sideIndex = all[..<idx].filter { $0.side == goal.side }.count
-                let liveKey = "\(eventId):\(goal.side.rawValue):\(sideIndex):\(goal.minute):\(goal.added)"
+                // Identity by side and minute, not position, so a feed reorder can't revive a removed goal (review of 28 Sep).
+                let liveKey = "\(eventId):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
                 if m.removedLiveGoalKeys.contains(liveKey) { continue }
                 let key = "\(slot):\(eventId):\(idx):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
                 let seen = liveSeenAt[key] ?? now
