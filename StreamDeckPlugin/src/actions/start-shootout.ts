@@ -8,13 +8,13 @@ import type { BaseSettings } from "../lib/scorebug.js";
 export class StartShootout extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
 		const settings = ev.payload.settings;
-		await server.send(slotOf(settings), "startShootout", { side: sideOf(settings) });
+		await server.send(slotOf(settings), "startShootout", { side: sideOf(settings) }, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		const match = server.match(slot);
 		await a.setImage(iconPath("start-shootout", sideOf(settings), slot));
-		await a.setTitle(match ? undefined : "OFFLINE");
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }

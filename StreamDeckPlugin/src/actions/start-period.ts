@@ -9,7 +9,7 @@ export class StartPeriod extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
 		const settings = ev.payload.settings;
 		const period = typeof settings.period === "string" ? settings.period : "firstHalf";
-		await server.send(slotOf(settings), "startPeriod", { period });
+		await server.send(slotOf(settings), "startPeriod", { period }, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
@@ -18,6 +18,6 @@ export class StartPeriod extends StatefulAction {
 		const period = typeof settings.period === "string" ? settings.period : "firstHalf";
 		const known = period === "secondHalf" || period === "extraFirst" || period === "extraSecond" ? period : "firstHalf";
 		await a.setImage(iconPath("start-period", known, slot));
-		await a.setTitle(match ? undefined : "OFFLINE");
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }

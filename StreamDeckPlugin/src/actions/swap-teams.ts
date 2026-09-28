@@ -7,12 +7,12 @@ import type { BaseSettings } from "../lib/scorebug.js";
 @action({ UUID: "com.juniornkanabassi.scorebug.swap-teams" })
 export class SwapTeams extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
-		await server.send(slotOf(ev.payload.settings), "swapTeams");
+		await server.send(slotOf(ev.payload.settings), "swapTeams", {}, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
 		const slot = slotOf(settings);
 		await a.setImage(iconPath("swap-teams", "key", slot));
-		await a.setTitle(server.match(slot) ? undefined : "OFFLINE");
+		await a.setTitle(server.match(slot) ? undefined : server.offlineTitle);
 	}
 }
