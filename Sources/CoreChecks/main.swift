@@ -392,7 +392,7 @@ do {
 do {
     let sample = """
     {"leagues":[{"abbreviation":"UEFA.CHAMPIONS","name":"UEFA Champions League"}],
-     "events":[{"date":"2026-09-27T15:00Z","competitions":[{"competitors":[
+     "events":[{"id":"event-1","date":"2026-09-27T15:00Z","competitions":[{"competitors":[
         {"homeAway":"away","team":{"displayName":"Internazionale","shortDisplayName":"Inter","abbreviation":"INT","logo":"https://a.espncdn.com/i/teamlogos/soccer/500/110.png"}},
         {"homeAway":"home","team":{"displayName":"Real Madrid","abbreviation":"RMA"}}]}]},
       {"date":"not a date","competitions":[{"competitors":[{"homeAway":"home","team":{"displayName":"X"}},{"homeAway":"away","team":{"displayName":"Y"}}]}]}]}
@@ -401,6 +401,7 @@ do {
     check(fixtures.count == 1, "ESPN: one fixture decoded, the undated event dropped")
     check(fixtures[0].home.code == "RMA" && fixtures[0].away.shortName == "Inter", "ESPN: home and away picked by homeAway regardless of order")
     check(fixtures[0].kickoff == ISO8601DateFormatter().date(from: "2026-09-27T15:00:00Z"), "ESPN: date without seconds decoded")
+    check(fixtures[0].espnEventId == "event-1", "ESPN: fixture event id retained for the live link")
     check(fixtures[0].competitionCode == "UEFA.CHAMPIONS" && fixtures[0].home.crestURL == nil && fixtures[0].away.crestURL != nil, "ESPN: league code and optional logos")
     check((try? FixtureDecoder.espn(Data("[]".utf8))) == nil, "ESPN: a wrong shape throws rather than crashes")
 } catch { check(false, "ESPN decoder threw: \(error)") }
@@ -472,6 +473,38 @@ do {
     let pl = Competition(id: "premier-league", name: "Premier League", shortName: "PL", themeId: "premier-league", sourceIds: ["footballData": "PL", "espn": "eng.1"])
     let fixture = Fixture(kickoff: at(0), competitionCode: "eng.1", competitionName: "Premier League", home: team, away: team)
     check(FixtureLogic.filter([fixture], competition: pl).count == 1 && FixtureLogic.filter([fixture], competition: Competition(id: "la-liga", name: "LaLiga", shortName: "LL", themeId: "la-liga", sourceIds: ["espn": "esp.1"])).isEmpty, "fixture competition filter matches configured provider codes")
+}
+
+// Live data decoding, assignment and scorer search remain pure and provider-free.
+do {
+    let fixture = #"""
+    {"header":{"competitions":[{"status":{"type":{"completed":true}},"competitors":[
+      {"homeAway":"home","score":"1","team":{"id":"10","displayName":"Fulham"}},
+      {"homeAway":"away","score":"1","team":{"id":"20","displayName":"United"}}],"details":[
+        {"scoringPlay":true,"ownGoal":true,"penaltyKick":false,"clock":{"displayValue":"63'"},"team":{"id":"10"},"athletesInvolved":[{"displayName":"Lisandro Martínez"}]},
+        {"scoringPlay":true,"ownGoal":false,"penaltyKick":true,"clock":{"displayValue":"45'"},"addedClock":{"displayValue":"2'"},"team":{"id":"20"},"participants":[{"athlete":{"shortName":"Bruno"}}]}
+    ]}]},"rosters":[{"team":{"id":"10"},"roster":[{"athlete":{"displayName":"Lisandro Martínez"}}]}]}
+    """#
+    let live = try LiveDataLogic.espnSummary(Data(fixture.utf8), eventId: "fixture")
+    check(live.homeScore == 1 && live.awayScore == 1 && live.goals.count == 2, "ESPN summary decodes the score and scoring plays")
+    check(live.goals[0].side == .home && live.goals[0].ownGoal && !live.goals[0].penalty, "ESPN own-goal side uses the credited competitor and keeps ownGoal")
+    check(live.goals[1].side == .away && live.goals[1].penalty && live.goals[1].minuteLabel == "45+2'" && live.goals[1].scorer == "Bruno", "ESPN penalty, added-minute and participant play decode")
+    check(live.lineups[.home] == ["Lisandro Martínez"] && live.isFinished, "ESPN lineup and finished status decode")
+    check(LiveDataLogic.parseMinute("45'+2'")?.0 == 45 && LiveDataLogic.parseMinute("45'+2'")?.1 == 2 && LiveDataLogic.parseMinute("63'")?.0 == 63, "minute label parser handles regular and added time")
+
+    var m = Match(slot: 1)
+    m.goals = [Goal(side: .home, elapsedSeconds: 100, minuteLabel: "2'", scorer: "Manually chosen"), Goal(side: .home, elapsedSeconds: 200, minuteLabel: "4'")]
+    let events = [LiveGoal(side: .home, minute: 2), LiveGoal(side: .home, minute: 4), LiveGoal(side: .home, minute: 8)]
+    let assignments = LiveDataLogic.assignments(match: m, liveGoals: events)
+    check(assignments.count == 3 && assignments[0].goalId == m.goals[0].id && !assignments[0].shouldUpdate
+        && assignments[1].goalId == m.goals[1].id && assignments[1].shouldUpdate && assignments[2].shouldAdd,
+        "kth live goal leaves a manual scorer alone, fills the next goal and marks the surplus for addition")
+
+    check(LiveDataLogic.displayScorer("Lamine Yamal") == "L. Yamal" && LiveDataLogic.displayScorer("Kevin De Bruyne") == "K. De Bruyne", "full scorer names display as initial and surname with particles")
+    check(LiveDataLogic.displayScorer("Fermín") == "Fermín", "mononyms remain unchanged")
+    check(LiveDataLogic.rankedScorers(["L. Yamal", "Lamine Yamal"], query: "Lamian").first == "Lamine Yamal", "fuzzy scorer search finds Lamine Yamal")
+    check(LiveDataLogic.rankedScorers(["L. Yamal"], query: "yamal").first == "L. Yamal", "scorer search matches a surname from an initial")
+    check(LiveDataLogic.rankedScorers(["Kevin De Bruyne"], query: "debruyne").first == "Kevin De Bruyne", "scorer search matches joined surname particles")
 }
 
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")

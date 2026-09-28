@@ -82,6 +82,21 @@ struct SettingsView: View {
                     Text(keyStatus).scaledFont(.caption).foregroundStyle(.secondary)
                 }
             }
+            Section("Live data") {
+                ForEach(["ESPN", "FotMob", "SofaScore"], id: \.self) { source in
+                    HStack {
+                        Toggle(source, isOn: Binding(
+                            get: { model.settings.liveSourceEnabled[source] ?? false },
+                            set: { model.setLiveSource(source, enabled: $0) }
+                        ))
+                        .disabled(source == "SofaScore")
+                        Spacer()
+                        Text(model.liveSourceStatus[source] ?? "Not checked").scaledFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                Text("ESPN is primary. FotMob cross-checks goal counts. SofaScore is unavailable from this network.")
+                    .scaledFont(.caption).foregroundStyle(.secondary)
+            }
             Section("Crests") {
                 LabeledContent("Folder") {
                     HStack {

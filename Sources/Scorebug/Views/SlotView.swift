@@ -70,7 +70,7 @@ struct SlotView: View {
                     ClockSection(phase: m.phase, clock: m.clock,
                                   hasKnockouts: hasKnockouts, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     StoppageSection(addedMinutes: m.addedMinutes, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
-                    GoalsSection(goals: m.goals, homeCode: m.home.code, awayCode: m.away.code, showScorers: m.showScorers,
+                    GoalsSection(match: m, goals: m.goals, homeCode: m.home.code, awayCode: m.away.code, showScorers: m.showScorers,
                                   homeColour: m.home.primaryColour, awayColour: m.away.primaryColour, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     if m.phase != .preMatch {
                         MatchSetupSection(home: m.home, away: m.away, competitionId: m.competitionId, phase: m.phase,
@@ -482,6 +482,12 @@ struct ClockSection: View, Equatable {
                     Button { model.apply(.adjustClock(deltaSeconds: -10), slot: slot) } label: {
                         Text("−10 s").frame(maxWidth: .infinity).scaledControl(64)
                     }.disabled(phase.period == nil).help(Self.unavailableHelp)
+                    Button { model.apply(.adjustClock(deltaSeconds: -1), slot: slot) } label: {
+                        Text("−1 s").frame(maxWidth: .infinity).scaledControl(64)
+                    }.disabled(phase.period == nil).help(Self.unavailableHelp)
+                    Button { model.apply(.adjustClock(deltaSeconds: 1), slot: slot) } label: {
+                        Text("+1 s").frame(maxWidth: .infinity).scaledControl(64)
+                    }.disabled(phase.period == nil).help(Self.unavailableHelp)
                     Button { model.apply(.adjustClock(deltaSeconds: 10), slot: slot) } label: {
                         Text("+10 s").frame(maxWidth: .infinity).scaledControl(64)
                     }.disabled(phase.period == nil).help(Self.unavailableHelp)
@@ -587,6 +593,7 @@ struct StoppageSection: View, Equatable {
 /// The goal list and the scorer strap toggle. Equatable on the goal list and the two short names, so a
 /// clock edit or a shootout kick (neither touches goals) skips this block.
 struct GoalsSection: View, Equatable {
+    let match: Match
     let goals: [Goal]
     let homeCode: String
     let awayCode: String
@@ -598,7 +605,9 @@ struct GoalsSection: View, Equatable {
     let zoomGeneration: Int
 
     static func == (l: Self, r: Self) -> Bool {
-        l.goals == r.goals && l.homeCode == r.homeCode && l.awayCode == r.awayCode
+        l.match.espnEventId == r.match.espnEventId && l.match.home.shortName == r.match.home.shortName && l.match.away.shortName == r.match.away.shortName
+            && l.match.autoUpdateLiveData == r.match.autoUpdateLiveData && l.match.liveDataDelayMinutes == r.match.liveDataDelayMinutes
+            && l.match.liveDataNotice == r.match.liveDataNotice && l.goals == r.goals && l.homeCode == r.homeCode && l.awayCode == r.awayCode
             && l.showScorers == r.showScorers && l.homeColour == r.homeColour && l.awayColour == r.awayColour
             && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
     }
@@ -610,6 +619,29 @@ struct GoalsSection: View, Equatable {
                 .help(goals.isEmpty ? "No goals yet to show scorers for" : "Show scorer names on the bug")
         }) {
             VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    if match.espnEventId != nil {
+                        Label("Linked to ESPN · \(match.home.shortName) v \(match.away.shortName)", systemImage: "link")
+                            .scaledFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Button("Unlink") { model.apply(.setLiveLink(eventId: nil, league: nil), slot: slot) }.scaledFont(.caption)
+                    } else {
+                        Text("Not linked to live data").scaledFont(.caption).foregroundStyle(.secondary)
+                        Button("Link") { Task { await model.linkESPN(slot: slot) } }.scaledFont(.caption)
+                    }
+                    Spacer()
+                    Toggle("Auto-update from live data", isOn: Binding(get: { match.autoUpdateLiveData }, set: { model.apply(.setAutoUpdateLiveData($0), slot: slot) }))
+                        .toggleStyle(.switch).scaledFont(.caption)
+                }
+                HStack {
+                    Text("Spoiler delay").scaledFont(.caption).foregroundStyle(.secondary)
+                    Picker("Spoiler delay", selection: Binding(get: { match.liveDataDelayMinutes }, set: { model.apply(.setLiveDataDelay($0), slot: slot) })) {
+                        ForEach(0...10, id: \.self) { Text("\($0) min").tag($0) }
+                    }.labelsHidden().frame(width: 96)
+                    Spacer()
+                }
+                if let notice = match.liveDataNotice {
+                    Text(notice).scaledFont(.caption).foregroundStyle(.secondary)
+                }
                 if goals.isEmpty {
                     Text("No goals yet. Use the plus buttons above; each goal gets a line here for the scorer's name.").scaledFont(.caption).foregroundStyle(.secondary)
                 }
@@ -618,6 +650,7 @@ struct GoalsSection: View, Equatable {
                         Circle().fill(Color(hex: goal.side == .home ? homeColour : awayColour)).frame(width: 8, height: 8)
                         Text(goal.side == .home ? homeCode : awayCode).scaledFont(.body).lineLimit(1).frame(width: 56, alignment: .leading)
                         GoalMinuteField(goal: goal, slot: slot)
+                        if goal.autoAdded { Text("Auto").scaledFont(.caption, weight: .semibold).padding(.horizontal, 6).padding(.vertical, 3).background(.secondary.opacity(0.16), in: Capsule()) }
                         GoalRow(goal: goal, slot: slot).frame(maxWidth: .infinity)
                         Button { model.apply(.removeGoal(goal.id), slot: slot) } label: {
                             // scaledControl(32, square: true) used to differ from the default here; now that

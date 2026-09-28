@@ -14,13 +14,14 @@ public struct FixtureTeam: Equatable, Sendable {
 
 public struct Fixture: Equatable, Sendable {
     public var kickoff: Date
+    public var espnEventId: String?
     public var competitionCode: String
     public var competitionName: String
     public var home: FixtureTeam
     public var away: FixtureTeam
-    public init(kickoff: Date, competitionCode: String, competitionName: String, home: FixtureTeam, away: FixtureTeam) {
+    public init(kickoff: Date, competitionCode: String, competitionName: String, home: FixtureTeam, away: FixtureTeam, espnEventId: String? = nil) {
         self.kickoff = kickoff; self.competitionCode = competitionCode; self.competitionName = competitionName
-        self.home = home; self.away = away
+        self.home = home; self.away = away; self.espnEventId = espnEventId
     }
 }
 
@@ -67,7 +68,7 @@ extension FixtureDecoder {
     // ESPN scoreboard shape (undocumented, so tolerant): {"leagues":[{abbreviation,name}],"events":[{date, competitions:[{competitors:[{homeAway, team:{displayName,shortDisplayName,abbreviation,logo}}]}]}]}
     private struct ESPNEnvelope: Decodable { var leagues: [ESPNLeague]?; var events: [ESPNEvent] }
     private struct ESPNLeague: Decodable { var abbreviation: String?; var name: String? }
-    private struct ESPNEvent: Decodable { var date: String; var competitions: [ESPNCompetition] }
+    private struct ESPNEvent: Decodable { var id: String?; var date: String; var competitions: [ESPNCompetition] }
     private struct ESPNCompetition: Decodable { var competitors: [ESPNCompetitor] }
     private struct ESPNCompetitor: Decodable { var homeAway: String; var team: ESPNTeam }
     private struct ESPNTeam: Decodable { var displayName: String; var shortDisplayName: String?; var abbreviation: String?; var logo: String? }
@@ -85,7 +86,7 @@ extension FixtureDecoder {
             func team(_ t: ESPNTeam) -> FixtureTeam {
                 FixtureTeam(name: t.displayName, shortName: t.shortDisplayName ?? t.displayName, code: t.abbreviation ?? String(t.displayName.prefix(3)).uppercased(), crestURL: t.logo.flatMap(URL.init(string:)))
             }
-            return Fixture(kickoff: date, competitionCode: league?.abbreviation ?? "", competitionName: league?.name ?? "", home: team(h.team), away: team(a.team))
+            return Fixture(kickoff: date, competitionCode: league?.abbreviation ?? "", competitionName: league?.name ?? "", home: team(h.team), away: team(a.team), espnEventId: e.id)
         }
     }
 }

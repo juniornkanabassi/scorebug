@@ -32,6 +32,10 @@ public enum Command: Sendable, Equatable {
     case clearAggregate
     case setShowScorers(Bool)
     case toggleShowScorers
+    case setLiveLink(eventId: String?, league: String?)
+    case setAutoUpdateLiveData(Bool)
+    case setLiveDataDelay(Int)
+    case setLiveNotice(String?)
     /// Re-labels and re-times a goal after the fact. `plus` over 0 makes `"45+2'"`, else `"47'"`.
     case setGoalMinute(UUID, minute: Int, plus: Int?)
     case removeGoal(UUID)
@@ -97,13 +101,14 @@ public struct CommandRequest: Codable, Sendable {
     public var plus: Int?
     /// "setKick"/"removeKick" only: 0-based within that side's own kicks.
     public var index: Int?
+    public var eventId: String?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil, index: Int? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil, index: Int? = nil, eventId: String? = nil) {
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
         self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
         self.competitionId = competitionId; self.team = team; self.themeId = themeId
         self.seconds = seconds; self.deltaSeconds = deltaSeconds; self.home = home; self.away = away; self.showScorers = showScorers
-        self.minute = minute; self.plus = plus; self.index = index
+        self.minute = minute; self.plus = plus; self.index = index; self.eventId = eventId
     }
 
     public func toCommand() throws -> Command {
@@ -152,6 +157,10 @@ public struct CommandRequest: Codable, Sendable {
         case "clearAggregate": return .clearAggregate
         case "setShowScorers": return .setShowScorers(showScorers ?? true)
         case "toggleScorers": return .toggleShowScorers
+        case "linkESPN": return .setLiveLink(eventId: eventId, league: competitionId)
+        case "unlinkESPN": return .setLiveLink(eventId: nil, league: nil)
+        case "setAutoUpdateLiveData": return .setAutoUpdateLiveData(showScorers ?? true)
+        case "setLiveDataDelay": return .setLiveDataDelay(max(0, min(10, minutes ?? 5)))
         case "setGoalMinute":
             guard let g = goalId, let id = UUID(uuidString: g), let min = minute else { throw EngineError.badRequest("goalId and minute required") }
             return .setGoalMinute(id, minute: min, plus: plus)
@@ -193,7 +202,8 @@ public enum MatchEngine {
         case .setScorer(let id, let scorer, let ownGoal, let penalty):
             guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
             let trimmed = scorer?.trimmingCharacters(in: .whitespacesAndNewlines)
-            m.goals[idx].scorer = (trimmed?.isEmpty ?? true) ? nil : trimmed
+            m.goals[idx].scorer = (trimmed?.isEmpty ?? true) ? nil : trimmed.map(LiveDataLogic.displayScorer)
+            m.goals[idx].autoFilled = false
             if let ownGoal { m.goals[idx].ownGoal = ownGoal }
             if let penalty { m.goals[idx].penalty = penalty }
         case .startPeriod(let period):
@@ -282,6 +292,14 @@ public enum MatchEngine {
             m.showScorers = v
         case .toggleShowScorers:
             m.showScorers.toggle()
+        case .setLiveLink(let eventId, let league):
+            m.espnEventId = eventId; m.espnLeague = eventId == nil ? nil : league; m.liveDataNotice = nil
+        case .setAutoUpdateLiveData(let enabled):
+            m.autoUpdateLiveData = enabled; m.fillScorersFromESPN = enabled
+        case .setLiveDataDelay(let minutes):
+            m.liveDataDelayMinutes = max(0, min(10, minutes))
+        case .setLiveNotice(let notice):
+            m.liveDataNotice = notice
         case .setGoalMinute(let id, let minute, let plus):
             guard let idx = m.goals.firstIndex(where: { $0.id == id }) else { return m }
             let minute = min(130, max(1, minute)), extra = min(30, max(0, plus ?? 0))
@@ -308,6 +326,9 @@ public enum MatchEngine {
             fresh.themeId = m.themeId
             fresh.revision = m.revision
             fresh.aggregate = m.aggregate
+            fresh.espnEventId = m.espnEventId; fresh.espnLeague = m.espnLeague
+            fresh.fillScorersFromESPN = m.fillScorersFromESPN; fresh.autoUpdateLiveData = m.autoUpdateLiveData
+            fresh.liveDataDelayMinutes = m.liveDataDelayMinutes; fresh.removedLiveGoalKeys = m.removedLiveGoalKeys
             m = fresh
         }
         m.revision += 1

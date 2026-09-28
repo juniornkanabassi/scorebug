@@ -16,16 +16,17 @@ private struct FixtureWire: Codable {
     var away: Team
     var kickoff: String
     var competitionCode: String
+    var espnEventId: String?
     var force: Bool?
     init(_ fixture: Fixture) {
         home = Team(fixture.home); away = Team(fixture.away)
         kickoff = ISO8601DateFormatter().string(from: fixture.kickoff)
-        competitionCode = fixture.competitionCode; force = nil
+        competitionCode = fixture.competitionCode; espnEventId = fixture.espnEventId; force = nil
     }
     var fixture: Fixture? {
         let formatter = ISO8601DateFormatter()
         guard let date = formatter.date(from: kickoff) else { return nil }
-        return Fixture(kickoff: date, competitionCode: competitionCode, competitionName: "", home: home.fixtureTeam, away: away.fixtureTeam)
+        return Fixture(kickoff: date, competitionCode: competitionCode, competitionName: "", home: home.fixtureTeam, away: away.fixtureTeam, espnEventId: espnEventId)
     }
 }
 
