@@ -47,9 +47,13 @@ struct SlotView: View {
             if showPreview {
                 PreviewStage(slot: slot, baseURL: model.baseURL, visible: m.visible).frame(minHeight: 110, idealHeight: 160)
             }
+            // Live bar and controls share the lower pane, so the live bar is never a draggable split pane of its own,
+            // and its zero ideal width keeps it out of the detail column's minimum (rule 22).
+            VStack(spacing: 0) {
             LiveMatchBar(home: m.home, away: m.away, homeScore: m.homeScore, awayScore: m.awayScore,
                          phase: m.phase, clock: m.clock, addedMinutes: m.addedMinutes, clockStyle: clockStyle,
                          aggregate: m.aggregate, slot: slot, model: model, zoomGeneration: ScaledFonts.generation).equatable()
+                .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity)
             GeometryReader { geo in ScrollView {
                 VStack(spacing: 16) {
                     // `.equatable()` is what actually makes SwiftUI skip a block's diff when its inputs compare
@@ -87,6 +91,7 @@ struct SlotView: View {
             // detail column's minimum, which pushed the sidebar off the window at 1180 pt.
             .frame(minHeight: 200)
             .overlay(alignment: .top) { Divider() }
+            }
         }
         .navigationTitle(slot == 1 ? "Primary match" : "Secondary match")
         .navigationSubtitle("\(m.home.name) v \(m.away.name)")

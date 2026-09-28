@@ -52,8 +52,7 @@ struct ScorebugApp: App {
 
     var body: some Scene {
         WindowGroup("Scorebug", id: "main") {
-            // The native titlebar/toolbar adds 52 pt; keep the full window at the accepted 1180×720 minimum.
-            ContentView().environmentObject(model).frame(minWidth: 1180, minHeight: 668)
+            ContentView().environmentObject(model).frame(minWidth: 1180, minHeight: 720)
                 .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
                 .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
