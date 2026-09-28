@@ -195,9 +195,11 @@ final class AppModel: ObservableObject {
         return FixtureLogic.filter(found, competition: competition)
     }
 
-    func loadFixture(_ fixture: Fixture, slot: Int, force: Bool = false) async {
-        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return }
-        guard state.matches[idx].phase == .preMatch || force else { return }
+    /// False when the slot is not before kick-off and `force` is off, so callers can say it was skipped.
+    @discardableResult
+    func loadFixture(_ fixture: Fixture, slot: Int, force: Bool = false) async -> Bool {
+        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return false }
+        guard state.matches[idx].phase == .preMatch || force else { return false }
         let competition = library.competitions.first { $0.sourceIds.values.contains(fixture.competitionCode) }
         let competitionId = competition?.id ?? state.matches[idx].competitionId
         func club(for team: FixtureTeam) async -> Club {
@@ -210,7 +212,7 @@ final class AppModel: ObservableObject {
         }
         let homeClub = await club(for: fixture.home)
         let awayClub = await club(for: fixture.away)
-        guard match(slot).phase == .preMatch || force else { return }
+        guard match(slot).phase == .preMatch || force else { return false }
         for club in [homeClub, awayClub] {
             if let i = library.clubs.firstIndex(where: { $0.id == club.id }) { library.clubs[i] = club }
             else { library.clubs.append(club) }
@@ -219,6 +221,7 @@ final class AppModel: ObservableObject {
         if let competition { setCompetition(competition.id, slot: slot) }
         apply(.setTeam(.home, homeClub.entry(for: competitionId)), slot: slot)
         apply(.setTeam(.away, awayClub.entry(for: competitionId)), slot: slot)
+        return true
     }
 
     private func persistAndBroadcast() {

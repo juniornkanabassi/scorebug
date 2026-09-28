@@ -99,6 +99,15 @@ class ServerClient {
 		});
 	}
 
+	#reconnectNow(): void {
+		// Only while waiting out a backoff; with no timer a socket is already connecting.
+		if (!this.#reconnectTimer) return;
+		clearTimeout(this.#reconnectTimer);
+		this.#reconnectTimer = null;
+		this.#backoff = 1000;
+		this.#connect();
+	}
+
 	#scheduleReconnect(): void {
 		const wasOnline = this.#snapshot !== null;
 		this.#snapshot = null;
@@ -162,7 +171,8 @@ class ServerClient {
 			}
 		};
 
-		let result: "sent" | "refused" | "unknown" = this.online ? await sendCommand() : "refused";
+		// Always try first: the app may be up while the socket is still waiting out its backoff.
+		let result = await sendCommand();
 		if (result === "refused") {
 			this.#starting++;
 			this.#notify();
@@ -173,6 +183,9 @@ class ServerClient {
 				this.#notify();
 			}
 		}
+		// A command got through, so the app is up: reconnect now rather than after the backoff, or the key keeps
+		// showing OFFLINE and invites a second press (review of 28 Sep).
+		if (result === "sent" && !this.online) this.#reconnectNow();
 		const delivered = result === "sent";
 		if (!delivered) await onUnavailable?.();
 	}
