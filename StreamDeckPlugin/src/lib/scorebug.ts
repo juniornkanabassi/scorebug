@@ -142,44 +142,38 @@ class ServerClient {
 	}
 
 	async send(slot: number, command: string, body: Record<string, unknown> = {}, onUnavailable?: () => Promise<unknown>): Promise<void> {
-		const sendCommand = async (): Promise<boolean> => {
+		// "refused" means the request never reached a server (the app isn't running), so it is safe to launch and
+		// resend. Any other failure (timeout, reset) may have been applied already: never resend it, or a goal
+		// could count twice on air (review of 28 Sep).
+		const sendCommand = async (): Promise<"sent" | "refused" | "unknown"> => {
 			try {
 				const res = await fetch(`http://${HOST}:${PORT}/api/match/${slot}/command`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ command, ...body })
+					body: JSON.stringify({ command, ...body }),
+					signal: AbortSignal.timeout(3000)
 				});
 				if (!res.ok) streamDeck.logger.warn(`scorebug: ${command} rejected (${res.status})`);
-				return true;
+				return "sent";
 			} catch (err) {
-				streamDeck.logger.warn(`scorebug: ${command} failed, server unreachable`, err);
-				return false;
+				const code = (err as { cause?: { code?: string } })?.cause?.code;
+				streamDeck.logger.warn(`scorebug: ${command} failed (${code ?? "unknown"})`, err);
+				return code === "ECONNREFUSED" ? "refused" : "unknown";
 			}
 		};
 
-		let delivered = false;
-		if (!this.online) {
+		let result: "sent" | "refused" | "unknown" = this.online ? await sendCommand() : "refused";
+		if (result === "refused") {
 			this.#starting++;
 			this.#notify();
 			try {
-				if (await launchAndWait(PORT)) delivered = await sendCommand();
+				if (await launchAndWait(PORT)) result = await sendCommand();
 			} finally {
 				this.#starting--;
 				this.#notify();
 			}
-		} else {
-			delivered = await sendCommand();
-			if (!delivered) {
-				this.#starting++;
-				this.#notify();
-				try {
-					if (await launchAndWait(PORT)) delivered = await sendCommand();
-				} finally {
-					this.#starting--;
-					this.#notify();
-				}
-			}
 		}
+		const delivered = result === "sent";
 		if (!delivered) await onUnavailable?.();
 	}
 }
