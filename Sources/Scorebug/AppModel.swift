@@ -48,13 +48,13 @@ struct LaunchOptions {
 
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var state: MatchState
+    var state: MatchState
     @Published var library: Library
     @Published var settings: ScorebugCore.Settings
     @Published var serverStatus: String = "Starting"
     @Published var serverRunning = false
     @Published var lastError: String?
-    @Published private(set) var slotSummaries: [Int: SlotSummary] = [:]
+    private(set) var slotSummaries: [Int: SlotSummary] = [:]
 
     let store: Store
     let resolver: OverlayResolver
@@ -65,6 +65,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var liveSourceStatus: [String: String] = ["ESPN": "Ready", "FotMob": "Not checked", "SofaScore": "Unavailable: HTTP 403"]
     private var liveSeenAt: [String: Date] = [:]
     private var stoppedLiveEvents: Set<String> = []
+    private var pendingUIUpdate: DispatchWorkItem?
 
     var port: Int { options.port ?? settings.port }
     var baseURL: String { "http://127.0.0.1:\(port)" }
@@ -162,7 +163,7 @@ final class AppModel: ObservableObject {
             if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
                 state.matches[idx].removedLiveGoalKeys.append(removedKey)
             }
-            persistAndBroadcast()
+            persistAndBroadcast(deferUIUpdate: true)
             if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
     }
@@ -358,15 +359,30 @@ final class AppModel: ObservableObject {
         edit(&state.matches[idx].goals[goal]); state.matches[idx].revision += 1; persistAndBroadcast()
     }
 
-    private func persistAndBroadcast() {
+    private func persistAndBroadcast(deferUIUpdate: Bool = false) {
         do { try store.saveState(state) } catch { lastError = "Could not save state: \(error.localizedDescription)" }
         updateSlotSummaries()
         broadcast()
+        if deferUIUpdate {
+            // Coalesce rapid API commands so the window diff cannot hold up the next response.
+            pendingUIUpdate?.cancel()
+            let update = DispatchWorkItem { [weak self] in
+                self?.objectWillChange.send()
+                self?.pendingUIUpdate = nil
+            }
+            pendingUIUpdate = update
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: update)
+        } else {
+            pendingUIUpdate?.cancel()
+            pendingUIUpdate = nil
+            objectWillChange.send()
+        }
     }
 
     private func updateSlotSummaries() {
         for m in state.matches {
-            slotSummaries[m.slot] = SlotSummary(homeCode: m.home.code, awayCode: m.away.code, homeScore: m.homeScore, awayScore: m.awayScore, visible: m.visible)
+            let summary = SlotSummary(homeCode: m.home.code, awayCode: m.away.code, homeScore: m.homeScore, awayScore: m.awayScore, visible: m.visible)
+            if slotSummaries[m.slot] != summary { slotSummaries[m.slot] = summary }
         }
     }
 
