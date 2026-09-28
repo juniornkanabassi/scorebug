@@ -5,6 +5,15 @@ import ScorebugCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenObserver: Any?
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // SCOREBUG_APPEARANCE=light|dark pins this launch to Aqua or Dark Aqua for visual checks.
+        switch ProcessInfo.processInfo.environment["SCOREBUG_APPEARANCE"] {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         let wanted = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).screenName
@@ -98,7 +107,10 @@ struct SidebarMatchRow: View, Equatable {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
-                    if summary.visible { Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS") }
+                    if summary.visible {
+                        Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS")
+                        Text("LIVE").scaledFont(.caption2, weight: .bold).foregroundStyle(.green)
+                    }
                 }
                 Text("\(summary.homeCode) \(summary.homeScore) – \(summary.awayScore) \(summary.awayCode)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
@@ -119,8 +131,14 @@ struct ContentView: View {
                     }
                 }
                 Section {
-                    Label("Team Library", systemImage: "books.vertical").scaledFont(.body).tag(SidebarSection.library)
-                    Label("Settings", systemImage: "gearshape").scaledFont(.body).tag(SidebarSection.settings)
+                    HStack(spacing: 8) {
+                        Image(systemName: "books.vertical")
+                        Text("Team Library").lineLimit(1)
+                    }.scaledFont(.body).accessibilityElement(children: .combine).tag(SidebarSection.library)
+                    HStack(spacing: 8) {
+                        Image(systemName: "gearshape")
+                        Text("Settings").lineLimit(1)
+                    }.scaledFont(.body).accessibilityElement(children: .combine).tag(SidebarSection.settings)
                 }
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 260)
