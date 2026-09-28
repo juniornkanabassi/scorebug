@@ -185,6 +185,39 @@ final class AppModel: ObservableObject {
         persistAndBroadcast()
     }
 
+    func fixtures(on date: Date, competitionId: String?) async throws -> [Fixture] {
+        if let competitionId, !library.competitions.contains(where: { $0.id == competitionId }) { return [] }
+        let competition = competitionId.flatMap { id in library.competitions.first { $0.id == id } }
+        let found = try await FixtureService.fetch(date: date, apiKey: KeychainStore.get(), espnLeague: competition?.sourceIds["espn"])
+        return FixtureLogic.filter(found, competition: competition)
+    }
+
+    func loadFixture(_ fixture: Fixture, slot: Int, force: Bool = false) async {
+        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return }
+        guard state.matches[idx].phase == .preMatch || force else { return }
+        let competition = library.competitions.first { $0.sourceIds.values.contains(fixture.competitionCode) }
+        let competitionId = competition?.id ?? state.matches[idx].competitionId
+        func club(for team: FixtureTeam) async -> Club {
+            var club = FixtureLogic.matchingClub(for: team, in: library.clubs) ?? FixtureLogic.makeClub(from: team)
+            if club.crestFile == nil, case .file(let url) = await FixtureService.crest(for: team, in: store.crestsDirectory) {
+                club.crestFile = url.lastPathComponent
+                CrestImage.invalidate(file: url.lastPathComponent)
+            }
+            return club
+        }
+        let homeClub = await club(for: fixture.home)
+        let awayClub = await club(for: fixture.away)
+        guard match(slot).phase == .preMatch || force else { return }
+        for club in [homeClub, awayClub] {
+            if let i = library.clubs.firstIndex(where: { $0.id == club.id }) { library.clubs[i] = club }
+            else { library.clubs.append(club) }
+        }
+        saveLibrary()
+        if let competition { setCompetition(competition.id, slot: slot) }
+        apply(.setTeam(.home, homeClub.entry(for: competitionId)), slot: slot)
+        apply(.setTeam(.away, awayClub.entry(for: competitionId)), slot: slot)
+    }
+
     private func persistAndBroadcast() {
         do { try store.saveState(state) } catch { lastError = "Could not save state: \(error.localizedDescription)" }
         updateSlotSummaries()

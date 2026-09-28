@@ -3,6 +3,32 @@ import Foundation
 import FlyingFox
 import ScorebugCore
 
+private struct FixtureWire: Codable {
+    struct Team: Codable {
+        var name: String
+        var shortName: String
+        var code: String
+        var crestURL: String?
+        init(_ team: FixtureTeam) { name = team.name; shortName = team.shortName; code = team.code; crestURL = team.crestURL?.absoluteString }
+        var fixtureTeam: FixtureTeam { FixtureTeam(name: name, shortName: shortName, code: code, crestURL: crestURL.flatMap(URL.init(string:))) }
+    }
+    var home: Team
+    var away: Team
+    var kickoff: String
+    var competitionCode: String
+    var force: Bool?
+    init(_ fixture: Fixture) {
+        home = Team(fixture.home); away = Team(fixture.away)
+        kickoff = ISO8601DateFormatter().string(from: fixture.kickoff)
+        competitionCode = fixture.competitionCode; force = nil
+    }
+    var fixture: Fixture? {
+        let formatter = ISO8601DateFormatter()
+        guard let date = formatter.date(from: kickoff) else { return nil }
+        return Fixture(kickoff: date, competitionCode: competitionCode, competitionName: "", home: home.fixtureTeam, away: away.fixtureTeam)
+    }
+}
+
 actor Broadcaster {
     private var clients: [UUID: AsyncStream<WSMessage>.Continuation] = [:]
     var count: Int { clients.count }
@@ -125,6 +151,26 @@ final class OverlayServer: @unchecked Sendable {
             guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
             let data = await MainActor.run { (try? JSONCoding.encoder().encode(model.library)) ?? Data() }
             return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: data)
+        })
+        await server.appendRoute("GET /api/fixtures", handler: { [weak self] request in
+            guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
+            let query = Dictionary(request.query.map { ($0.name, $0.value) }, uniquingKeysWith: { first, _ in first })
+            let formatter = DateFormatter(); formatter.calendar = Calendar(identifier: .gregorian); formatter.timeZone = TimeZone(secondsFromGMT: 0); formatter.dateFormat = "yyyy-MM-dd"
+            guard let raw = query["date"], let date = formatter.date(from: raw) else { return HTTPResponse(statusCode: .badRequest, body: Data("date must be YYYY-MM-DD".utf8)) }
+            do {
+                let fixtures = try await model.fixtures(on: date, competitionId: query["competition"])
+                let data = try JSONEncoder().encode(fixtures.map(FixtureWire.init))
+                return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8", .cacheControl: "no-store"], body: data)
+            } catch { return HTTPResponse(statusCode: .badGateway, body: Data("fixture providers failed: \(error)".utf8)) }
+        })
+        await server.appendRoute("POST /api/match/:slot/loadFixture", handler: { [weak self] request in
+            guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
+            guard let slot = request.routeParameters["slot"].flatMap(Int.init), [1, 2].contains(slot) else { return HTTPResponse(statusCode: .badRequest, body: Data("slot must be 1 or 2".utf8)) }
+            let body = try await request.bodyData
+            guard let wire = try? JSONDecoder().decode(FixtureWire.self, from: body),
+                  let fixture = wire.fixture else { return HTTPResponse(statusCode: .badRequest, body: Data("invalid fixture JSON".utf8)) }
+            await model.loadFixture(fixture, slot: slot, force: wire.force ?? false)
+            return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: await model.snapshotData())
         })
         await server.appendRoute("POST /api/match/:slot/command", handler: { [weak self] request in
             guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }

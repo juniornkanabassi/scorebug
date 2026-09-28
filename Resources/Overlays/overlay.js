@@ -4,6 +4,20 @@
 // (ø, æ, ß, ł, đ) are mapped by hand first, so "FK Bodø/Glimt" becomes "fk-bodo-glimt", not "fk-bod-glimt".
 const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").replace(/ß/g, "ss").replace(/[łŁ]/g, "l").replace(/[đĐ]/g, "d").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 // The clock maths mirrors ScorebugCore/ClockEngine.swift. Keep them in step.
+// Relative luminance (sRGB) of a #RRGGBB colour, 0 black to 1 white.
+function luminance(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return 0;
+  const n = parseInt(m[1], 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+// Ink for text drawn on a team's secondary colour: white on a dark one; on a light one the team's own primary
+// when that is dark enough, else near-black. Arsenal's white secondary made white Premier League digits vanish (28 Sep).
+function secondaryInk(t) {
+  if (luminance(t.secondaryColour) < 0.45) return "#fff";
+  return luminance(t.primaryColour) < 0.25 ? t.primaryColour : "#111";
+}
+
 (function () {
   const body = document.body;
   const orientation = body.dataset.orientation === "v" ? "v" : "h";
@@ -154,6 +168,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       bug.style.setProperty("--" + side + "-primary", t.primaryColour);
       bug.style.setProperty("--" + side + "-secondary", t.secondaryColour);
       bug.style.setProperty("--" + side + "-text", t.textColour);
+      bug.style.setProperty("--" + side + "-secondary-ink", secondaryInk(t)); // digits that stay legible on the secondary colour
       bug.style.setProperty("--" + side + "-code", JSON.stringify(t.code)); // a theme can print it with content: var(--home-code)
       // Stable per-club identifier for club-specific goal motifs: themes match [data-home-club="arsenal"].goal-home.
       bug.dataset[side + "Club"] = slug(t.name);
