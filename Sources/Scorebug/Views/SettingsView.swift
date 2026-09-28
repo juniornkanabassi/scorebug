@@ -6,6 +6,8 @@ struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @State private var pickingFolder = false
     @State private var pickingBackdrop = false
+    @State private var footballDataKey = ""
+    @State private var keyStatus = KeychainStore.get() == nil ? "No key, using ESPN only" : "Saved in Keychain"
 
     private enum BackdropMode: Hashable { case none, pitch, streamer, file }
     /// Read straight from settings rather than a separate `@State`, so cancelling the file importer (which
@@ -65,6 +67,35 @@ struct SettingsView: View {
                     model.settings.previewBackdrop = url.path
                     model.saveSettings()
                 }
+            }
+            Section("Fixtures") {
+                SecureField("football-data.org key", text: $footballDataKey).scaledFont(.body)
+                HStack {
+                    Button("Save") {
+                        do { try KeychainStore.set(footballDataKey); footballDataKey = ""; keyStatus = "Saved in Keychain" }
+                        catch { keyStatus = "Could not save key: \(error.localizedDescription)" }
+                    }.disabled(footballDataKey.isEmpty).scaledFont(.body)
+                    Button("Remove") {
+                        do { try KeychainStore.delete(); keyStatus = "No key, using ESPN only" }
+                        catch { keyStatus = "Could not remove key: \(error.localizedDescription)" }
+                    }.scaledFont(.body)
+                    Text(keyStatus).scaledFont(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Section("Live data") {
+                ForEach(["ESPN", "FotMob", "SofaScore"], id: \.self) { source in
+                    HStack {
+                        Toggle(source, isOn: Binding(
+                            get: { model.settings.liveSourceEnabled[source] ?? false },
+                            set: { model.setLiveSource(source, enabled: $0) }
+                        ))
+                        .disabled(source == "SofaScore")
+                        Spacer()
+                        Text(model.liveSourceStatus[source] ?? "Not checked").scaledFont(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                Text("ESPN is primary. FotMob cross-checks goal counts. SofaScore is unavailable from this network.")
+                    .scaledFont(.caption).foregroundStyle(.secondary)
             }
             Section("Crests") {
                 LabeledContent("Folder") {

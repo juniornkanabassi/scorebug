@@ -3,3 +3,4 @@
 node_modules/
 StreamDeckPlugin/com.juniornkanabassi.scorebug.sdPlugin/bin/
 .DS_Store
+StreamDeckPlugin/com.juniornkanabassi.scorebug.sdPlugin/logs/

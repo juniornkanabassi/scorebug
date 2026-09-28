@@ -112,10 +112,25 @@ public struct Goal: Codable, Sendable, Identifiable, Equatable {
     public var scorer: String?
     public var ownGoal: Bool
     public var penalty: Bool
+    /// True only while this scorer came from ESPN and may be corrected by a later poll.
+    public var autoFilled: Bool
+    public var autoAdded: Bool
+    public var autoAddedKey: String?
 
-    public init(id: UUID = UUID(), side: Side, elapsedSeconds: Int, minuteLabel: String, scorer: String? = nil, ownGoal: Bool = false, penalty: Bool = false) {
+    public init(id: UUID = UUID(), side: Side, elapsedSeconds: Int, minuteLabel: String, scorer: String? = nil, ownGoal: Bool = false, penalty: Bool = false, autoFilled: Bool = false, autoAdded: Bool = false, autoAddedKey: String? = nil) {
         self.id = id; self.side = side; self.elapsedSeconds = elapsedSeconds; self.minuteLabel = minuteLabel
-        self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
+        self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty; self.autoFilled = autoFilled; self.autoAdded = autoAdded; self.autoAddedKey = autoAddedKey
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, side, elapsedSeconds, minuteLabel, scorer, ownGoal, penalty, autoFilled, autoAdded, autoAddedKey }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id); side = try c.decode(Side.self, forKey: .side)
+        elapsedSeconds = try c.decode(Int.self, forKey: .elapsedSeconds); minuteLabel = try c.decode(String.self, forKey: .minuteLabel)
+        scorer = try c.decodeIfPresent(String.self, forKey: .scorer); ownGoal = try c.decodeIfPresent(Bool.self, forKey: .ownGoal) ?? false
+        penalty = try c.decodeIfPresent(Bool.self, forKey: .penalty) ?? false; autoFilled = try c.decodeIfPresent(Bool.self, forKey: .autoFilled) ?? false
+        autoAdded = try c.decodeIfPresent(Bool.self, forKey: .autoAdded) ?? false
+        autoAddedKey = try c.decodeIfPresent(String.self, forKey: .autoAddedKey)
     }
 }
 
@@ -196,18 +211,28 @@ public struct Match: Codable, Sendable, Equatable {
     public var aggregate: Aggregate?
     /// Manual scorer strap visibility. Optional in decoding (old state.json files default to false).
     public var showScorers: Bool
+    /// ESPN event link and opt-in scorer filling, optional for existing schema-1 files.
+    public var espnEventId: String?
+    public var espnLeague: String?
+    public var fillScorersFromESPN: Bool
+    public var autoUpdateLiveData: Bool
+    public var liveDataDelayMinutes: Int
+    public var liveDataNotice: String?
+    public var removedLiveGoalKeys: [String]
 
     public init(slot: Int, competitionId: String = "ligue1", home: TeamEntry = .placeholderHome, away: TeamEntry = .placeholderAway) {
         self.slot = slot; self.competitionId = competitionId; self.home = home; self.away = away
         self.kickoff = nil; self.phase = .preMatch; self.clock = Clock(); self.addedMinutes = nil
         self.homeScore = 0; self.awayScore = 0; self.goals = []; self.shootout = nil
         self.visible = true; self.lastGoal = nil; self.revision = 0; self.themeId = nil
-        self.aggregate = nil; self.showScorers = false
+        self.aggregate = nil; self.showScorers = false; self.espnEventId = nil; self.espnLeague = nil
+        self.fillScorersFromESPN = true; self.autoUpdateLiveData = true; self.liveDataDelayMinutes = 5; self.liveDataNotice = nil
+        self.removedLiveGoalKeys = []
     }
 
     private enum CodingKeys: String, CodingKey {
         case slot, competitionId, home, away, kickoff, phase, clock, addedMinutes, homeScore, awayScore
-        case goals, shootout, visible, lastGoal, revision, themeId, aggregate, showScorers
+        case goals, shootout, visible, lastGoal, revision, themeId, aggregate, showScorers, espnEventId, espnLeague, fillScorersFromESPN, autoUpdateLiveData, liveDataDelayMinutes, liveDataNotice, removedLiveGoalKeys
     }
 
     public init(from decoder: Decoder) throws {
@@ -230,6 +255,12 @@ public struct Match: Codable, Sendable, Equatable {
         themeId = try c.decodeIfPresent(String.self, forKey: .themeId)
         aggregate = try c.decodeIfPresent(Aggregate.self, forKey: .aggregate)
         showScorers = try c.decodeIfPresent(Bool.self, forKey: .showScorers) ?? false
+        espnEventId = try c.decodeIfPresent(String.self, forKey: .espnEventId); espnLeague = try c.decodeIfPresent(String.self, forKey: .espnLeague)
+        fillScorersFromESPN = try c.decodeIfPresent(Bool.self, forKey: .fillScorersFromESPN) ?? true
+        autoUpdateLiveData = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateLiveData) ?? fillScorersFromESPN
+        liveDataDelayMinutes = min(10, max(0, try c.decodeIfPresent(Int.self, forKey: .liveDataDelayMinutes) ?? 5))
+        liveDataNotice = try c.decodeIfPresent(String.self, forKey: .liveDataNotice)
+        removedLiveGoalKeys = try c.decodeIfPresent([String].self, forKey: .removedLiveGoalKeys) ?? []
     }
 
     public func score(_ side: Side) -> Int { side == .home ? homeScore : awayScore }
@@ -325,14 +356,15 @@ public struct Settings: Codable, Sendable, Equatable {
     /// (drawn stadium green, no asset), or an absolute path to a still or a muted looping video. Optional
     /// since schema 1.
     public var previewBackdrop: String?
+    public var liveSourceEnabled: [String: Bool]
 
-    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true, crestFolder: String? = nil, portraitTop: Int = 100, previewBackdrop: String? = nil) {
+    public init(schema: Int = currentSchema, port: Int = 8600, dataSourceOrder: [String] = ["footballData", "espn"], themeOverridesEnabled: Bool = true, crestFolder: String? = nil, portraitTop: Int = 100, previewBackdrop: String? = nil, liveSourceEnabled: [String: Bool] = ["ESPN": true, "FotMob": true, "SofaScore": false]) {
         self.schema = schema; self.port = port; self.dataSourceOrder = dataSourceOrder; self.themeOverridesEnabled = themeOverridesEnabled
-        self.crestFolder = crestFolder; self.portraitTop = portraitTop; self.previewBackdrop = previewBackdrop
+        self.crestFolder = crestFolder; self.portraitTop = portraitTop; self.previewBackdrop = previewBackdrop; self.liveSourceEnabled = liveSourceEnabled
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schema, port, dataSourceOrder, themeOverridesEnabled, crestFolder, portraitTop, previewBackdrop
+        case schema, port, dataSourceOrder, themeOverridesEnabled, crestFolder, portraitTop, previewBackdrop, liveSourceEnabled
     }
 
     public init(from decoder: Decoder) throws {
@@ -344,6 +376,7 @@ public struct Settings: Codable, Sendable, Equatable {
         crestFolder = try c.decodeIfPresent(String.self, forKey: .crestFolder)
         portraitTop = try c.decodeIfPresent(Int.self, forKey: .portraitTop) ?? 100
         previewBackdrop = try c.decodeIfPresent(String.self, forKey: .previewBackdrop)
+        liveSourceEnabled = try c.decodeIfPresent([String: Bool].self, forKey: .liveSourceEnabled) ?? ["ESPN": true, "FotMob": true, "SofaScore": false]
     }
 }
 

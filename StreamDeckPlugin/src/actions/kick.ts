@@ -9,7 +9,7 @@ export class Kick extends StatefulAction {
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
 		const settings = ev.payload.settings;
 		const result = settings.result === "missed" ? "missed" : "scored";
-		await server.send(slotOf(settings), "recordKick", { side: sideOf(settings), result });
+		await server.send(slotOf(settings), "recordKick", { side: sideOf(settings), result }, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
@@ -19,7 +19,7 @@ export class Kick extends StatefulAction {
 		const result = settings.result === "missed" ? "missed" : "scored";
 		await a.setImage(iconPath("kick", `${side}-${result}`, slot));
 		if (!match) {
-			await a.setTitle("OFFLINE");
+			await a.setTitle(server.offlineTitle);
 			return;
 		}
 		const scored = match.shootout?.kicks.filter((k) => k.side === side && k.result === "scored").length ?? 0;

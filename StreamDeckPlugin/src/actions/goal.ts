@@ -21,7 +21,7 @@ export class Goal extends StatefulAction {
 		const settings = ev.payload.settings;
 		const side = sideOf(settings);
 		const delta = settings.delta === -1 ? -1 : 1;
-		await server.send(slotOf(settings), "goal", { side, delta: longPress ? -delta : delta });
+		await server.send(slotOf(settings), "goal", { side, delta: longPress ? -delta : delta }, () => ev.action.showAlert());
 	}
 
 	protected override async paint(a: KeyAction<BaseSettings>, settings: BaseSettings): Promise<void> {
@@ -29,6 +29,6 @@ export class Goal extends StatefulAction {
 		const side = sideOf(settings);
 		const match = server.match(slot);
 		await a.setImage(iconPath("goal", `${side}-${settings.delta === -1 ? "minus" : "plus"}`, slot));
-		await a.setTitle(match ? undefined : "OFFLINE");
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }

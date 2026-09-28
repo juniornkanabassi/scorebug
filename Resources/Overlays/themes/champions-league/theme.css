@@ -166,9 +166,9 @@ body[data-family="uefa"] .main::after { content: "GOAL"; display: flex; align-it
   color: #fff; font-style: italic; font-weight: 700; font-family: "UEFA Champions", "Barlow Condensed", Arial, sans-serif; letter-spacing: 0;
   font-size: calc(var(--h) * 1.3); transform-origin: right center;
   filter: drop-shadow(0 0 2px rgba(0,0,0,0.55)) drop-shadow(0 0 4px rgba(0,0,0,0.35)); }
-body[data-family="uefa"] .bug.goal .main::before { opacity: 1; animation: uefa-goal-band 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
-body[data-family="uefa"] .bug.goal .main::after { opacity: 0; animation: uefa-goal-word 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
-body[data-family="uefa"] .bug.goal .team .code, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.2s cubic-bezier(.3,.7,.4,1) forwards; }
+body[data-family="uefa"] .bug.goal .main::before { opacity: 1; animation: uefa-goal-band 1.44s cubic-bezier(.3,.7,.4,1) forwards; }
+body[data-family="uefa"] .bug.goal .main::after { opacity: 0; animation: uefa-goal-word 1.44s cubic-bezier(.3,.7,.4,1) forwards; }
+body[data-family="uefa"] .bug.goal .team .code, body[data-family="uefa"] .bug.goal .score { animation: uefa-text 1.44s cubic-bezier(.3,.7,.4,1) forwards; }
 @keyframes uefa-goal-band {
   0%   { clip-path: inset(0 100% 0 0); }
   20%  { clip-path: inset(0 0 0 0); }
@@ -400,3 +400,7 @@ body[data-theme="nations-league"] .scorers .list::before { background-color: #1B
    so the goal band is one solid team colour and GOAL takes the team's own text colour, never white on white. */
 body[data-theme="nations-league"] .main::before { background: var(--goal-primary, var(--uefa-plate-b)); }
 body[data-theme="nations-league"] .main::after { color: var(--goal-text, #fff); }
+/* 0.12.0 pixel pass: Champions League house colours measured from `ucl26-final_normal_00-30` (2026 final world feed);
+   goal band, word and score fade last 1.44 s, wipe start to settled score in `ucl26-final_goal_arsenal_wipe_00-45`
+   through `ucl26-final_goal_arsenal_settled_00-46`. Geometry and the chevrons stay as 0.11 (Junior's ruling). */
+body[data-theme="champions-league"] .bug { --uefa-ink: #FFFFFF; --uefa-sq: #0C27F3; --uefa-plate-a: #060BA5; --uefa-plate-b: #000267; }

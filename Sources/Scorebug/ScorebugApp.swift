@@ -5,10 +5,20 @@ import ScorebugCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenObserver: Any?
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // SCOREBUG_APPEARANCE=light|dark pins this launch to Aqua or Dark Aqua for visual checks.
+        switch ProcessInfo.processInfo.environment["SCOREBUG_APPEARANCE"] {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        let wanted = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).screenName
-        guard let wanted else { NSApp.activate(ignoringOtherApps: true); return }
+        let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        if !options.background, options.screenName == nil { NSApp.activate(ignoringOtherApps: true) }
+        guard let wanted = options.screenName else { return }
         // `--screen`: every window this process opens goes to the named display, and the app never takes focus,
         // so agents' test instances stay off Junior's monitors. Falls back to normal behaviour if the screen is absent.
         let place: (NSWindow) -> Void = { window in
@@ -33,9 +43,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct ScorebugApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model: AppModel
+    private let launchOptions: LaunchOptions
 
     init() {
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
         model.startServer()
@@ -48,7 +60,7 @@ struct ScorebugApp: App {
                 .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
         }
         .defaultSize(width: 1180, height: 820)
-        .defaultLaunchBehavior(.presented)
+        .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
         .restorationBehavior(.disabled)
         .commands {
             CommandGroup(after: .toolbar) {
@@ -59,6 +71,19 @@ struct ScorebugApp: App {
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
         }
+        MenuBarExtra("Scorebug", systemImage: "sportscourt") {
+            MenuBarCommands()
+        }
+    }
+}
+
+private struct MenuBarCommands: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Open Scorebug") { openWindow(id: "main") }
+        Divider()
+        Button("Quit Scorebug") { NSApp.terminate(nil) }
     }
 }
 
@@ -98,7 +123,10 @@ struct SidebarMatchRow: View, Equatable {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
-                    if summary.visible { Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS") }
+                    if summary.visible {
+                        Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS")
+                        Text("LIVE").scaledFont(.caption2, weight: .bold).foregroundStyle(.green)
+                    }
                 }
                 Text("\(summary.homeCode) \(summary.homeScore) – \(summary.awayScore) \(summary.awayCode)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
@@ -119,8 +147,14 @@ struct ContentView: View {
                     }
                 }
                 Section {
-                    Label("Team Library", systemImage: "books.vertical").scaledFont(.body).tag(SidebarSection.library)
-                    Label("Settings", systemImage: "gearshape").scaledFont(.body).tag(SidebarSection.settings)
+                    HStack(spacing: 8) {
+                        Image(systemName: "books.vertical")
+                        Text("Team Library").lineLimit(1)
+                    }.scaledFont(.body).accessibilityElement(children: .combine).tag(SidebarSection.library)
+                    HStack(spacing: 8) {
+                        Image(systemName: "gearshape")
+                        Text("Settings").lineLimit(1)
+                    }.scaledFont(.body).accessibilityElement(children: .combine).tag(SidebarSection.settings)
                 }
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 260)

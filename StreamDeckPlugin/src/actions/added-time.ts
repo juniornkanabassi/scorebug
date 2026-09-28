@@ -11,10 +11,10 @@ export class AddedTime extends StatefulAction {
 		const settings = ev.payload.settings;
 		const slot = slotOf(settings);
 		if (typeof settings.minutes === "number") {
-			await server.send(slot, "setAddedMinutes", { minutes: settings.minutes });
+			await server.send(slot, "setAddedMinutes", { minutes: settings.minutes }, () => ev.action.showAlert());
 		} else {
 			const delta = typeof settings.delta === "number" ? settings.delta : 1;
-			await server.send(slot, "adjustAddedMinutes", { delta });
+			await server.send(slot, "adjustAddedMinutes", { delta }, () => ev.action.showAlert());
 		}
 	}
 
@@ -24,6 +24,6 @@ export class AddedTime extends StatefulAction {
 		const value = typeof settings.minutes === "number" ? settings.minutes : (typeof settings.delta === "number" ? settings.delta : 1);
 		const variant = value === 0 ? "off" : value < 0 ? "minus" : "plus";
 		await a.setImage(iconPath("added-time", variant, slot));
-		await a.setTitle(match ? undefined : "OFFLINE");
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }

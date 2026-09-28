@@ -368,5 +368,150 @@ if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
     check(missingCode.isEmpty, "every five-league club has a code for each of its competitions (missing: \(missingCode))")
 }
 
+
+// Stage 4 slice 1: football-data.org fixture decoder against a canned sample (no network)
+do {
+    let sample = """
+    {"matches":[{"utcDate":"2026-09-27T15:00:00Z","competition":{"code":"CL","name":"UEFA Champions League"},
+      "homeTeam":{"name":"Real Madrid CF","shortName":"Real Madrid","tla":"RMA","crest":"https://crests.football-data.org/86.png"},
+      "awayTeam":{"name":"FC Internazionale Milano","shortName":"Inter","tla":"INT","crest":"https://crests.football-data.org/108.png"}},
+     {"utcDate":"2026-09-28T19:00:00Z","competition":{"code":"PL","name":"Premier League"},
+      "homeTeam":{"name":"Coventry City FC"},"awayTeam":{"name":"Arsenal FC","shortName":"Arsenal","tla":"ARS","crest":null}}]}
+    """
+    let fixtures = try FixtureDecoder.footballData(Data(sample.utf8))
+    check(fixtures.count == 2, "decodes two fixtures from the canned sample")
+    check(fixtures[0].home.code == "RMA" && fixtures[0].away.shortName == "Inter", "codes and short names come from tla and shortName")
+    check(fixtures[0].competitionCode == "CL" && fixtures[0].kickoff == ISO8601DateFormatter().date(from: "2026-09-27T15:00:00Z"), "competition code and ISO 8601 kick-off decoded")
+    check(fixtures[0].home.crestURL?.absoluteString == "https://crests.football-data.org/86.png", "crest URL kept")
+    check(fixtures[1].home.shortName == "Coventry City FC" && fixtures[1].home.code == "COV" && fixtures[1].home.crestURL == nil, "missing shortName, tla and crest fall back")
+    check((try? FixtureDecoder.footballData(Data("{\"nope\":1}".utf8))) == nil, "a wrong shape throws rather than crashes")
+} catch { check(false, "fixture decoder threw: \(error)") }
+
+
+// Stage 4 slice 2: ESPN scoreboard decoder against a canned sample (no network)
+do {
+    let sample = """
+    {"leagues":[{"abbreviation":"UEFA.CHAMPIONS","name":"UEFA Champions League"}],
+     "events":[{"id":"event-1","date":"2026-09-27T15:00Z","competitions":[{"competitors":[
+        {"homeAway":"away","team":{"displayName":"Internazionale","shortDisplayName":"Inter","abbreviation":"INT","logo":"https://a.espncdn.com/i/teamlogos/soccer/500/110.png"}},
+        {"homeAway":"home","team":{"displayName":"Real Madrid","abbreviation":"RMA"}}]}]},
+      {"date":"not a date","competitions":[{"competitors":[{"homeAway":"home","team":{"displayName":"X"}},{"homeAway":"away","team":{"displayName":"Y"}}]}]}]}
+    """
+    let fixtures = try FixtureDecoder.espn(Data(sample.utf8))
+    check(fixtures.count == 1, "ESPN: one fixture decoded, the undated event dropped")
+    check(fixtures[0].home.code == "RMA" && fixtures[0].away.shortName == "Inter", "ESPN: home and away picked by homeAway regardless of order")
+    check(fixtures[0].kickoff == ISO8601DateFormatter().date(from: "2026-09-27T15:00:00Z"), "ESPN: date without seconds decoded")
+    check(fixtures[0].espnEventId == "event-1", "ESPN: fixture event id retained for the live link")
+    check(fixtures[0].competitionCode == "UEFA.CHAMPIONS" && fixtures[0].home.crestURL == nil && fixtures[0].away.crestURL != nil, "ESPN: league code and optional logos")
+    check((try? FixtureDecoder.espn(Data("[]".utf8))) == nil, "ESPN: a wrong shape throws rather than crashes")
+} catch { check(false, "ESPN decoder threw: \(error)") }
+
+
+// Stage 4 slice 3: fetch tries football-data first, then ESPN, with a stub loader (no network)
+do {
+    struct Down: Error {}
+    let espnSample = """
+    {"leagues":[{"abbreviation":"ENG.1","name":"Premier League"}],"events":[{"date":"2026-09-27T15:00Z","competitions":[{"competitors":[
+      {"homeAway":"home","team":{"displayName":"Arsenal","abbreviation":"ARS"}},{"homeAway":"away","team":{"displayName":"Chelsea","abbreviation":"CHE"}}]}]}]}
+    """
+    final class Calls: @unchecked Sendable { var hosts: [String] = []; var token: String? }
+    let calls = Calls()
+    let loader: FixtureService.Loader = { request in
+        calls.hosts.append(request.url!.host!)
+        if request.url!.host!.contains("football-data") { calls.token = request.value(forHTTPHeaderField: "X-Auth-Token"); throw Down() }
+        return Data(espnSample.utf8)
+    }
+    let semaphore = DispatchSemaphore(value: 0)
+    var result: [Fixture] = []
+    Task { result = (try? await FixtureService.fetch(date: at(0), apiKey: "k", loader: loader)) ?? []; semaphore.signal() }
+    semaphore.wait()
+    check(calls.hosts == ["api.football-data.org", "site.api.espn.com"], "fetch tries football-data then ESPN (got \(calls.hosts))")
+    check(calls.token == "k", "fetch sends the API key as X-Auth-Token")
+    check(result.count == 1 && result[0].home.code == "ARS", "fetch answers from ESPN when football-data fails")
+}
+
+
+// Stage 4 slice 4: crest download cached by team slug, monogram when it fails (stub loader, no network)
+do {
+    struct Down: Error {}
+    let folder = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-crests-\(UUID().uuidString)")
+    final class Calls: @unchecked Sendable { var n = 0 }
+    let calls = Calls()
+    let loader: FixtureService.Loader = { request in
+        calls.n += 1
+        if request.url!.path.hasSuffix("down.png") { throw Down() }
+        return Data([0x89, 0x50, 0x4E, 0x47])
+    }
+    let inter = FixtureTeam(name: "FC Internazionale Milano", shortName: "Inter", code: "INT", crestURL: URL(string: "https://crests.football-data.org/108.png"))
+    let down = FixtureTeam(name: "Down FC", shortName: "Down", code: "DOW", crestURL: URL(string: "https://crests.football-data.org/down.png"))
+    let none = FixtureTeam(name: "No Crest", shortName: "No Crest", code: "NOC", crestURL: nil)
+    let semaphore = DispatchSemaphore(value: 0)
+    var results: [FixtureCrest] = []
+    Task {
+        results.append(await FixtureService.crest(for: inter, in: folder, loader: loader))
+        results.append(await FixtureService.crest(for: inter, in: folder, loader: loader))
+        results.append(await FixtureService.crest(for: down, in: folder, loader: loader))
+        results.append(await FixtureService.crest(for: none, in: folder, loader: loader))
+        semaphore.signal()
+    }
+    semaphore.wait()
+    let expected = folder.appendingPathComponent("fc-internazionale-milano.png")
+    check(results[0] == .file(expected) && FileManager.default.fileExists(atPath: expected.path), "crest downloaded to <slug>.png under the folder")
+    check(results[1] == .file(expected) && calls.n == 2, "second request served from the cache, loader called once for Inter and once for Down")
+    check(results[2] == .monogram("DO") && calls.n == 2, "failed download falls back to the monogram")
+    check(results[3] == .monogram("NO") && calls.n == 2, "no crest URL gives the monogram without a request")
+    try? FileManager.default.removeItem(at: folder)
+}
+
+// Stage 4 pure fixture mapping
+do {
+    let arsenal = Club(name: "Arsenal FC", shortName: "Arsenal", defaultCode: "ARS", codes: ["premier-league": "ARS"], primaryColour: "#EF0107")
+    let team = FixtureTeam(name: "Arsenal", shortName: "Arsenal", code: "ARS")
+    check(FixtureLogic.matchingClub(for: team, in: [arsenal]) == arsenal, "fixture club matching accepts a normalized short name or code")
+    let created = FixtureLogic.makeClub(from: FixtureTeam(name: "New Club", shortName: "New", code: "NEW"))
+    check(created.name == "New Club" && created.shortName == "New" && created.defaultCode == "NEW" && created.crestFile == nil, "fixture club creation keeps fixture labels and neutral defaults")
+    let pl = Competition(id: "premier-league", name: "Premier League", shortName: "PL", themeId: "premier-league", sourceIds: ["footballData": "PL", "espn": "eng.1"])
+    let fixture = Fixture(kickoff: at(0), competitionCode: "eng.1", competitionName: "Premier League", home: team, away: team)
+    check(FixtureLogic.filter([fixture], competition: pl).count == 1 && FixtureLogic.filter([fixture], competition: Competition(id: "la-liga", name: "LaLiga", shortName: "LL", themeId: "la-liga", sourceIds: ["espn": "esp.1"])).isEmpty, "fixture competition filter matches configured provider codes")
+}
+
+// Live data decoding, assignment and scorer search remain pure and provider-free.
+do {
+    let fixture = #"""
+    {"header":{"competitions":[{"status":{"type":{"completed":true}},"competitors":[
+      {"homeAway":"home","score":"1","team":{"id":"10","displayName":"Fulham"}},
+      {"homeAway":"away","score":"1","team":{"id":"20","displayName":"United"}}],"details":[
+        {"scoringPlay":true,"ownGoal":true,"penaltyKick":false,"clock":{"displayValue":"63'"},"team":{"id":"10"},"athletesInvolved":[{"displayName":"Lisandro Martínez"}]},
+        {"scoringPlay":true,"ownGoal":false,"penaltyKick":true,"clock":{"displayValue":"45'"},"addedClock":{"displayValue":"2'"},"team":{"id":"20"},"participants":[{"athlete":{"shortName":"Bruno"}}]}
+    ]}]},"rosters":[{"team":{"id":"10"},"roster":[{"athlete":{"displayName":"Lisandro Martínez"}}]}]}
+    """#
+    let live = try LiveDataLogic.espnSummary(Data(fixture.utf8), eventId: "fixture")
+    check(live.homeScore == 1 && live.awayScore == 1 && live.goals.count == 2, "ESPN summary decodes the score and scoring plays")
+    check(live.goals[0].side == .home && live.goals[0].ownGoal && !live.goals[0].penalty, "ESPN own-goal side uses the credited competitor and keeps ownGoal")
+    check(live.goals[1].side == .away && live.goals[1].penalty && live.goals[1].minuteLabel == "45+2'" && live.goals[1].scorer == "Bruno", "ESPN penalty, added-minute and participant play decode")
+    check(live.lineups[.home] == ["Lisandro Martínez"] && live.isFinished, "ESPN lineup and finished status decode")
+    check(LiveDataLogic.parseMinute("45'+2'")?.0 == 45 && LiveDataLogic.parseMinute("45'+2'")?.1 == 2 && LiveDataLogic.parseMinute("63'")?.0 == 63, "minute label parser handles regular and added time")
+
+    var m = Match(slot: 1)
+    m.goals = [Goal(side: .home, elapsedSeconds: 100, minuteLabel: "2'", scorer: "Manually chosen"), Goal(side: .home, elapsedSeconds: 200, minuteLabel: "4'")]
+    let events = [LiveGoal(side: .home, minute: 2), LiveGoal(side: .home, minute: 4), LiveGoal(side: .home, minute: 8)]
+    let assignments = LiveDataLogic.assignments(match: m, liveGoals: events)
+    check(assignments.count == 3 && assignments[0].goalId == m.goals[0].id && !assignments[0].shouldUpdate
+        && assignments[1].goalId == m.goals[1].id && assignments[1].shouldUpdate && assignments[2].shouldAdd,
+        "kth live goal leaves a manual scorer alone, fills the next goal and marks the surplus for addition")
+    var overturned = Match(slot: 1)
+    var first = Goal(side: .home, elapsedSeconds: 1200, minuteLabel: "20'"), second = Goal(side: .home, elapsedSeconds: 4500, minuteLabel: "75'")
+    first.autoFilled = true; second.autoFilled = true
+    overturned.goals = [first, second]
+    let afterVAR = LiveDataLogic.assignments(match: overturned, liveGoals: [LiveGoal(side: .home, minute: 75)])
+    check(afterVAR.count == 1 && !afterVAR[0].shouldUpdate && !afterVAR[0].shouldAdd, "a goal dropped from the feed leaves that side's recorded goals untouched")
+
+    check(LiveDataLogic.displayScorer("Lamine Yamal") == "L. Yamal" && LiveDataLogic.displayScorer("Kevin De Bruyne") == "K. De Bruyne", "full scorer names display as initial and surname with particles")
+    check(LiveDataLogic.displayScorer("Fermín") == "Fermín", "mononyms remain unchanged")
+    check(LiveDataLogic.rankedScorers(["L. Yamal", "Lamine Yamal"], query: "Lamian").first == "Lamine Yamal", "fuzzy scorer search finds Lamine Yamal")
+    check(LiveDataLogic.rankedScorers(["L. Yamal"], query: "yamal").first == "L. Yamal", "scorer search matches a surname from an initial")
+    check(LiveDataLogic.rankedScorers(["Kevin De Bruyne"], query: "debruyne").first == "Kevin De Bruyne", "scorer search matches joined surname particles")
+}
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)
