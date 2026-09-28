@@ -462,5 +462,17 @@ do {
     try? FileManager.default.removeItem(at: folder)
 }
 
+// Stage 4 pure fixture mapping
+do {
+    let arsenal = Club(name: "Arsenal FC", shortName: "Arsenal", defaultCode: "ARS", codes: ["premier-league": "ARS"], primaryColour: "#EF0107")
+    let team = FixtureTeam(name: "Arsenal", shortName: "Arsenal", code: "ARS")
+    check(FixtureLogic.matchingClub(for: team, in: [arsenal]) == arsenal, "fixture club matching accepts a normalized short name or code")
+    let created = FixtureLogic.makeClub(from: FixtureTeam(name: "New Club", shortName: "New", code: "NEW"))
+    check(created.name == "New Club" && created.shortName == "New" && created.defaultCode == "NEW" && created.crestFile == nil, "fixture club creation keeps fixture labels and neutral defaults")
+    let pl = Competition(id: "premier-league", name: "Premier League", shortName: "PL", themeId: "premier-league", sourceIds: ["footballData": "PL", "espn": "eng.1"])
+    let fixture = Fixture(kickoff: at(0), competitionCode: "eng.1", competitionName: "Premier League", home: team, away: team)
+    check(FixtureLogic.filter([fixture], competition: pl).count == 1 && FixtureLogic.filter([fixture], competition: Competition(id: "la-liga", name: "LaLiga", shortName: "LL", themeId: "la-liga", sourceIds: ["espn": "esp.1"])).isEmpty, "fixture competition filter matches configured provider codes")
+}
+
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)

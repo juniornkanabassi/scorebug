@@ -18,6 +18,30 @@ public struct Fixture: Equatable, Sendable {
     public var competitionName: String
     public var home: FixtureTeam
     public var away: FixtureTeam
+    public init(kickoff: Date, competitionCode: String, competitionName: String, home: FixtureTeam, away: FixtureTeam) {
+        self.kickoff = kickoff; self.competitionCode = competitionCode; self.competitionName = competitionName
+        self.home = home; self.away = away
+    }
+}
+
+public enum FixtureLogic {
+    public static func matchingClub(for team: FixtureTeam, in clubs: [Club]) -> Club? {
+        let keys = Set([team.name, team.shortName, team.code].map(Store.matchKey).filter { !$0.isEmpty })
+        return clubs.first { club in
+            ([club.name, club.shortName, club.defaultCode] + Array(club.codes.values)).contains { keys.contains(Store.matchKey($0)) }
+        }
+    }
+
+    public static func makeClub(from team: FixtureTeam) -> Club {
+        Club(name: team.name, shortName: team.shortName, defaultCode: team.code,
+             primaryColour: "#555555", secondaryColour: "#FFFFFF", textColour: "#FFFFFF")
+    }
+
+    public static func filter(_ fixtures: [Fixture], competition: Competition?) -> [Fixture] {
+        guard let competition else { return fixtures }
+        let codes = Set(competition.sourceIds.values)
+        return fixtures.filter { codes.contains($0.competitionCode) }
+    }
 }
 
 public enum FixtureDecoder {
@@ -72,7 +96,9 @@ public enum FixtureService {
     public static let urlSessionLoader: Loader = { try await URLSession.shared.data(for: $0).0 }
 
     /// Fixtures on one day: football-data.org first (needs the API key), ESPN as fallback. Throws only when both fail.
-    public static func fetch(date: Date, apiKey: String?, loader: Loader = urlSessionLoader) async throws -> [Fixture] {
+    /// `espnLeague` (a competition's `sourceIds["espn"]`, e.g. "uefa.nations") asks ESPN for that league only and stamps
+    /// its slug as the competition code, because ESPN's all-leagues scoreboard carries no per-event competition.
+    public static func fetch(date: Date, apiKey: String?, espnLeague: String? = nil, loader: Loader = urlSessionLoader) async throws -> [Fixture] {
         var day = Calendar(identifier: .gregorian); day.timeZone = TimeZone(identifier: "UTC")!
         let c = day.dateComponents([.year, .month, .day], from: date)
         let iso = String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
@@ -83,8 +109,12 @@ public enum FixtureService {
             do { return try FixtureDecoder.footballData(try await loader(request)) } catch { firstError = error }
         }
         let compact = iso.replacingOccurrences(of: "-", with: "")
-        let request = URLRequest(url: URL(string: "https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=\(compact)")!)
-        do { return try FixtureDecoder.espn(try await loader(request)) } catch { throw firstError ?? error }
+        let request = URLRequest(url: URL(string: "https://site.api.espn.com/apis/site/v2/sports/soccer/\(espnLeague ?? "all")/scoreboard?dates=\(compact)")!)
+        do {
+            let found = try FixtureDecoder.espn(try await loader(request))
+            guard let espnLeague else { return found }
+            return found.map { var f = $0; f.competitionCode = espnLeague; return f }
+        } catch { throw firstError ?? error }
     }
 }
 
