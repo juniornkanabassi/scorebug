@@ -257,6 +257,12 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
       let at = null;
       if (kind === "goal") {
         const side = p1; at = p2;
+        if (buildTimer) { clearTimeout(buildTimer); buildTimer = null; }
+        bug.classList.remove("hidden", "building-in", "building-out");
+        visibleState = true;
+        bug.style.transition = "none";
+        bug.style.opacity = "1";
+        void bug.offsetWidth;
         bug.style.setProperty("--goal-crest", "var(--" + (side || "home") + "-crest)");
         bug.style.setProperty("--goal-primary", "var(--" + (side || "home") + "-primary)");
         bug.style.setProperty("--goal-text", "var(--" + (side || "home") + "-text)");
@@ -282,7 +288,7 @@ const slug = (s) => (s || "").replace(/[øØ]/g, "o").replace(/[æÆ]/g, "ae").r
         demoForceScorers = true;
         bug.classList.add("show-scorers");
       }
-      if (at) requestAnimationFrame(() => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = parseInt(at, 10); }));
+      if (at !== null) requestAnimationFrame(() => document.getAnimations().forEach((a) => { a.pause(); a.currentTime = parseInt(at, 10); }));
     }, 900);
   }
 
