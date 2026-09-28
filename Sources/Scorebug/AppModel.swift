@@ -126,6 +126,7 @@ final class AppModel: ObservableObject {
         }
         try? store.saveState(state)
         updateSlotSummaries()
+        objectWillChange.send()  // state is not @Published (perf012), so say so here too
     }
 
     // MARK: Matches
