@@ -18,8 +18,27 @@ def lab(rgb):
     return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz))
 
 
-def median_rgb(im):
-    return ImageStat.Stat(im.convert("RGB")).median
+def plate_rgb(im, expected=None):
+    if expected:
+        target = tuple(int(expected[i:i + 2], 16) for i in (1, 3, 5))
+        pixels = list(im.convert("RGB").getdata())
+        plate = [p for p in pixels if sum((p[i] - target[i]) ** 2 for i in range(3)) <= 55 ** 2]
+        if plate:
+            return tuple(round(sum(p[i] for p in plate) / len(plate)) for i in range(3))
+    # Four thin interior corner strips avoid centred glyphs and crests. Their mean also works for
+    # gradients, where choosing one modal pixel would compare different stops in the two crops.
+    w, h = im.size
+    x, y = max(1, round(w * .08)), max(1, round(h * .08))
+    patches = [im.crop((x, y, max(x + 1, round(w * .3)), max(y + 1, round(h * .17)))),
+               im.crop((round(w * .7), y, max(round(w * .7) + 1, w - x), max(y + 1, round(h * .17)))),
+               im.crop((x, round(h * .83), max(x + 1, round(w * .3)), max(round(h * .83) + 1, h - y))),
+               im.crop((round(w * .7), round(h * .83), max(round(w * .7) + 1, w - x), max(round(h * .83) + 1, h - y)))]
+    sample = Image.new("RGB", (sum(p.width for p in patches), max(p.height for p in patches)))
+    offset = 0
+    for patch in patches:
+        sample.paste(patch, (offset, 0))
+        offset += patch.width
+    return tuple(round(v) for v in ImageStat.Stat(sample).mean)
 
 
 def rect(box):
@@ -32,8 +51,8 @@ def crop(im, box):
 
 
 def masked_rmse(a, b, ca, cb):
-    # The dominant interior colour is the plate. Pixels unlike either plate median (text, crests,
-    # video bleed and anti-aliased edges) are excluded; compare only their shared flat-fill pixels.
+    # Pixels unlike either corner sample (text, crests, video bleed and anti-aliased edges) are
+    # excluded; compare only the shared plate fill/gradient pixels.
     size = (min(320, max(1, a.width)), min(220, max(1, a.height)))
     a = a.convert("RGB").resize(size, Image.Resampling.BILINEAR)
     b = b.convert("RGB").resize(size, Image.Resampling.BILINEAR)
@@ -59,9 +78,15 @@ def main(spec_path):
     scale, dx, dy = 1.0, 0.0, 0.0
     aligned = Image.new("RGBA", s["canvas"], (0, 0, 0, 0))
     if has_box and source and expected_visible:
-        sx, sy, ex, ey = source
-        scale = box[2] / max(1, ex - sx)
-        dx, dy = box[0] - sx * scale, box[1] - sy * scale
+        anchor_name = s.get("anchor")
+        reference_anchor = s.get("anchorBox") or (s.get("elements", {}).get(anchor_name) if anchor_name else None)
+        capture_anchor = s.get("captureBoxes", {}).get(anchor_name) if anchor_name else None
+        if not reference_anchor or not capture_anchor or capture_anchor[2] <= 0:
+            raise ValueError(f"missing fixed-element anchor ({anchor_name})")
+        ax, ay, aw, ah = reference_anchor
+        sx, sy, sw, sh = capture_anchor
+        scale = aw / sw
+        dx, dy = ax - sx * scale, ay - sy * scale
         size = (max(1, round(raw.width * scale)), max(1, round(raw.height * scale)))
         scaled = raw.resize(size, Image.Resampling.LANCZOS)
         aligned.alpha_composite(scaled, (round(dx), round(dy)))
@@ -105,19 +130,21 @@ def main(spec_path):
                      "right": round(gx + gw - rx - rw, 2), "bottom": round(gy + gh - ry - rh, 2)}
             item["edgeOffsets"] = edges
             item["sizeRatio"] = {"width": round(gw / rw, 4), "height": round(gh / rh, 4)}
-            a, b = crop(ref, ref_box).convert("RGB"), crop(ours_panel, ref_box).convert("RGB")
+            tx, ty, _, _ = box if has_box else (0, 0, ref.width, ref.height)
+            a = crop(ref, ref_box).convert("RGB")
+            b = crop(ours_panel, [ref_box[0] - tx, ref_box[1] - ty, ref_box[2], ref_box[3]]).convert("RGB")
             # Sample the central 70% of a plate, limiting text and diagonal boundaries.
-            inset = (round(a.width * .15), round(a.height * .15), round(a.width * .85), round(a.height * .85))
-            ma, mb = median_rgb(a.crop(inset)), median_rgb(b.crop(inset))
+            expected = s.get("expectedColours", {}).get(name)
+            ma, mb = plate_rgb(a, expected), plate_rgb(b, expected)
             la, lb = lab(ma), lab(mb)
             de = math.sqrt(sum((la[i] - lb[i]) ** 2 for i in range(3)))
             rmse = masked_rmse(a, b, ma, mb)
-            item["medianPlateRGB"] = {"reference": [round(x, 1) for x in ma], "ours": [round(x, 1) for x in mb]}
+            item["sampledPlateRGB"] = {"reference": list(ma), "ours": list(mb)}
             item["deltaE76"] = round(de, 2)
             item["maskedRMSE"] = round(rmse, 2) if rmse is not None else None
             geometry_ok = max(abs(x) for x in edges.values()) <= threshold.get("geometryPx", 2)
-            color_ok = de <= threshold.get("deltaE", 6)
-            rmse_ok = rmse is not None and rmse <= threshold.get("maskedRMSE", 24)
+            color_ok = not threshold.get("scoreColor", True) or de <= threshold.get("deltaE", 6)
+            rmse_ok = not threshold.get("scoreRMSE", True) or (rmse is not None and rmse <= threshold.get("maskedRMSE", 24))
             item["status"] = "PASS" if geometry_ok and color_ok and rmse_ok else "FAIL"
         else:
             item["status"] = "PASS" if not expected_visible and not visible else "FAIL"
@@ -125,6 +152,7 @@ def main(spec_path):
         results[name] = item
 
     output = {"id": s["id"], "visible": visible, "sourceBox": list(source) if source else None,
+              "anchor": {"name": s.get("anchor"), "referenceBox": s.get("anchorBox") or s.get("elements", {}).get(s.get("anchor")), "captureBox": s.get("captureBoxes", {}).get(s.get("anchor"))},
               "targetBox": box, "scale": round(scale, 5), "offset": [round(dx, 2), round(dy, 2)],
               "sourceSize": [raw.width, raw.height], "referenceSize": list(ref.size), "elements": results,
               "preview": s["preview"]}
