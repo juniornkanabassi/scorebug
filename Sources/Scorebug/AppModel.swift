@@ -299,7 +299,8 @@ final class AppModel: ObservableObject {
                         let conflict = zip(primaryCounts, otherCounts).contains { $0.0 != $0.1 } &&
                             (other.isFinished || otherCounts.enumerated().contains { $0.element > primaryCounts[$0.offset] })
                         if conflict {
-                            let message = "Sources disagree: ESPN \(live.homeScore)–\(live.awayScore), FotMob \(other.homeScore)–\(other.awayScore)"
+                            // No scores in notices: they show at once and would spoil the 5 minute delay (28 Sep).
+                            let message = "ESPN and FotMob disagree, so live updates are paused"
                             if m.liveDataNotice != message { apply(.setLiveNotice(message), slot: slot) }
                             if live.isFinished { stoppedLiveEvents.insert(eventKey) }
                             return
@@ -307,9 +308,7 @@ final class AppModel: ObservableObject {
                     } else { liveSourceStatus["FotMob"] = "No matching fixture" }
                 } catch { liveSourceStatus["FotMob"] = "Error: \(error.localizedDescription)" }
             }
-            let notice = live.homeScore != m.homeScore || live.awayScore != m.awayScore
-                ? "ESPN has \(live.homeScore)–\(live.awayScore); you have \(m.homeScore)–\(m.awayScore)" : nil
-            if notice != m.liveDataNotice { apply(.setLiveNotice(notice), slot: slot) }
+            if m.liveDataNotice != nil { apply(.setLiveNotice(nil), slot: slot) }
             let all = live.goals
             let assignments = LiveDataLogic.assignments(match: m, liveGoals: all)
             for (idx, assignment) in assignments.enumerated() {
