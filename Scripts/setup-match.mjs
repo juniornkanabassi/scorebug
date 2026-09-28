@@ -14,6 +14,7 @@ import { parseArgs } from "node:util";
 const { values } = parseArgs({
 	options: {
 		home: { type: "string" }, away: { type: "string" }, competition: { type: "string" },
+		fixture: { type: "string" }, pick: { type: "string" }, force: { type: "boolean" },
 		slot: { type: "string", default: "1" }, "first-leg": { type: "string" },
 		show: { type: "boolean" }, hide: { type: "boolean" }, "keep-score": { type: "boolean" },
 		port: { type: "string", default: "8600" }, "dry-run": { type: "boolean" }, list: { type: "string" },
@@ -77,6 +78,28 @@ const library = await fetch(`${BASE}/api/library`).then((r) => {
 	if (!r.ok) throw new Error(`Scorebug is not answering on ${BASE}. Open the app first.`);
 	return r.json();
 });
+
+if (values.fixture) {
+	const now = new Date();
+	const date = values.fixture === "today" ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}` : values.fixture;
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("--fixture wants today or YYYY-MM-DD");
+	const query = new URLSearchParams({ date });
+	if (values.competition) query.set("competition", pickCompetition(library.competitions, values.competition)?.id ?? values.competition);
+	const response = await fetch(`${BASE}/api/fixtures?${query}`);
+	if (!response.ok) throw new Error(`Fixture request failed: ${response.status} ${await response.text()}`);
+	const fixtures = await response.json();
+	for (const [i, f] of fixtures.entries()) console.log(`${i + 1}. ${new Date(f.kickoff).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}  ${f.home.name} v ${f.away.name}  ${f.competitionCode}`);
+	if (values.pick !== undefined) {
+		const index = Number.parseInt(values.pick, 10) - 1;
+		if (!Number.isInteger(index) || !fixtures[index]) throw new Error(`--pick must be between 1 and ${fixtures.length}`);
+		const chosen = { ...fixtures[index], ...(values.force ? { force: true } : {}) };
+		if (values["dry-run"]) { console.log(`  would load fixture ${index + 1} into slot ${slot}`); process.exit(0); }
+		const result = await fetch(`${BASE}/api/match/${slot}/loadFixture`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(chosen) });
+		if (!result.ok) throw new Error(`Fixture load failed: ${result.status} ${await result.text()}`);
+		console.log(`Loaded fixture ${index + 1} into slot ${slot}.`);
+	}
+	process.exit(0);
+}
 
 if (values.list !== undefined) {
 	const q = values.list;
