@@ -24,5 +24,8 @@ mkdir -p "$INSTALL_ROOT"
 rm -rf "$DEST"
 /usr/bin/ditto "$APP" "$DEST"
 rm -rf "$STAGE"
+# A replaced icon otherwise lingers in Finder and the Dock from the icon cache.
+touch "$DEST"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$DEST"
 open -g "$DEST" --args --screen "Prompter XL"
 print "Installed and opened $DEST ($(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist))"
