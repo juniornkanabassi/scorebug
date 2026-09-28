@@ -27,17 +27,18 @@ struct GoalPrompt: View {
     /// The goal's current scorer's row, so the popover opens with it highlighted instead of always row 0.
     private func initialHighlight() -> Int {
         guard let scorer = goal.scorer else { return 0 }
-        return flatResults.firstIndex { $0.name == scorer } ?? 0
+        return flatResults.firstIndex { $0.name == scorer || LiveDataLogic.scorerRank($0.name, query: scorer) != nil } ?? 0
     }
 
     /// Read live rather than passed in: this view only exists while its popover is open, so the cost of a
     /// section elsewhere in `SlotView` skipping its own diff (the whole point of the Equatable sections in
     /// `SlotView.swift`) never applies here.
     private var match: Match { model.match(slot) }
-    private var scoringSquad: [String] { match.team(goal.side).squad ?? [] }
-    private var otherSquad: [String] { match.team(goal.side.other).squad ?? [] }
-    private var filteredScoring: [String] { query.isEmpty ? scoringSquad : scoringSquad.filter { squadNameMatches($0, query: query) } }
-    private var filteredOther: [String] { query.isEmpty ? otherSquad : otherSquad.filter { squadNameMatches($0, query: query) } }
+    private var linkedLineup: [String] { model.liveLineups[slot]?[goal.side] ?? [] }
+    private var scoringSquad: [String] { LiveDataLogic.deduplicatedScorers((match.team(goal.side).squad ?? []) + linkedLineup) }
+    private var otherSquad: [String] { LiveDataLogic.deduplicatedScorers((match.team(goal.side.other).squad ?? []) + linkedLineup) }
+    private var filteredScoring: [String] { query.isEmpty ? scoringSquad : LiveDataLogic.rankedScorers(scoringSquad, query: query) }
+    private var filteredOther: [String] { query.isEmpty ? otherSquad : LiveDataLogic.rankedScorers(otherSquad, query: query) }
     /// The navigable rows in reading order (the scoring side's squad, then the other side's).
     private var flatResults: [(name: String, ownGoal: Bool)] { filteredScoring.map { ($0, false) } + filteredOther.map { ($0, true) } }
 

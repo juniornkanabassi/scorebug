@@ -61,6 +61,10 @@ final class AppModel: ObservableObject {
     let options: LaunchOptions
     private var server: OverlayServer?
     private var themeConfigCache: [String: ThemeConfig] = [:]
+    @Published private(set) var liveLineups: [Int: [Side: [String]]] = [:]
+    @Published private(set) var liveSourceStatus: [String: String] = ["ESPN": "Ready", "FotMob": "Not checked", "SofaScore": "Unavailable: HTTP 403"]
+    private var liveSeenAt: [String: Date] = [:]
+    private var stoppedLiveEvents: Set<String> = []
 
     var port: Int { options.port ?? settings.port }
     var baseURL: String { "http://127.0.0.1:\(port)" }
@@ -82,6 +86,7 @@ final class AppModel: ObservableObject {
         importDefaultCrestFolderIfPresent()
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
         Task.detached(priority: .utility) { [store] in store.writeMissingThumbnails() }
+        Task { await livePollLoop() }
     }
 
     /// First run on Junior's Mac: his logo library exists at a known place, so crests are imported without asking.
@@ -138,8 +143,13 @@ final class AppModel: ObservableObject {
     func apply(_ command: Command, slot: Int) {
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return }
         profiled(command) {
+            let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
             state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
+            if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
+                state.matches[idx].removedLiveGoalKeys.append(removedKey)
+            }
             persistAndBroadcast()
+            if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
     }
 
@@ -147,8 +157,13 @@ final class AppModel: ObservableObject {
         let command = try request.toCommand()
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { throw EngineError.badRequest("slot must be 1 or 2") }
         profiled(command) {
+            let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
             state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
+            if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
+                state.matches[idx].removedLiveGoalKeys.append(removedKey)
+            }
             persistAndBroadcast()
+            if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
     }
 
@@ -221,7 +236,122 @@ final class AppModel: ObservableObject {
         if let competition { setCompetition(competition.id, slot: slot) }
         apply(.setTeam(.home, homeClub.entry(for: competitionId)), slot: slot)
         apply(.setTeam(.away, awayClub.entry(for: competitionId)), slot: slot)
+        apply(.setKickoff(fixture.kickoff), slot: slot)
+        if let eventId = fixture.espnEventId, let league = competition?.sourceIds["espn"] ?? (fixture.competitionCode.hasPrefix("uefa") ? fixture.competitionCode : nil) {
+            apply(.setLiveLink(eventId: eventId, league: league), slot: slot)
+        } else { await linkESPN(slot: slot, date: fixture.kickoff) }
         return true
+    }
+
+    func linkESPN(slot: Int, date: Date = Date()) async {
+        let m = match(slot)
+        guard let competition = library.competitions.first(where: { $0.id == m.competitionId }),
+              let league = competition.sourceIds["espn"] else { return }
+        do {
+            let source = ESPNLiveSource(league: league)
+            guard let event = try await source.findEvent(home: m.home.name, away: m.away.name, date: date) else {
+                lastError = "No ESPN fixture matched \(m.home.name) v \(m.away.name)."; return
+            }
+            guard match(slot).home.name == m.home.name, match(slot).away.name == m.away.name,
+                  match(slot).competitionId == m.competitionId else { return }
+            apply(.setLiveLink(eventId: event.id, league: league), slot: slot)
+            if m.kickoff == nil { apply(.setKickoff(event.kickoff), slot: slot) }
+        } catch { liveSourceStatus["ESPN"] = "Lookup failed: \(error.localizedDescription)" }
+    }
+
+    func setLiveSource(_ name: String, enabled: Bool) {
+        settings.liveSourceEnabled[name] = enabled
+        saveSettings()
+    }
+
+    private func livePollLoop() async {
+        while !Task.isCancelled {
+            for slot in [1, 2] { await refreshLiveData(slot: slot) }
+            try? await Task.sleep(for: .seconds(30))
+        }
+    }
+
+    private func refreshLiveData(slot: Int) async {
+        let m = match(slot), now = Date()
+        guard m.autoUpdateLiveData, let eventId = m.espnEventId, let league = m.espnLeague,
+              !stoppedLiveEvents.contains("\(slot):\(eventId)"),
+              m.phase != .fullTime, m.phase != .extraFullTime, m.phase != .finished,
+              (m.kickoff.map { now >= $0 } ?? m.phase.isLivePeriod), settings.liveSourceEnabled["ESPN"] != false else { return }
+        do {
+            let live = try await Task.detached(priority: .utility) {
+                try await ESPNLiveSource(league: league).fetchGoals(eventId: eventId)
+            }.value
+            let eventKey = "\(slot):\(eventId)"
+            liveLineups[slot] = live.lineups
+            liveSourceStatus["ESPN"] = "OK · \(Date.now.formatted(date: .omitted, time: .shortened))"
+            let liveHome = live.goals.filter { $0.side == .home }, liveAway = live.goals.filter { $0.side == .away }
+            if settings.liveSourceEnabled["FotMob"] == true, let kickoff = m.kickoff {
+                do {
+                    let secondary = FotMobLiveSource()
+                    if let secondaryEvent = try await Task.detached(priority: .utility, operation: {
+                        try await secondary.findEvent(home: m.home.name, away: m.away.name, date: kickoff)
+                    }).value {
+                        let other = try await Task.detached(priority: .utility) {
+                            try await secondary.fetchGoals(eventId: secondaryEvent.id)
+                        }.value
+                        liveSourceStatus["FotMob"] = "OK · \(Date.now.formatted(date: .omitted, time: .shortened))"
+                        let primaryCounts = [liveHome.count, liveAway.count], otherCounts = [other.goals.filter { $0.side == .home }.count, other.goals.filter { $0.side == .away }.count]
+                        let conflict = zip(primaryCounts, otherCounts).contains { $0.0 != $0.1 } &&
+                            (other.isFinished || otherCounts.enumerated().contains { $0.element > primaryCounts[$0.offset] })
+                        if conflict {
+                            let message = "Sources disagree: ESPN \(live.homeScore)–\(live.awayScore), FotMob \(other.homeScore)–\(other.awayScore)"
+                            if m.liveDataNotice != message { apply(.setLiveNotice(message), slot: slot) }
+                            if live.isFinished { stoppedLiveEvents.insert(eventKey) }
+                            return
+                        }
+                    } else { liveSourceStatus["FotMob"] = "No matching fixture" }
+                } catch { liveSourceStatus["FotMob"] = "Error: \(error.localizedDescription)" }
+            }
+            let notice = live.homeScore != m.homeScore || live.awayScore != m.awayScore
+                ? "ESPN has \(live.homeScore)–\(live.awayScore); you have \(m.homeScore)–\(m.awayScore)" : nil
+            if notice != m.liveDataNotice { apply(.setLiveNotice(notice), slot: slot) }
+            let all = live.goals
+            let assignments = LiveDataLogic.assignments(match: m, liveGoals: all)
+            for (idx, assignment) in assignments.enumerated() {
+                let goal = assignment.liveGoal
+                let sideIndex = all[..<idx].filter { $0.side == goal.side }.count
+                let liveKey = "\(eventId):\(goal.side.rawValue):\(sideIndex):\(goal.minute):\(goal.added)"
+                if m.removedLiveGoalKeys.contains(liveKey) { continue }
+                let key = "\(slot):\(eventId):\(idx):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
+                let seen = liveSeenAt[key] ?? now
+                liveSeenAt[key] = seen
+                guard now.timeIntervalSince(seen) >= Double(m.liveDataDelayMinutes * 60) else { continue }
+                if assignment.shouldAdd {
+                    apply(.goal(goal.side, 1), slot: slot)
+                    guard let addedId = match(slot).lastGoal?.goalId else { continue }
+                    setGoalMinuteFromLive(addedId, goal: goal, slot: slot)
+                    apply(.setScorer(addedId, goal.scorer.map(LiveDataLogic.displayScorer), ownGoal: goal.ownGoal, penalty: goal.penalty), slot: slot)
+                    setAutoAdded(addedId, liveKey: liveKey, slot: slot)
+                    setAutoFilled(addedId, slot: slot)
+                } else if assignment.shouldUpdate, let goalId = assignment.goalId {
+                    let scorer = goal.scorer.map(LiveDataLogic.displayScorer) ?? match(slot).goals.first(where: { $0.id == goalId })?.scorer
+                    apply(.setScorer(goalId, scorer, ownGoal: goal.ownGoal, penalty: goal.penalty), slot: slot)
+                    setGoalMinuteFromLive(goalId, goal: goal, slot: slot)
+                    setAutoFilled(goalId, slot: slot)
+                }
+            }
+            if live.isFinished {
+                let mature = all.enumerated().allSatisfy { idx, goal in
+                    let key = "\(slot):\(eventId):\(idx):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
+                    guard let seen = liveSeenAt[key] else { return false }
+                    return now.timeIntervalSince(seen) >= Double(m.liveDataDelayMinutes * 60)
+                }
+                if mature { stoppedLiveEvents.insert(eventKey) }
+            }
+        } catch { liveSourceStatus["ESPN"] = "Error: \(error.localizedDescription)" }
+    }
+
+    private func setGoalMinuteFromLive(_ id: UUID, goal: LiveGoal, slot: Int) { apply(.setGoalMinute(id, minute: goal.minute, plus: goal.added > 0 ? goal.added : nil), slot: slot) }
+    private func setAutoFilled(_ id: UUID, slot: Int) { markGoal(id, slot: slot) { $0.autoFilled = true } }
+    private func setAutoAdded(_ id: UUID, liveKey: String, slot: Int) { markGoal(id, slot: slot) { $0.autoAdded = true; $0.autoAddedKey = liveKey } }
+    private func markGoal(_ id: UUID, slot: Int, edit: (inout Goal) -> Void) {
+        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }), let goal = state.matches[idx].goals.firstIndex(where: { $0.id == id }) else { return }
+        edit(&state.matches[idx].goals[goal]); state.matches[idx].revision += 1; persistAndBroadcast()
     }
 
     private func persistAndBroadcast() {
