@@ -272,7 +272,8 @@ final class AppModel: ObservableObject {
     }
 
     private func refreshLiveData(slot: Int) async {
-        let m = match(slot), now = Date()
+        var m = match(slot)
+        var now = Date()
         guard m.autoUpdateLiveData, let eventId = m.espnEventId, let league = m.espnLeague,
               !stoppedLiveEvents.contains("\(slot):\(eventId)"),
               m.phase != .fullTime, m.phase != .extraFullTime, m.phase != .finished,
@@ -308,6 +309,9 @@ final class AppModel: ObservableObject {
                     } else { liveSourceStatus["FotMob"] = "No matching fixture" }
                 } catch { liveSourceStatus["FotMob"] = "Error: \(error.localizedDescription)" }
             }
+            // Re-read after the network waits: the operator may have added or removed a goal meanwhile (review of 28 Sep).
+            m = match(slot); now = Date()
+            guard m.autoUpdateLiveData, m.espnEventId == eventId else { return }
             if m.liveDataNotice != nil { apply(.setLiveNotice(nil), slot: slot) }
             let all = live.goals
             let assignments = LiveDataLogic.assignments(match: m, liveGoals: all)
