@@ -189,11 +189,11 @@ final class OverlayServer: @unchecked Sendable {
             let body = try await request.bodyData
             guard let wire = try? JSONDecoder().decode(FixtureWire.self, from: body),
                   let fixture = wire.fixture else { return HTTPResponse(statusCode: .badRequest, body: Data("invalid fixture JSON".utf8)) }
-            guard await model.loadFixture(fixture, slot: slot, force: wire.force ?? false) else {
+            guard let saveFailed = await model.loadFixture(fixture, slot: slot, force: wire.force ?? false) else {
                 return HTTPResponse(statusCode: .conflict, body: Data("slot \(slot) is not before kick-off; reset it or send force".utf8))
             }
             var headers: [HTTPHeader: String] = [.contentType: "application/json; charset=utf-8"]
-            if await model.stateSaveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
+            if saveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
             return HTTPResponse(statusCode: .ok, headers: headers, body: await model.snapshotData())
         })
         await server.appendRoute("POST /api/match/:slot/command", handler: { [weak self] request in

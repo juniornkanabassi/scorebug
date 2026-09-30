@@ -147,17 +147,20 @@ final class AppModel: ObservableObject {
         return config
     }
 
-    func apply(_ command: Command, slot: Int) {
-        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return }
+    @discardableResult
+    func apply(_ command: Command, slot: Int) -> Bool {
+        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return false }
+        var saved = false
         profiled(command) {
             let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
             state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
             if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
                 state.matches[idx].removedLiveGoalKeys.append(removedKey)
             }
-            persistAndBroadcast()
+            saved = persistAndBroadcast()
             if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
+        return saved
     }
 
     // ponytail: last 500 successful responses per session; durable retry history only if needed.
@@ -227,7 +230,8 @@ final class AppModel: ObservableObject {
         apply(.setTeam(side, entry), slot: slot)
     }
 
-    func setCompetition(_ id: String, slot: Int, deferUIUpdate: Bool = false) {
+    @discardableResult
+    func setCompetition(_ id: String, slot: Int, deferUIUpdate: Bool = false) -> Bool {
         var m = match(slot)
         m = MatchEngine.apply(.setCompetition(id), to: m, now: Date())
         // Codes follow the competition, so refresh both entries from the library where the club is known.
@@ -238,7 +242,7 @@ final class AppModel: ObservableObject {
             }
         }
         if let idx = state.matches.firstIndex(where: { $0.slot == slot }) { state.matches[idx] = m }
-        persistAndBroadcast(deferUIUpdate: deferUIUpdate)
+        return persistAndBroadcast(deferUIUpdate: deferUIUpdate)
     }
 
     func fixtures(on date: Date, competitionId: String?) async throws -> [Fixture] {
@@ -248,11 +252,11 @@ final class AppModel: ObservableObject {
         return FixtureLogic.filter(found, competition: competition)
     }
 
-    /// False when the slot is not before kick-off and `force` is off, so callers can say it was skipped.
+    /// Nil when skipped; otherwise returns whether any fixture change failed to save.
     @discardableResult
-    func loadFixture(_ fixture: Fixture, slot: Int, force: Bool = false) async -> Bool {
-        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return false }
-        guard state.matches[idx].phase == .preMatch || force else { return false }
+    func loadFixture(_ fixture: Fixture, slot: Int, force: Bool = false) async -> Bool? {
+        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return nil }
+        guard state.matches[idx].phase == .preMatch || force else { return nil }
         let competition = library.competitions.first { $0.sourceIds.values.contains(fixture.competitionCode) }
         let competitionId = competition?.id ?? state.matches[idx].competitionId
         func club(for team: FixtureTeam) async -> Club {
@@ -265,36 +269,39 @@ final class AppModel: ObservableObject {
         }
         let homeClub = await club(for: fixture.home)
         let awayClub = await club(for: fixture.away)
-        guard match(slot).phase == .preMatch || force else { return false }
+        guard match(slot).phase == .preMatch || force else { return nil }
         for club in [homeClub, awayClub] {
             if let i = library.clubs.firstIndex(where: { $0.id == club.id }) { library.clubs[i] = club }
             else { library.clubs.append(club) }
         }
         saveLibrary()
-        if let competition { setCompetition(competition.id, slot: slot) }
-        apply(.setTeam(.home, homeClub.entry(for: competitionId)), slot: slot)
-        apply(.setTeam(.away, awayClub.entry(for: competitionId)), slot: slot)
-        apply(.setKickoff(fixture.kickoff), slot: slot)
+        var saveFailed = false
+        if let competition { saveFailed = !setCompetition(competition.id, slot: slot) || saveFailed }
+        saveFailed = !apply(.setTeam(.home, homeClub.entry(for: competitionId)), slot: slot) || saveFailed
+        saveFailed = !apply(.setTeam(.away, awayClub.entry(for: competitionId)), slot: slot) || saveFailed
+        saveFailed = !apply(.setKickoff(fixture.kickoff), slot: slot) || saveFailed
         if let eventId = fixture.espnEventId, let league = competition?.sourceIds["espn"] ?? (fixture.competitionCode.hasPrefix("uefa") ? fixture.competitionCode : nil) {
-            apply(.setLiveLink(eventId: eventId, league: league), slot: slot)
-        } else { await linkESPN(slot: slot, date: fixture.kickoff) }
-        return true
+            saveFailed = !apply(.setLiveLink(eventId: eventId, league: league), slot: slot) || saveFailed
+        } else { saveFailed = !(await linkESPN(slot: slot, date: fixture.kickoff)) || saveFailed }
+        return saveFailed
     }
 
-    func linkESPN(slot: Int, date: Date = Date()) async {
+    @discardableResult
+    func linkESPN(slot: Int, date: Date = Date()) async -> Bool {
         let m = match(slot)
         guard let competition = library.competitions.first(where: { $0.id == m.competitionId }),
-              let league = competition.sourceIds["espn"] else { return }
+              let league = competition.sourceIds["espn"] else { return true }
         do {
             let source = ESPNLiveSource(league: league)
             guard let event = try await source.findEvent(home: m.home.name, away: m.away.name, date: date) else {
-                lastError = "No ESPN fixture matched \(m.home.name) v \(m.away.name)."; return
+                lastError = "No ESPN fixture matched \(m.home.name) v \(m.away.name)."; return true
             }
             guard match(slot).home.name == m.home.name, match(slot).away.name == m.away.name,
-                  match(slot).competitionId == m.competitionId else { return }
-            apply(.setLiveLink(eventId: event.id, league: league), slot: slot)
-            if m.kickoff == nil { apply(.setKickoff(event.kickoff), slot: slot) }
-        } catch { liveSourceStatus["ESPN"] = "Lookup failed: \(error.localizedDescription)" }
+                  match(slot).competitionId == m.competitionId else { return true }
+            var saved = apply(.setLiveLink(eventId: event.id, league: league), slot: slot)
+            if m.kickoff == nil { saved = apply(.setKickoff(event.kickoff), slot: slot) && saved }
+            return saved
+        } catch { liveSourceStatus["ESPN"] = "Lookup failed: \(error.localizedDescription)"; return true }
     }
 
     func setLiveSource(_ name: String, enabled: Bool) {
@@ -397,7 +404,8 @@ final class AppModel: ObservableObject {
     }
 
     private(set) var stateSaveFailed = false
-    private func persistAndBroadcast(deferUIUpdate: Bool = false) {
+    @discardableResult
+    private func persistAndBroadcast(deferUIUpdate: Bool = false) -> Bool {
         do { try store.saveState(state); stateSaveFailed = false } catch { stateSaveFailed = true; lastError = "Could not save state: \(error.localizedDescription)" }
         updateSlotSummaries()
         broadcast()
@@ -415,6 +423,7 @@ final class AppModel: ObservableObject {
             pendingUIUpdate = nil
             objectWillChange.send()
         }
+        return !stateSaveFailed
     }
 
     private func updateSlotSummaries() {
