@@ -29,7 +29,7 @@ async function handle(line) {
  const argv=[...tool.name.split('_'),'--json'];
  for(const [key,value] of Object.entries(args))if(value!==false)argv.push(value===true?flag(key):`${flag(key)}=${value}`);
  try {
-  const {stdout}=await exec(process.execPath,[cli,...argv],{timeout:30000,env:process.env});
+  const {stdout}=await exec(process.execPath,[cli,...argv],{timeout:150000,env:process.env});
   reply(id,{content:[{type:'text',text:stdout.trim()}]});
  }catch(e){reply(id,{content:[{type:'text',text:e.stdout?.trim()||JSON.stringify({ok:false,error:{code:'timeout',message:e.killed?'CLI timed out':'CLI failed'}})}],isError:true});}
 }

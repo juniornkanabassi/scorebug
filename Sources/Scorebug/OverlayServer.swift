@@ -83,7 +83,7 @@ final class OverlayServer: @unchecked Sendable {
 
     func start() async throws {
         // IPv4 loopback on purpose: .loopback picks ::1 on macOS, which refuses 127.0.0.1 clients (curl, scripts, the Stream Deck plugin). "localhost" clients fall back to 127.0.0.1 themselves.
-        let server = HTTPServer(address: try .inet(ip4: "127.0.0.1", port: port))
+        let server = HTTPServer(address: try .inet(ip4: "127.0.0.1", port: port), timeout: 150)
         self.server = server
         let resolver = self.resolver
         let crests = self.crestsDirectory

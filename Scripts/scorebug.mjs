@@ -89,7 +89,7 @@ export async function main(args=process.argv.slice(2)) {
   let launched=false;
   async function api(path,body) {
    let r;
-   try {r=await fetch(base+path,{...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(3000)});}
+   try {r=await fetch(base+path,{...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(path.startsWith('/api/fixtures')||path.endsWith('/loadFixture')?120000:3000)});}
    catch(e) {
     if(e.name==='TimeoutError'||e.name==='AbortError')throw new Failure('timeout','Request timed out; it was not retried');
     if(e.cause?.code==='ECONNREFUSED') {
