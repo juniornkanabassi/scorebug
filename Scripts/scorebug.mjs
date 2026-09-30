@@ -104,6 +104,7 @@ export async function main(args=process.argv.slice(2)) {
     throw new Failure('not_running','Connection failed; an ambiguous command was not retried');
    }
    if(!r.ok)throw new Failure(({400:'bad_request',403:'forbidden',415:'unsupported_media_type',409:'match_live',502:'fixture_service_failed'})[r.status]??`http_${r.status}`,await r.text());
+   if(r.headers.get('x-scorebug-save-failed')==='true')throw new Failure('save_failed','Change was applied but could not be saved; check Scorebug before retrying');
    return r.json();
   }
   const send=(action,params={})=>api(`/api/match/${slot}/command`,{command:action,...params});

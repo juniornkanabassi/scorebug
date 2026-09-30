@@ -192,7 +192,9 @@ final class OverlayServer: @unchecked Sendable {
             guard await model.loadFixture(fixture, slot: slot, force: wire.force ?? false) else {
                 return HTTPResponse(statusCode: .conflict, body: Data("slot \(slot) is not before kick-off; reset it or send force".utf8))
             }
-            return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: await model.snapshotData())
+            var headers: [HTTPHeader: String] = [.contentType: "application/json; charset=utf-8"]
+            if await model.stateSaveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
+            return HTTPResponse(statusCode: .ok, headers: headers, body: await model.snapshotData())
         })
         await server.appendRoute("POST /api/match/:slot/command", handler: { [weak self] request in
             guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
@@ -209,14 +211,14 @@ final class OverlayServer: @unchecked Sendable {
             if object?["requestId"] != nil && (requestId == nil || !(1...128).contains(requestId!.count)) {
                 return HTTPResponse(statusCode: .badRequest, body: Data("requestId must be 1 to 128 characters".utf8))
             }
-            let result: Result<Data, Error> = await MainActor.run {
+            let result: Result<(data: Data, saveFailed: Bool), Error> = await MainActor.run {
                 do { return .success(try model.commandResponse(req, slot: slot, requestId: requestId)) } catch { return .failure(error) }
             }
             switch result {
-            case .success(let data):
+            case .success(let saved):
                 var headers: [HTTPHeader: String] = [.contentType: "application/json; charset=utf-8"]
-                if await model.stateSaveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
-                return HTTPResponse(statusCode: .ok, headers: headers, body: data)
+                if saved.saveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
+                return HTTPResponse(statusCode: .ok, headers: headers, body: saved.data)
             case .failure(let error): return HTTPResponse(statusCode: .badRequest, body: Data("\(error)".utf8))
             }
         })

@@ -161,18 +161,18 @@ final class AppModel: ObservableObject {
     }
 
     // ponytail: last 500 successful responses per session; durable retry history only if needed.
-    private var commandResponses: [String: Data] = [:]
+    private var commandResponses: [String: (Data, Bool)] = [:]
     private var commandResponseOrder: [String] = []
-    func commandResponse(_ request: CommandRequest, slot: Int, requestId: String?) throws -> Data {
+    func commandResponse(_ request: CommandRequest, slot: Int, requestId: String?) throws -> (data: Data, saveFailed: Bool) {
         let key = requestId.map { "\(slot)|\($0)" }
-        if let key, let cached = commandResponses[key] { return cached }
+        if let key, let cached = commandResponses[key] { return (cached.0, cached.1) }
         try applyRequest(request, slot: slot)
         let data = snapshotData()
         if let key {
-            commandResponses[key] = data; commandResponseOrder.append(key)
+            commandResponses[key] = (data, stateSaveFailed); commandResponseOrder.append(key)
             if commandResponseOrder.count > 500 { commandResponses.removeValue(forKey: commandResponseOrder.removeFirst()) }
         }
-        return data
+        return (data, stateSaveFailed)
     }
 
     func applyRequest(_ request: CommandRequest, slot: Int) throws {
