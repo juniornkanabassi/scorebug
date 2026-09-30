@@ -4,9 +4,9 @@ import type { KeyDownEvent, KeyAction } from "@elgato/streamdeck";
 import { StatefulAction, iconPath, server, slotOf } from "../lib/scorebug.js";
 import type { BaseSettings } from "../lib/scorebug.js";
 
-/** The eight competitions with baked-in key art (see Outputs/Stream Deck/icons-src/render_icons.py); any other id falls back to "default". */
+/** The nine competitions with baked-in key art (see Outputs/Stream Deck/icons-src/render_icons.py); any other id falls back to "default". */
 const ART_COMPETITIONS = new Set([
-	"ligue1", "premier-league", "champions-league", "europa-league", "conference-league", "la-liga", "serie-a", "bundesliga"
+	"ligue1", "premier-league", "champions-league", "europa-league", "conference-league", "la-liga", "serie-a", "bundesliga", "nations-league"
 ]);
 
 @action({ UUID: "com.juniornkanabassi.scorebug.set-competition" })
