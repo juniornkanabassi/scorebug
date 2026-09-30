@@ -186,6 +186,14 @@ final class AppModel: ObservableObject {
             throw EngineError.badRequest("unknown theme \(id); known: \(resolver.availableThemeIds().joined(separator: ", "))")
         }
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { throw EngineError.badRequest("slot must be 1 or 2") }
+        if case .removeGoal(let id) = command {
+            guard state.matches[idx].phase != .shootout else { throw EngineError.badRequest("goals cannot be removed during a shootout") }
+            guard state.matches[idx].goals.contains(where: { $0.id == id }) else { throw EngineError.badRequest("goal does not exist") }
+        }
+        if case .goal(let side, let delta) = command, delta < 0 {
+            guard state.matches[idx].phase != .shootout else { throw EngineError.badRequest("goals cannot be removed during a shootout") }
+            guard state.matches[idx].goals.contains(where: { $0.side == side }) else { throw EngineError.badRequest("no goal exists for that side") }
+        }
         profiled(command) {
             let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
             state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
