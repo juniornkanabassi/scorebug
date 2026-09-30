@@ -165,7 +165,7 @@ export async function main(args=process.argv.slice(2)) {
   } else if(name==='theme set')result=summary(await send('setTheme',{themeId:values.id==='default'?'':values.id}),slot);
   else result=summary(await send(name==='reset'?'reset':'setVisible',name==='reset'?{}:{visible:name==='show'}),slot);
   if(values.show)await exec('/usr/bin/open',['-b','local.scorebug.mac']);
-  console.log(json?JSON.stringify({ok:true,result}):JSON.stringify(result));return 0;
+  console.log(json?JSON.stringify({ok:true,result}):name==='status'?result.matches.map(m=>`Slot ${m.slot}: ${m.home.name} ${m.score[0]}–${m.score[1]} ${m.away.name} · ${m.phase} ${m.clock}`).join('\n'):JSON.stringify(result));return 0;
  } catch(e) {
   const error=e instanceof Failure?e:new Failure('usage',e.message,2);
   const output={ok:false,error:{code:error.code,message:error.message}};
