@@ -236,7 +236,7 @@ final class AppModel: ObservableObject {
     func fixtures(on date: Date, competitionId: String?) async throws -> [Fixture] {
         if let competitionId, !library.competitions.contains(where: { $0.id == competitionId }) { return [] }
         let competition = competitionId.flatMap { id in library.competitions.first { $0.id == id } }
-        let found = try await FixtureService.fetch(date: date, apiKey: KeychainStore.get(), espnLeague: competition?.sourceIds["espn"])
+        let found = try await FixtureService.fetch(date: date, apiKey: options.dataDirectory == Store.defaultDirectory() ? KeychainStore.get() : nil, espnLeague: competition?.sourceIds["espn"])
         return FixtureLogic.filter(found, competition: competition)
     }
 

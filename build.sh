@@ -20,6 +20,11 @@ cp Resources/Info.plist "$APP_PATH/Contents/Info.plist"
 [[ -f Resources/AppIcon.icns ]] && cp Resources/AppIcon.icns "$APP_PATH/Contents/Resources/AppIcon.icns"
 cp -R Resources/Overlays "$APP_PATH/Contents/Resources/Overlays"
 cp Resources/seed-library.json "$APP_PATH/Contents/Resources/seed-library.json"
+mkdir -p "$APP_PATH/Contents/Resources/Scripts" "$APP_PATH/Contents/Resources/mcp"
+cp Scripts/scorebug.mjs Scripts/match-lib.mjs "$APP_PATH/Contents/Resources/Scripts/"
+cp mcp/scorebug-mcp.mjs "$APP_PATH/Contents/Resources/mcp/"
+[[ -f Resources/squads.json ]] && cp Resources/squads.json "$APP_PATH/Contents/Resources/squads.json"
+
 if /usr/bin/xattr -p com.apple.FinderInfo "$APP_PATH" >/dev/null 2>&1; then /usr/bin/xattr -d com.apple.FinderInfo "$APP_PATH"; fi
 /usr/bin/codesign --force --sign - "$APP_PATH"
 /usr/bin/codesign --verify --strict "$APP_PATH"

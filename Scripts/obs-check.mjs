@@ -1,7 +1,7 @@
 // Lead's OBS check over obs-websocket 5 (port 4455). Node 22: built-in WebSocket and fetch.
-// usage: node obs-check.mjs <password> <outdir> [goalSide]
+// usage: OBS_PASSWORD=… node obs-check.mjs <outdir> [goalSide]
 import { createHash } from "node:crypto"; import { writeFileSync, mkdirSync } from "node:fs";
-const [pw, out, goalSide] = process.argv.slice(2); mkdirSync(out, { recursive: true });
+const pw = process.env.OBS_PASSWORD ?? ""; const [out, goalSide] = process.argv.slice(2); mkdirSync(out, { recursive: true });
 const ws = new WebSocket("ws://127.0.0.1:4455"); let n = 0; const pending = new Map();
 const req = (requestType, requestData = {}) => new Promise((res, rej) => { const requestId = String(++n); pending.set(requestId, { res, rej }); ws.send(JSON.stringify({ op: 6, d: { requestType, requestId, requestData } })); });
 const ready = new Promise(res => { ws.onmessage = e => { const { op, d } = JSON.parse(e.data);
