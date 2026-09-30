@@ -74,9 +74,13 @@ final class AppModel: ObservableObject {
         self.options = options
         let store = try! Store(directory: options.dataDirectory)
         self.store = store
-        self.library = (try? store.loadLibrary()) ?? SeedLibrary.make()
-        self.state = (try? store.loadState()) ?? MatchState()
-        let settings = (try? store.loadSettings()) ?? ScorebugCore.Settings()
+        var loadErrors: [String] = []
+        func load<T>(_ name: String, fallback: T, _ read: () throws -> T) -> T {
+            do { return try read() } catch { loadErrors.append("Could not load \(name): \(error)"); return fallback }
+        }
+        self.library = load("library", fallback: SeedLibrary.make(), store.loadLibrary)
+        self.state = load("state", fallback: MatchState(), store.loadState)
+        let settings = load("settings", fallback: ScorebugCore.Settings(), store.loadSettings)
         self.settings = settings
         let bundled = OverlayResolver.locateBundledOverlays(explicit: options.overlaysDirectory)
             ?? URL(fileURLWithPath: "/nonexistent")
@@ -84,7 +88,8 @@ final class AppModel: ObservableObject {
         CrestImage.directory = store.crestsDirectory
         ScaledFonts.scale = zoomScale
         updateSlotSummaries()
-        importDefaultCrestFolderIfPresent()
+        if loadErrors.isEmpty, options.dataDirectory == Store.defaultDirectory() { importDefaultCrestFolderIfPresent() }
+        if !loadErrors.isEmpty { lastError = loadErrors.joined(separator: "\n") }
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
         Task.detached(priority: .utility) { [store] in store.writeMissingThumbnails() }
         Task { await livePollLoop() }
@@ -155,8 +160,31 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // ponytail: last 500 successful responses per session; durable retry history only if needed.
+    private var commandResponses: [String: Data] = [:]
+    private var commandResponseOrder: [String] = []
+    func commandResponse(_ request: CommandRequest, slot: Int, requestId: String?) throws -> Data {
+        let key = requestId.map { "\(slot)|\($0)" }
+        if let key, let cached = commandResponses[key] { return cached }
+        try applyRequest(request, slot: slot)
+        let data = snapshotData()
+        if let key {
+            commandResponses[key] = data; commandResponseOrder.append(key)
+            if commandResponseOrder.count > 500 { commandResponses.removeValue(forKey: commandResponseOrder.removeFirst()) }
+        }
+        return data
+    }
+
     func applyRequest(_ request: CommandRequest, slot: Int) throws {
         let command = try request.toCommand()
+        if case .setCompetition(let id) = command {
+            guard library.competitions.contains(where: { $0.id == id }) else { throw EngineError.badRequest("unknown competition \(id); known: \(library.competitions.map(\.id).sorted().joined(separator: ", "))") }
+            setCompetition(id, slot: slot, deferUIUpdate: true)
+            return
+        }
+        if case .setTheme(let id) = command, let id, !id.isEmpty, themeConfig(id: id) == nil {
+            throw EngineError.badRequest("unknown theme \(id); known: \(resolver.availableThemeIds().joined(separator: ", "))")
+        }
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { throw EngineError.badRequest("slot must be 1 or 2") }
         profiled(command) {
             let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
@@ -191,7 +219,7 @@ final class AppModel: ObservableObject {
         apply(.setTeam(side, entry), slot: slot)
     }
 
-    func setCompetition(_ id: String, slot: Int) {
+    func setCompetition(_ id: String, slot: Int, deferUIUpdate: Bool = false) {
         var m = match(slot)
         m = MatchEngine.apply(.setCompetition(id), to: m, now: Date())
         // Codes follow the competition, so refresh both entries from the library where the club is known.
@@ -202,7 +230,7 @@ final class AppModel: ObservableObject {
             }
         }
         if let idx = state.matches.firstIndex(where: { $0.slot == slot }) { state.matches[idx] = m }
-        persistAndBroadcast()
+        persistAndBroadcast(deferUIUpdate: deferUIUpdate)
     }
 
     func fixtures(on date: Date, competitionId: String?) async throws -> [Fixture] {
@@ -360,8 +388,9 @@ final class AppModel: ObservableObject {
         edit(&state.matches[idx].goals[goal]); state.matches[idx].revision += 1; persistAndBroadcast()
     }
 
+    private(set) var stateSaveFailed = false
     private func persistAndBroadcast(deferUIUpdate: Bool = false) {
-        do { try store.saveState(state) } catch { lastError = "Could not save state: \(error.localizedDescription)" }
+        do { try store.saveState(state); stateSaveFailed = false } catch { stateSaveFailed = true; lastError = "Could not save state: \(error.localizedDescription)" }
         updateSlotSummaries()
         broadcast()
         if deferUIUpdate {
@@ -512,7 +541,8 @@ final class AppModel: ObservableObject {
     // MARK: Server
 
     func startServer() {
-        let server = OverlayServer(port: UInt16(port), resolver: resolver, crestsDirectory: store.crestsDirectory, model: self)
+        guard let validPort = UInt16(exactly: port), validPort >= 1024 else { serverStatus = "Invalid port \(port)"; return }
+        let server = OverlayServer(port: validPort, resolver: resolver, crestsDirectory: store.crestsDirectory, model: self)
         self.server = server
         serverStatus = "Starting on port \(port)"
         Task {

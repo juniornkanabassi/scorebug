@@ -32,9 +32,12 @@ public final class Store: @unchecked Sendable {
 
     private func url(_ name: String) -> URL { directory.appendingPathComponent(name) }
 
+    private var unreadableFiles: Set<String> = []
+
     private func load<T: Decodable>(_ name: String, as type: T.Type, schemaOf: (T) -> Int) throws -> T? {
         let file = url(name)
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        do {
         let data = try Data(contentsOf: file)
         let value = try JSONCoding.decoder().decode(T.self, from: data)
         let schema = schemaOf(value)
@@ -44,9 +47,16 @@ public final class Store: @unchecked Sendable {
             if !FileManager.default.fileExists(atPath: backup.path) { try data.write(to: backup) }
         }
         return value
+        } catch {
+            unreadableFiles.insert(name)
+            let backup = url("\(name).unreadable-\(UUID().uuidString)")
+            try? FileManager.default.copyItem(at: file, to: backup)
+            throw error
+        }
     }
 
     private func save<T: Encodable>(_ value: T, to name: String) throws {
+        guard !unreadableFiles.contains(name) else { throw CocoaError(.fileWriteNoPermission, userInfo: [NSLocalizedDescriptionKey: "Refusing to replace unreadable \(name); recover the original or its backup and restart."]) }
         let data = try JSONCoding.prettyEncoder().encode(value)
         let target = url(name)
         let temp = url(".\(name).\(UUID().uuidString).tmp")

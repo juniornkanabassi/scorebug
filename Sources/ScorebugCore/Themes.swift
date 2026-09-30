@@ -41,13 +41,18 @@ public struct OverlayResolver: Sendable {
         let fm = FileManager.default
         if let overrides {
             let candidate = overrides.appendingPathComponent(clean)
-            if fm.fileExists(atPath: candidate.path) { return candidate }
+            if fm.fileExists(atPath: candidate.path), Self.contains(candidate, in: overrides) { return candidate }
         }
         let candidate = bundled.appendingPathComponent(clean)
-        return fm.fileExists(atPath: candidate.path) ? candidate : nil
+        return fm.fileExists(atPath: candidate.path) && Self.contains(candidate, in: bundled) ? candidate : nil
+    }
+
+    public static func contains(_ file: URL, in root: URL) -> Bool {
+        file.resolvingSymlinksInPath().path.hasPrefix(root.resolvingSymlinksInPath().path + "/")
     }
 
     public func themeConfig(id: String) -> ThemeConfig? {
+        guard !id.contains("/"), !id.contains("..") else { return nil }
         guard let url = file(for: "themes/\(id)/theme.json"), let data = try? Data(contentsOf: url) else { return nil }
         return try? JSONDecoder().decode(ThemeConfig.self, from: data)
     }
@@ -58,7 +63,7 @@ public struct OverlayResolver: Sendable {
             let themes = root.appendingPathComponent("themes")
             if let names = try? FileManager.default.contentsOfDirectory(atPath: themes.path) { ids.formUnion(names.filter { !$0.hasPrefix(".") }) }
         }
-        return ids.sorted()
+        return ids.filter { themeConfig(id: $0) != nil }.sorted()
     }
 }
 
@@ -79,5 +84,19 @@ public enum MIME {
         case "otf": return "font/otf"
         default: return "application/octet-stream"
         }
+    }
+}
+
+/// A first-route guard for HTTP and WebSocket requests, before any action or file read.
+public enum RequestSafety {
+    public static func refusal(port: Int, host: String?, origin: String?, method: String, contentType: String?, contentLength: String? = nil, transferEncoding: String? = nil) -> (Int, String)? {
+        let hosts = ["127.0.0.1:\(port)", "localhost:\(port)"]
+        guard let host, hosts.contains(host) else { return (403, "request refused: foreign host") }
+        if let origin, !hosts.contains(where: { origin == "http://\($0)" }) { return (403, "request refused: foreign origin") }
+        if method == "POST" {
+            guard contentType?.split(separator: ";").first?.trimmingCharacters(in: .whitespaces).lowercased() == "application/json" else { return (415, "content type must be application/json") }
+            guard transferEncoding == nil, let length = contentLength.flatMap(Int.init), (0...65536).contains(length) else { return (413, "JSON body must have Content-Length and be at most 64 KiB") }
+        }
+        return nil
     }
 }

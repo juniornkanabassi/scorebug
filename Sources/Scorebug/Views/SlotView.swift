@@ -892,7 +892,7 @@ struct ClockFieldsRow: View {
     /// back out before sending `.setClock`.
     private func applyTypedTime() {
         guard let m = Int(minutesText), let s = Int(secondsText), match.currentPeriod != nil else { resyncIfIdle(force: true); return }
-        model.apply(.setClock(seconds: max(0, m * 60 + s - periodBaseSeconds)), slot: slot)
+        model.apply(.setClock(seconds: max(0, min(333, max(0, m)) * 60 + min(59, max(0, s)) - periodBaseSeconds)), slot: slot)
     }
 }
 

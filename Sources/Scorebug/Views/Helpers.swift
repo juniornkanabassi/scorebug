@@ -21,6 +21,7 @@ enum CrestImage {
     /// next launch, is a small decode again. Callers draw the result with `.resizable().scaledToFit()` so a
     /// non-square source (the squashed Atletico crest, formerly stretched to a square) keeps its own shape.
     static func thumbnail(file: String, size: CGFloat) -> NSImage? {
+        guard !file.contains("/"), !file.contains("..") else { return nil }
         let key = "\(file)@\(Int(size))"
         if let cached = cache.object(forKey: key as NSString) { return cached }
         guard let dir = directory else { return nil }
@@ -53,6 +54,7 @@ enum CrestImage {
     /// that isn't already circular (a flag, a square badge), the round mask baked into those pixels rather
     /// than applied with `.clipShape` (which a `Menu` also ignores).
     static func menuIcon(file: String) -> NSImage? {
+        guard !file.contains("/"), !file.contains("..") else { return nil }
         let key = "\(file)@menu"
         if let cached = cache.object(forKey: key as NSString) { return cached }
         guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
@@ -77,6 +79,7 @@ enum CrestImage {
 
     /// Drops this file's cached sizes and its persisted rendition, so a re-imported crest is decoded afresh.
     static func invalidate(file: String) {
+        guard !file.contains("/"), !file.contains("..") else { return }
         for key in keysByFile.removeValue(forKey: file) ?? [] { cache.removeObject(forKey: key as NSString) }
         pendingRenditions.remove(file)
         if let dir = directory { try? FileManager.default.removeItem(at: dir.appendingPathComponent(".thumbs").appendingPathComponent(file)) }

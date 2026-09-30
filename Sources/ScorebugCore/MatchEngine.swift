@@ -157,7 +157,10 @@ public struct CommandRequest: Codable, Sendable {
         case "clearAggregate": return .clearAggregate
         case "setShowScorers": return .setShowScorers(showScorers ?? true)
         case "toggleScorers": return .toggleShowScorers
-        case "linkESPN": return .setLiveLink(eventId: eventId, league: competitionId)
+        case "linkESPN":
+            guard let eventId, eventId.range(of: "^[0-9]{1,12}$", options: .regularExpression) != nil,
+                  let competitionId, competitionId.range(of: "^[a-z0-9._-]{1,40}$", options: .regularExpression) != nil else { throw EngineError.badRequest("eventId must be 1 to 12 digits; league must be 1 to 40 letters, digits, dots, underscores or hyphens") }
+            return .setLiveLink(eventId: eventId, league: competitionId)
         case "unlinkESPN": return .setLiveLink(eventId: nil, league: nil)
         case "setAutoUpdateLiveData": return .setAutoUpdateLiveData(showScorers ?? true)
         case "setLiveDataDelay": return .setLiveDataDelay(max(0, min(10, minutes ?? 5)))
@@ -226,9 +229,10 @@ public enum MatchEngine {
             guard m.currentPeriod != nil, m.clock.running else { return m }
             freeze(&m.clock, now: now)
         case .setAddedMinutes(let minutes):
-            m.addedMinutes = (minutes ?? 0) > 0 ? minutes : nil
+            let value = min(30, max(0, minutes ?? 0))
+            m.addedMinutes = value > 0 ? value : nil
         case .adjustAddedMinutes(let delta):
-            let value = max(0, (m.addedMinutes ?? 0) + delta)
+            let value = min(30, max(0, min(30, max(0, m.addedMinutes ?? 0)) + min(30, max(-30, delta))))
             m.addedMinutes = value > 0 ? value : nil
         case .setVisible(let v):
             m.visible = v
@@ -285,7 +289,7 @@ public enum MatchEngine {
         case .setTheme(let id):
             m.themeId = (id?.isEmpty ?? true) ? nil : id
         case .setAggregate(let home, let away):
-            m.aggregate = Aggregate(firstLegHome: home, firstLegAway: away)
+            m.aggregate = Aggregate(firstLegHome: min(99, max(0, home)), firstLegAway: min(99, max(0, away)))
         case .clearAggregate:
             m.aggregate = nil
         case .setShowScorers(let v):
@@ -313,11 +317,11 @@ public enum MatchEngine {
             if m.lastGoal?.goalId == id { m.lastGoal = nil }
         case .setClock(let seconds):
             guard m.currentPeriod != nil else { return m }
-            setLocalElapsed(&m.clock, to: TimeInterval(max(0, seconds)), now: now)
+            setLocalElapsed(&m.clock, to: TimeInterval(min(10000, max(0, seconds))), now: now)
         case .adjustClock(let delta):
             guard m.currentPeriod != nil else { return m }
             let currentLocal = m.clock.elapsed(at: now) - TimeInterval(m.clock.periodBaseSeconds)
-            let newLocal = max(0, currentLocal + TimeInterval(delta))
+            let newLocal = min(10000, max(0, currentLocal + TimeInterval(min(10000, max(-10000, delta)))))
             setLocalElapsed(&m.clock, to: newLocal, now: now)
         case .reset:
             var fresh = Match(slot: m.slot, competitionId: m.competitionId, home: m.home, away: m.away)

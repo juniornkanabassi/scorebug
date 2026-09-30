@@ -421,10 +421,8 @@ do {
         if request.url!.host!.contains("football-data") { calls.token = request.value(forHTTPHeaderField: "X-Auth-Token"); throw Down() }
         return Data(espnSample.utf8)
     }
-    let semaphore = DispatchSemaphore(value: 0)
     var result: [Fixture] = []
-    Task { result = (try? await FixtureService.fetch(date: at(0), apiKey: "k", loader: loader)) ?? []; semaphore.signal() }
-    semaphore.wait()
+    result = (try? await FixtureService.fetch(date: at(0), apiKey: "k", loader: loader)) ?? []
     check(calls.hosts == ["api.football-data.org", "site.api.espn.com"], "fetch tries football-data then ESPN (got \(calls.hosts))")
     check(calls.token == "k", "fetch sends the API key as X-Auth-Token")
     check(result.count == 1 && result[0].home.code == "ARS", "fetch answers from ESPN when football-data fails")
@@ -445,16 +443,13 @@ do {
     let inter = FixtureTeam(name: "FC Internazionale Milano", shortName: "Inter", code: "INT", crestURL: URL(string: "https://crests.football-data.org/108.png"))
     let down = FixtureTeam(name: "Down FC", shortName: "Down", code: "DOW", crestURL: URL(string: "https://crests.football-data.org/down.png"))
     let none = FixtureTeam(name: "No Crest", shortName: "No Crest", code: "NOC", crestURL: nil)
-    let semaphore = DispatchSemaphore(value: 0)
     var results: [FixtureCrest] = []
-    Task {
+    do {
         results.append(await FixtureService.crest(for: inter, in: folder, loader: loader))
         results.append(await FixtureService.crest(for: inter, in: folder, loader: loader))
         results.append(await FixtureService.crest(for: down, in: folder, loader: loader))
         results.append(await FixtureService.crest(for: none, in: folder, loader: loader))
-        semaphore.signal()
     }
-    semaphore.wait()
     let expected = folder.appendingPathComponent("fc-internazionale-milano.png")
     check(results[0] == .file(expected) && FileManager.default.fileExists(atPath: expected.path), "crest downloaded to <slug>.png under the folder")
     check(results[1] == .file(expected) && calls.n == 2, "second request served from the cache, loader called once for Inter and once for Down")
@@ -512,6 +507,66 @@ do {
     check(LiveDataLogic.rankedScorers(["L. Yamal"], query: "yamal").first == "L. Yamal", "scorer search matches a surname from an initial")
     check(LiveDataLogic.rankedScorers(["Kevin De Bruyne"], query: "debruyne").first == "Kevin De Bruyne", "scorer search matches joined surname particles")
 }
+
+
+// Security regressions: shared request policy, unsafe numbers, search, files and recovery.
+for (host, origin, method, type, expected) in [
+    ("127.0.0.1:8681", nil, "GET", nil, nil),
+    ("localhost:8681", "http://localhost:8681", "POST", "application/json", nil),
+    ("evil.test:8681", nil, "GET", nil, 403),
+    ("127.0.0.1:8681", "null", "GET", nil, 403),
+    ("127.0.0.1:8681", "https://evil.test", "GET", nil, 403),
+    ("127.0.0.1:8681", nil, "POST", "text/plain", 415),
+    ("127.0.0.1:8681", nil, "POST", "application/json-evil", 415),
+] as [(String, String?, String, String?, Int?)] {
+    check(RequestSafety.refusal(port: 8681, host: host, origin: origin, method: method, contentType: type, contentLength: "2")?.0 == expected, "request guard \(host) \(origin ?? "no origin") \(type ?? method)")
+}
+check(RequestSafety.refusal(port: 8681, host: "127.0.0.1:8681", origin: nil, method: "POST", contentType: "application/json", contentLength: "65537")?.0 == 413, "oversized body refused before collection")
+check(RequestSafety.refusal(port: 8681, host: "127.0.0.1:8681", origin: nil, method: "POST", contentType: "application/json", contentLength: "2", transferEncoding: "chunked")?.0 == 413, "chunked body refused before collection")
+check((try? CommandRequest(command: "linkESPN", competitionId: "eng.1", eventId: "401861081").toCommand()) != nil, "valid ESPN link accepted")
+for id in ["", "../secret", "1234567890123"] {
+    check((try? CommandRequest(command: "linkESPN", competitionId: "eng.1", eventId: id).toCommand()) == nil, "unsafe ESPN event id refused \(id)")
+}
+check((try? CommandRequest(command: "linkESPN", competitionId: "../eng.1", eventId: "12").toCommand()) == nil, "unsafe ESPN league refused")
+var bounded = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
+bounded = MatchEngine.apply(.setAddedMinutes(5), to: bounded, now: at(0))
+bounded = MatchEngine.apply(.adjustAddedMinutes(Int.max), to: bounded, now: at(0))
+check(bounded.addedMinutes == 30, "huge added-time delta safely clamped")
+bounded = MatchEngine.apply(.adjustAddedMinutes(Int.min), to: bounded, now: at(0))
+check(bounded.addedMinutes == nil, "negative added-time delta still hides row")
+bounded = MatchEngine.apply(.setClock(seconds: Int.max), to: bounded, now: at(0))
+check(bounded.clock.elapsed(at: at(0)) == 10000, "huge setClock cannot poison saved state")
+bounded.clock.accumulated = Double(Int.max)
+check(ClockEngine.display(match: bounded, style: .runOn, now: at(0)).main == "333:20", "previously poisoned clock renders safely")
+check(LiveDataLogic.rankedScorers(["Khvicha Kvaratskhelia", "Ousmane Dembélé", "João Neves"], query: "Kvaratskhelia").first == "Khvicha Kvaratskhelia", "full surname scorer search does not trap")
+_ = LiveDataLogic.scorerRank("D. Rice", query: "alexander")
+check(true, "long query against a short scorer does not trap")
+let sourceOverlays = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Resources/Overlays")
+let securityResolver = OverlayResolver(bundled: sourceOverlays, overrides: nil)
+check(securityResolver.availableThemeIds().count == 8, "theme discovery resolves eight valid themes")
+let securityFolder = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-security-" + UUID().uuidString)
+try FileManager.default.createDirectory(at: securityFolder, withIntermediateDirectories: true)
+let outside = securityFolder.appendingPathComponent("outside.json")
+try Data("canary".utf8).write(to: outside)
+let root = securityFolder.appendingPathComponent("root")
+try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("link.json"), withDestinationURL: outside)
+check(OverlayResolver(bundled: root, overrides: nil).file(for: "link.json") == nil, "static symlink escaping root refused")
+let recovery = try Store(directory: securityFolder.appendingPathComponent("recovery"))
+let corrupt = recovery.directory.appendingPathComponent("state.json")
+try Data("broken".utf8).write(to: corrupt)
+do { _ = try recovery.loadState(); check(false, "corrupt state must throw") } catch {
+    check((try? String(contentsOf: corrupt, encoding: .utf8)) == "broken", "unreadable original preserved")
+    do { try recovery.saveState(MatchState()); check(false, "fallback must not replace unreadable state") } catch { check(true, "fallback cannot overwrite unreadable state") }
+    check((try! FileManager.default.contentsOfDirectory(atPath: recovery.directory.path)).contains { $0.hasPrefix("state.json.unreadable-") }, "unreadable file backed up")
+}
+let forbiddenCrest = FixtureTeam(name: "Canary", shortName: "CA", code: "CAN", crestURL: outside)
+let noFileCrest = await FixtureService.crest(for: forbiddenCrest, in: root, loader: { _ in fatalError("file URL reached loader") })
+check(noFileCrest == .monogram("CA"), "file crest returns monogram without calling loader")
+let webCrest = FixtureTeam(name: "Safe", shortName: "SA", code: "SAF", crestURL: URL(string: "https://example.test/x.html"))
+let safeCrest = await FixtureService.crest(for: webCrest, in: root, loader: { _ in Data("image".utf8) })
+if case .file(let file) = safeCrest { check(file.pathExtension == "png", "unsafe downloaded extension becomes png") } else { check(false, "https crest saved") }
+try FileManager.default.removeItem(at: securityFolder)
 
 print(failures == 0 ? "All checks passed." : "\(failures) check(s) failed.")
 exit(failures == 0 ? 0 : 1)

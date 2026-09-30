@@ -265,7 +265,9 @@ public enum LiveDataLogic {
         let range = max(0, max(a.count, b.count) / 2 - 1)
         var am = Array(repeating: false, count: a.count), bm = Array(repeating: false, count: b.count), matches = 0
         for i in a.indices {
-            for j in max(0, i - range)...min(b.count - 1, i + range) where !bm[j] && a[i] == b[j] {
+            let lo = max(0, i - range), hi = min(b.count - 1, i + range)
+            guard lo <= hi else { continue }
+            for j in lo...hi where !bm[j] && a[i] == b[j] {
                 am[i] = true; bm[j] = true; matches += 1; break
             }
         }

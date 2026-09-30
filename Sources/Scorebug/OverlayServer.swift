@@ -87,6 +87,13 @@ final class OverlayServer: @unchecked Sendable {
         self.server = server
         let resolver = self.resolver
         let crests = self.crestsDirectory
+        let port = Int(self.port)
+        await server.appendRoute("*", handler: { request in
+            if let (code, message) = RequestSafety.refusal(port: port, host: request.headers[.host], origin: request.headers[HTTPHeader("Origin")], method: request.method.rawValue, contentType: request.headers[.contentType], contentLength: request.headers[.contentLength], transferEncoding: request.headers[HTTPHeader("Transfer-Encoding")]) {
+                return HTTPResponse(statusCode: HTTPStatusCode(code, phrase: "Request refused"), body: Data(message.utf8))
+            }
+            throw HTTPUnhandledError()
+        })
 
         await server.appendRoute("GET /", handler: { [weak self] _ in
             let base = "http://localhost:\(self?.port ?? 8600)"
@@ -124,7 +131,11 @@ final class OverlayServer: @unchecked Sendable {
         await server.appendRoute("GET /crests/*", handler: { request in
             let name = String(request.path.dropFirst("/crests/".count)).removingPercentEncoding ?? ""
             guard !name.contains("/"), !name.contains("..") else { return HTTPResponse(statusCode: .notFound) }
-            return serve(crests.appendingPathComponent(name))
+            let file = crests.appendingPathComponent(name)
+            guard OverlayResolver.contains(file, in: crests) else { return HTTPResponse(statusCode: .notFound) }
+            var response = serve(file)
+            response.headers[HTTPHeader("Content-Security-Policy")] = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+            return response
         })
 
         await server.appendRoute("GET /preview/backdrop", handler: { [weak self] request in
@@ -147,6 +158,14 @@ final class OverlayServer: @unchecked Sendable {
         await server.appendRoute("GET /api/state", handler: { [weak self] _ in
             let data = await self?.stateJSON() ?? Data("{}".utf8)
             return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8", .cacheControl: "no-store"], body: data)
+        })
+        await server.appendRoute("GET /api/status", handler: { _ in
+            let data = try JSONSerialization.data(withJSONObject: ["version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev", "port": port])
+            return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: data)
+        })
+        await server.appendRoute("GET /api/themes", handler: { _ in
+            let themes = resolver.availableThemeIds().compactMap { resolver.themeConfig(id: $0) }.map { ["id": $0.id, "name": $0.name ?? $0.id, "family": $0.family ?? ""] }
+            return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: try JSONSerialization.data(withJSONObject: themes))
         })
         await server.appendRoute("GET /api/library", handler: { [weak self] _ in
             guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
@@ -185,11 +204,19 @@ final class OverlayServer: @unchecked Sendable {
             let req: CommandRequest
             do { req = try JSONCoding.decoder().decode(CommandRequest.self, from: body) }
             catch { return HTTPResponse(statusCode: .badRequest, body: Data("invalid command JSON: \(error)".utf8)) }
+            let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+            let requestId = object?["requestId"] as? String
+            if object?["requestId"] != nil && (requestId == nil || !(1...128).contains(requestId!.count)) {
+                return HTTPResponse(statusCode: .badRequest, body: Data("requestId must be 1 to 128 characters".utf8))
+            }
             let result: Result<Data, Error> = await MainActor.run {
-                do { try model.applyRequest(req, slot: slot); return .success(model.snapshotData()) } catch { return .failure(error) }
+                do { return .success(try model.commandResponse(req, slot: slot, requestId: requestId)) } catch { return .failure(error) }
             }
             switch result {
-            case .success(let data): return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json; charset=utf-8"], body: data)
+            case .success(let data):
+                var headers: [HTTPHeader: String] = [.contentType: "application/json; charset=utf-8"]
+                if await model.stateSaveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
+                return HTTPResponse(statusCode: .ok, headers: headers, body: data)
             case .failure(let error): return HTTPResponse(statusCode: .badRequest, body: Data("\(error)".utf8))
             }
         })

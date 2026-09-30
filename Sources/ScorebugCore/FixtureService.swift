@@ -129,9 +129,9 @@ extension FixtureService {
     /// The crest for a fixture team, cached under `folder` as `<slug>.<ext>` so a repeat fetch never touches the network.
     public static func crest(for team: FixtureTeam, in folder: URL, loader: Loader = urlSessionLoader) async -> FixtureCrest {
         let monogram = FixtureCrest.monogram(String(team.shortName.filter(\.isLetter).prefix(2)).uppercased())
-        guard let url = team.crestURL else { return monogram }
+        guard let url = team.crestURL, url.scheme?.lowercased() == "https" else { return monogram }
         let slug = team.name.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "-" }.reduce(into: "") { if !($0.last == "-" && $1 == "-") { $0.append($1) } }
-        let ext = url.pathExtension.isEmpty ? "png" : url.pathExtension
+        let ext = ["png", "svg", "jpg", "jpeg", "webp"].contains(url.pathExtension.lowercased()) ? url.pathExtension.lowercased() : "png"
         let file = folder.appendingPathComponent("\(slug).\(ext)")
         if FileManager.default.fileExists(atPath: file.path) { return .file(file) }
         do {

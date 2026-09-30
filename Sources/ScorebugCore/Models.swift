@@ -100,7 +100,7 @@ public struct Clock: Codable, Sendable, Equatable {
     public func elapsed(at now: Date) -> TimeInterval {
         var total = TimeInterval(periodBaseSeconds) + accumulated
         if running, let start = periodStart { total += max(0, now.timeIntervalSince(start)) }
-        return total
+        return total.isFinite ? min(20000, max(0, total)) : 0
     }
 }
 
