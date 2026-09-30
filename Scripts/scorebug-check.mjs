@@ -43,7 +43,7 @@ try {
  posts=[];await cli(['goal','add','--side','home','--minute','23','--scorer','X','--own-goal','--request-id','r1']);
  assert.deepEqual(posts.map(p=>p.command),['goal','setScorer','setGoalMinute']);assert.equal(posts[0].requestId,'r1');assert.equal(posts[1].goalId,match.lastGoal.goalId);assert.equal(posts[1].requestId,'r1:scorer');assert.equal(posts[2].requestId,'r1:minute');checks++;
  posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--competition','ucl']);
- assert.deepEqual(posts.map(p=>p.command),['setCompetition','setTeam','setTeam','reset']);assert.equal(posts[0].competitionId,'champions-league');checks++;
+ assert.deepEqual(posts.map(p=>p.command),['setCompetition','setTeam','setTeam','reset','clearAggregate']);assert.equal(posts[0].competitionId,'champions-league');checks++;
  posts=[];await cli(['match','set','--competition','ucl']);ok(posts.length===1,'competition alone');
  posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--competition','ucl','--dry-run']);ok(posts.length===0,'dry-run');
  posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--first-leg','junk'],2);ok(posts.length===0,'validate before mutations');
