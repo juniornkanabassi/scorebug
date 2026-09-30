@@ -130,3 +130,5 @@ block:
 Same reasoning as the existing `show` comment: no follow-up timer to swap in `.hidden`, since under a
 headless capture with the animation paused mid-flight, a queued class swap could fire in the same tick and
 wipe the frozen frame before `capture.mjs` reads it.
+
+`scorebug` is the supported CLI for status, match setup, goals, clock, fixtures and themes. See [AI control](../README.md#ai-control) for every command, examples and MCP setup.
