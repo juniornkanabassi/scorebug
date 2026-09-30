@@ -266,7 +266,12 @@ public enum MatchEngine {
             s.kicks.remove(at: i)
             m.shootout = s
         case .setTeam(let side, let entry):
+            let changed = side == .home ? m.home != entry : m.away != entry
             if side == .home { m.home = entry } else { m.away = entry }
+            if changed {
+                m.kickoff = nil; m.espnEventId = nil; m.espnLeague = nil
+                m.aggregate = nil; m.liveDataNotice = nil
+            }
         case .swapTeams:
             swap(&m.home, &m.away)
             swap(&m.homeScore, &m.awayScore)
@@ -282,6 +287,10 @@ public enum MatchEngine {
             }
             m.lastGoal = nil
         case .setCompetition(let id):
+            if m.competitionId != id {
+                m.espnEventId = nil; m.espnLeague = nil; m.kickoff = nil
+                m.liveDataNotice = nil
+            }
             m.competitionId = id
             if !Competition.hasKnockouts(id: id) { m.aggregate = nil }
         case .setKickoff(let date):
