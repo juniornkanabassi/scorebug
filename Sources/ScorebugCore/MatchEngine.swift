@@ -266,7 +266,8 @@ public enum MatchEngine {
             s.kicks.remove(at: i)
             m.shootout = s
         case .setTeam(let side, let entry):
-            let changed = side == .home ? m.home != entry : m.away != entry
+            let old = m.team(side)
+            let changed = old.clubId != entry.clubId || (old.clubId == nil && old.name != entry.name)
             if side == .home { m.home = entry } else { m.away = entry }
             if changed {
                 m.kickoff = nil; m.espnEventId = nil; m.espnLeague = nil

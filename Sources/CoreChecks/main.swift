@@ -207,6 +207,23 @@ var freshSetup = Match(slot: 1, competitionId: "champions-league")
 freshSetup = MatchEngine.apply(.setLiveLink(eventId: "12345", league: "uefa.champions"), to: freshSetup, now: at(0))
 freshSetup = MatchEngine.apply(.setKickoff(at(0)), to: freshSetup, now: at(0))
 freshSetup = MatchEngine.apply(.setAggregate(home: 1, away: 0), to: freshSetup, now: at(0))
+// Library refreshes change details, not the selected club or its live fixture.
+for side in Side.allCases {
+    var live = freshSetup
+    var entry = live.team(side)
+    entry.clubId = UUID()
+    if side == .home { live.home = entry } else { live.away = entry }
+    entry.crestFile = "new-crest.png"
+    entry.code = "ALT"
+    entry.primaryColour = "#123456"
+    entry.squad = ["Updated player"]
+    entry.name = "Updated display name"
+    let refreshed = MatchEngine.apply(.setTeam(side, entry), to: live, now: at(0))
+    check(refreshed.aggregate == live.aggregate && refreshed.espnEventId == live.espnEventId && refreshed.espnLeague == live.espnLeague && refreshed.kickoff == live.kickoff, "team detail refresh keeps aggregate and fixture on \(side)")
+    entry.clubId = UUID()
+    let replaced = MatchEngine.apply(.setTeam(side, entry), to: live, now: at(0))
+    check(replaced.aggregate == nil && replaced.espnEventId == nil && replaced.kickoff == nil, "different club id clears aggregate and fixture on \(side)")
+}
 freshSetup = MatchEngine.apply(.setTeam(.home, TeamEntry(name: "New home", code: "NEW")), to: freshSetup, now: at(0))
 check(freshSetup.espnEventId == nil && freshSetup.kickoff == nil && freshSetup.aggregate == nil, "changing team identity clears linked fixture and first-leg state")
 clearOnComp = MatchEngine.apply(.setAggregate(home: 2, away: 1), to: clearOnComp, now: at(0))
