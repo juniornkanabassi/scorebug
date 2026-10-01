@@ -86,8 +86,6 @@ async function setState(s, { forHide = false } = {}) {
   }
 }
 
-const selectorMap = { main: ".main", comp: ".comp", sep: ".sep span", home: ".team.home", away: ".team.away", scoreHome: ".score.home", scoreAway: ".score.away", clock: ".clock", added: ".added", agg: ".agg", scorers: ".scorers", shootout: ".shootout" };
-const selectors = Object.entries(selectorMap);
 const results = [];
 let driver, driverOrientation;
 async function useDriver(orientation) {
@@ -118,7 +116,6 @@ try {
       }
       return boxes;
     });
-    const hidden = e.state.visible === false || e.demo?.startsWith("hide:");
     if (e.expectedVisible === false) captureBoxes.bug = null;
     const specPath = path.join(captureDir, `${e.id}.json`);
     const preview = path.join(reportDir, `${e.id}.png`);
