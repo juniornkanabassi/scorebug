@@ -29,6 +29,8 @@ Overlays are in `Resources/Overlays/`; during development the app finds them fro
 
 ## AI control
 
+Accepted localhost-only limitation (review 6): FlyingFox 0.27.1 decodes request lines and headers without a size cap or decoding deadline; the handler timeout starts afterwards. Only local processes can grow or stall headers indefinitely. Revisit if the listener binds beyond loopback or upstream adds limits; do not vendor or fork FlyingFox.
+
 Scorebug 1.0.0 ships `scorebug`, a Node CLI over the existing localhost HTTP API, and a thin MCP stdio adapter. They call the same app actions as the window; changes update the running GUI. Node 24 or later is required. `scorebug --help` and per-command help list flags, effects and examples. The installer links the bundled script into `~/.local/bin/scorebug`; without installing, use `node Scripts/scorebug.mjs` or the bundled `Contents/Resources/Scripts/scorebug.mjs`.
 
 | Command | Example |

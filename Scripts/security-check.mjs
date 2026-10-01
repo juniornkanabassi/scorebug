@@ -44,4 +44,13 @@ for (const [origin, expected] of [['https://evil.test', 403], [`http://127.0.0.1
     r.on('response', res => done(res)); r.on('upgrade', (res, socket) => done(res, socket)); r.on('error', reject); r.end();
   });
 }
+// Review 6 is accepted only while the listener is loopback-only; keep observing it.
+await new Promise((resolve, reject) => {
+  const r = http(`${base}/api/status`, { headers: { 'X-Oversized': 'x'.repeat(65537) }, timeout: 3000 }, res => {
+    console.log(`accepted limitation (Review 6): 65,537-byte header returns HTTP ${res.statusCode}; FlyingFox has no decoder size cap/deadline`);
+    res.resume(); res.on('end', resolve);
+  });
+  r.on('timeout', () => r.destroy(new Error('header observation timed out')));
+  r.on('error', reject); r.end();
+});
 console.log(`${checks} security runtime checks passed`);
