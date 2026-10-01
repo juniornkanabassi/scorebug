@@ -207,6 +207,8 @@ var freshSetup = Match(slot: 1, competitionId: "champions-league")
 freshSetup = MatchEngine.apply(.setLiveLink(eventId: "12345", league: "uefa.champions"), to: freshSetup, now: at(0))
 freshSetup = MatchEngine.apply(.setKickoff(at(0)), to: freshSetup, now: at(0))
 freshSetup = MatchEngine.apply(.setAggregate(home: 1, away: 0), to: freshSetup, now: at(0))
+let rethemed = MatchEngine.apply(.setCompetition("nations-league"), to: freshSetup, now: at(0))
+check(rethemed.espnEventId == freshSetup.espnEventId && rethemed.espnLeague == freshSetup.espnLeague && rethemed.kickoff == freshSetup.kickoff && rethemed.aggregate == freshSetup.aggregate, "competition change keeps the linked fixture and cup aggregate")
 // Library refreshes change details, not the selected club or its live fixture.
 for side in Side.allCases {
     var live = freshSetup

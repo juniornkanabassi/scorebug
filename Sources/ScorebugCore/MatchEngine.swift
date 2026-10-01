@@ -288,10 +288,6 @@ public enum MatchEngine {
             }
             m.lastGoal = nil
         case .setCompetition(let id):
-            if m.competitionId != id {
-                m.espnEventId = nil; m.espnLeague = nil; m.kickoff = nil
-                m.liveDataNotice = nil
-            }
             m.competitionId = id
             if !Competition.hasKnockouts(id: id) { m.aggregate = nil }
         case .setKickoff(let date):
