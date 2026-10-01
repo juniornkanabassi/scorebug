@@ -1,4 +1,4 @@
-// kick action: title shows that side's shootout tally while a shootout is on. Settings: slot, side, result.
+// kick action: the icon shows the side and result; the title is blank unless offline. Settings: slot, side, result.
 import { action } from "@elgato/streamdeck";
 import type { KeyDownEvent, KeyAction } from "@elgato/streamdeck";
 import { StatefulAction, iconPath, server, sideOf, slotOf } from "../lib/scorebug.js";
@@ -22,7 +22,6 @@ export class Kick extends StatefulAction {
 			await a.setTitle(server.offlineTitle);
 			return;
 		}
-		const scored = match.shootout?.kicks.filter((k) => k.side === side && k.result === "scored").length ?? 0;
 		await a.setTitle(undefined);
 	}
 }
