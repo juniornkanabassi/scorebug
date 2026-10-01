@@ -194,33 +194,6 @@ class ServerClient {
 /** The plugin's one connection to the server; every action imports this same instance. */
 export const server = new ServerClient();
 
-/** Mirrors `Clock.elapsed(at:)` in ClockEngine.swift. `now` and `clock.periodStart` are ms since 1970. */
-export function elapsedSeconds(clock: ClockState, now: number): number {
-	let total = clock.periodBaseSeconds + clock.accumulated;
-	if (clock.running && clock.periodStart !== null) total += Math.max(0, (now - clock.periodStart) / 1000);
-	return total;
-}
-
-export function formatClock(totalSeconds: number): string {
-	const s = Math.max(0, Math.floor(totalSeconds));
-	return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
-}
-
-/** Mirrors `Phase.stateLabel` in Models.swift, plus a short label for every live period. */
-export const PHASE_LABEL: Record<string, string> = {
-	preMatch: "KO",
-	firstHalf: "1H",
-	halfTime: "HT",
-	secondHalf: "2H",
-	fullTime: "FT",
-	extraFirst: "ET1",
-	extraBreak: "HT",
-	extraSecond: "ET2",
-	extraFullTime: "AET",
-	shootout: "PENS",
-	finished: "FT"
-};
-
 export interface BaseSettings {
 	slot?: number;
 	side?: string;
