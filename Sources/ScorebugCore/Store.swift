@@ -192,20 +192,24 @@ public final class Store: @unchecked Sendable {
     /// Copies a competition mark into crests/ as competition-<id>.<ext> and returns the stored file name.
     public func importCompetitionLogo(from source: URL, for competitionId: String) throws -> String {
         let ext = source.pathExtension.isEmpty ? "png" : source.pathExtension.lowercased()
-        let name = "competition-\(competitionId).\(ext)"
-        let target = crestsDirectory.appendingPathComponent(name)
-        if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
-        try FileManager.default.copyItem(at: source, to: target)
-        return name
+        return try copyIntoCrests(source, as: "competition-\(competitionId).\(ext)")
     }
 
     /// Copies an image into crests/ under the club id and returns the stored file name.
     public func importCrest(from source: URL, for clubId: UUID) throws -> String {
         let ext = source.pathExtension.isEmpty ? "png" : source.pathExtension.lowercased()
-        let name = "\(clubId.uuidString).\(ext)"
+        return try copyIntoCrests(source, as: "\(clubId.uuidString).\(ext)")
+    }
+
+    /// Copies through a hidden temporary file and only then replaces the stored image, so a missing or unreadable
+    /// replacement leaves the original the library points at (Codex review, 1 Oct). Importing the stored file itself is a no-op.
+    private func copyIntoCrests(_ source: URL, as name: String) throws -> String {
         let target = crestsDirectory.appendingPathComponent(name)
-        if FileManager.default.fileExists(atPath: target.path) { try FileManager.default.removeItem(at: target) }
-        try FileManager.default.copyItem(at: source, to: target)
+        if source.resolvingSymlinksInPath().path == target.resolvingSymlinksInPath().path { return name }
+        let temp = crestsDirectory.appendingPathComponent(".\(name).\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: temp) }
+        try FileManager.default.copyItem(at: source, to: temp)
+        _ = try FileManager.default.replaceItemAt(target, withItemAt: temp)
         return name
     }
 

@@ -560,6 +560,26 @@ do {
 }
 
 
+// Codex review, 1 Oct: image replacement, saved library edits, picker eligibility, live identity and swaps.
+let replaceTmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-replace-\(UUID().uuidString)")
+do {
+    defer { try? FileManager.default.removeItem(at: replaceTmp) }
+    let store = try Store(directory: replaceTmp.appendingPathComponent("data"))
+    let source = replaceTmp.appendingPathComponent("mark.png")
+    try Data("original".utf8).write(to: source)
+    let clubId = UUID()
+    let crest = try store.crestsDirectory.appendingPathComponent(store.importCrest(from: source, for: clubId))
+    let logo = try store.crestsDirectory.appendingPathComponent(store.importCompetitionLogo(from: source, for: "ligue1"))
+    let missing = replaceTmp.appendingPathComponent("missing.png")
+    check((try? store.importCrest(from: missing, for: clubId)) == nil && (try? Data(contentsOf: crest)) == Data("original".utf8), "a failed crest replacement keeps the existing crest")
+    check((try? store.importCompetitionLogo(from: missing, for: "ligue1")) == nil && (try? Data(contentsOf: logo)) == Data("original".utf8), "a failed competition logo replacement keeps the existing logo")
+    check((try? store.importCrest(from: crest, for: clubId)) == crest.lastPathComponent && (try? Data(contentsOf: crest)) == Data("original".utf8), "importing the stored crest onto itself keeps it")
+    try Data("replacement".utf8).write(to: source)
+    _ = try store.importCrest(from: source, for: clubId)
+    let temps = try FileManager.default.contentsOfDirectory(atPath: store.crestsDirectory.path).filter { $0.hasSuffix(".tmp") }
+    check((try? Data(contentsOf: crest)) == Data("replacement".utf8) && temps.isEmpty, "a successful replacement swaps the crest and leaves no temporary file")
+} catch { failures += 1; print("FAIL image replacement: \(error)") }
+
 // Security regressions: shared request policy, unsafe numbers, search, files and recovery.
 for (host, origin, method, type, expected) in [
     ("127.0.0.1:8681", nil, "GET", nil, nil),
