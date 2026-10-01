@@ -52,7 +52,9 @@ try {
  const reference=JSON.parse(readFileSync(new URL('./setup-match-reference.json',import.meta.url)));
  for(const [i,args] of referenceArgs.entries())assert.equal((await run('Scripts/setup-match.mjs',[...args,'--port',String(port)])).stdout,reference[i]);checks+=2;
  await new Promise(r=>server.close(r));
- const status=await cli(['status'],0,port);ok(status.result.running===false,'offline status');
+ const status=await cli(['status'],1,port);ok(status.ok===false && status.result.running===false,'offline JSON status');
+ const plain=await run('Scripts/scorebug.mjs',['status'],port);
+ ok(plain.code===1 && plain.stdout.includes('not running') && !plain.stderr,'offline human status');
  const offline=await cli(['show'],1,port);ok(offline.error.code==='not_running','spare port does not launch');
  console.log(`${checks} CLI checks passed`);
 } finally {server.close();}
