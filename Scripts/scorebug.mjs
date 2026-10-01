@@ -169,8 +169,8 @@ export async function main(args=process.argv.slice(2)) {
   const output = offline ? `Scorebug is not running on port ${result.port}`
    : name === 'status' ? result.matches.map(m=>`Slot ${m.slot}: ${m.home.name} ${m.score[0]}–${m.score[1]} ${m.away.name} · ${m.phase} ${m.clock}`).join('\n')
    : JSON.stringify(result);
-  console.log(json ? JSON.stringify({ok:!offline,result}) : output);
-  return offline ? 1 : 0;
+  console.log(json ? JSON.stringify({ok:true,result}) : output);
+  return 0;
  } catch(e) {
   const error=e instanceof Failure?e:new Failure('usage',e.message,2);
   const output={ok:false,error:{code:error.code,message:error.message}};
