@@ -33,6 +33,7 @@ public final class Store: @unchecked Sendable {
     private func url(_ name: String) -> URL { directory.appendingPathComponent(name) }
 
     private var unreadableFiles: Set<String> = []
+    public private(set) var libraryDirty = false
 
     private func load<T: Decodable>(_ name: String, as type: T.Type, schemaOf: (T) -> Int) throws -> T? {
         let file = url(name)
@@ -69,7 +70,9 @@ public final class Store: @unchecked Sendable {
             if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
                 let seedVersion = SeedLibrary.lastLoadedSquadsVersion
                 let changed = Store.mergeSeed(seed, into: &lib, seedSquadsVersion: seedVersion, storedSquadsVersion: storedSquadsVersion())
-                if changed { try saveLibrary(lib) }
+                if changed {
+                    do { try saveLibrary(lib) } catch { return lib }
+                }
                 if let seedVersion { saveSquadsVersion(seedVersion) }
             }
             return lib
@@ -79,7 +82,11 @@ public final class Store: @unchecked Sendable {
         if let v = SeedLibrary.lastLoadedSquadsVersion { saveSquadsVersion(v) }
         return seeded
     }
-    public func saveLibrary(_ library: Library) throws { try save(library, to: "library.json") }
+    public func saveLibrary(_ library: Library) throws {
+        libraryDirty = true
+        try save(library, to: "library.json")
+        libraryDirty = false
+    }
 
     /// Sidecar tracking of the squads.json "_version" last applied to this store's library.json, kept outside
     /// Models.swift (Library carries no version field) so mergeSeed can tell a stale squad from a current one.

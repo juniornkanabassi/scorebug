@@ -300,6 +300,32 @@ do {
     try FileManager.default.removeItem(at: tmp)
 } catch { failures += 1; print("FAIL store: \(error)") }
 
+// A readable curated library survives a failed post-merge save, then retries.
+let dirtyTmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-dirty-\(UUID().uuidString)")
+do {
+    let store = try Store(directory: dirtyTmp)
+    defer {
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: dirtyTmp.path)
+        try? FileManager.default.removeItem(at: dirtyTmp)
+    }
+    var curated = SeedLibrary.make()
+    curated.clubs = [curated.clubs[0]]
+    curated.clubs[0].name = "Curated sentinel"
+    let original = try JSONCoding.prettyEncoder().encode(curated)
+    let file = dirtyTmp.appendingPathComponent("library.json")
+    try original.write(to: file)
+    try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: dirtyTmp.path)
+    let loaded = try store.loadLibrary()
+    check(loaded.clubs.contains { $0.name == "Curated sentinel" } && store.libraryDirty, "failed merge save retains curated library and marks it dirty")
+    let unchanged = try Data(contentsOf: file)
+    check(unchanged == original, "failed merge save preserves the original library")
+    check(!FileManager.default.fileExists(atPath: dirtyTmp.appendingPathComponent("squads-version.txt").path), "failed library save does not advance squads version")
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: dirtyTmp.path)
+    try store.saveLibrary(loaded)
+    let persisted = try JSONCoding.decoder().decode(Library.self, from: Data(contentsOf: file))
+    check(persisted == loaded && !store.libraryDirty, "successful retry saves curated library and clears dirty marker")
+} catch { failures += 1; print("FAIL dirty library: \(error)") }
+
 // Overlay resolver refuses escapes
 if let bundled = OverlayResolver.locateBundledOverlays(explicit: nil) {
     let r = OverlayResolver(bundled: bundled, overrides: nil)

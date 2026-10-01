@@ -79,6 +79,7 @@ final class AppModel: ObservableObject {
             do { return try read() } catch { loadErrors.append("Could not load \(name): \(error)"); return fallback }
         }
         self.library = load("library", fallback: SeedLibrary.make(), store.loadLibrary)
+        if store.libraryDirty { loadErrors.append("Loaded library has unsaved updates; could not save library.") }
         self.state = load("state", fallback: MatchState(), store.loadState)
         let settings = load("settings", fallback: ScorebugCore.Settings(), store.loadSettings)
         self.settings = settings
