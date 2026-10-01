@@ -129,7 +129,7 @@ export async function main(args=process.argv.slice(2)) {
     if(comp)await send('setCompetition',{competitionId:comp.id});
     for(const side of ['home','away'])if(picks[side])await send('setTeam',{side,team:teamEntry(picks[side],compId)});
     if(values.home&&!values['keep-score'])await send('reset');
-    if(values.home){if(values['first-leg']){const [home,away]=values['first-leg'].split(/[-:]/).map(Number);await send('setAggregate',{home,away});}else await send('clearAggregate');}
+    if(values.home){if(values['first-leg']){const [home,away]=values['first-leg'].split(/[-:]/).map(Number);await send('setAggregate',{home,away});}else if(!values['keep-score'])await send('clearAggregate');}
     result=summary(await api('/api/state'),slot);
    }
   } else if(name==='goal add') {

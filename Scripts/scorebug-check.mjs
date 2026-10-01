@@ -16,6 +16,8 @@ const server = http.createServer(async(req,res)=>{
   if(fail) {res.writeHead(400);res.end('fake refusal');return;}
   if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
   if(p.command==='pause')match.clock.running=false;
+  if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
+  if(p.command==='clearAggregate')delete match.aggregate;
   if(p.command==='goal') {match.homeScore++;match.lastGoal={goalId:'00000000-0000-0000-0000-000000000001'};}
   res.end(JSON.stringify(state)); return;
  }
@@ -44,6 +46,14 @@ try {
  assert.deepEqual(posts.map(p=>p.command),['goal','setScorer','setGoalMinute']);assert.equal(posts[0].requestId,'r1');assert.equal(posts[1].goalId,match.lastGoal.goalId);assert.equal(posts[1].requestId,'r1:scorer');assert.equal(posts[2].requestId,'r1:minute');checks++;
  posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--competition','ucl']);
  assert.deepEqual(posts.map(p=>p.command),['setCompetition','setTeam','setTeam','reset','clearAggregate']);assert.equal(posts[0].competitionId,'champions-league');checks++;
+ match.phase='secondHalf';match.aggregate={firstLegHome:2,firstLegAway:1};
+ posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--keep-score','--force']);
+ assert.deepEqual(posts.map(p=>p.command),['setTeam','setTeam']);
+ ok(match.aggregate.firstLegHome===2 && match.aggregate.firstLegAway===1,'keep-score retains a live aggregate');
+ posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--keep-score','--force','--first-leg','3-2']);
+ assert.deepEqual(posts.map(p=>p.command),['setTeam','setTeam','setAggregate']);
+ ok(match.aggregate.firstLegHome===3 && match.aggregate.firstLegAway===2,'explicit first leg replaces retained aggregate');
+ match.phase='preMatch';
  posts=[];await cli(['match','set','--competition','ucl']);ok(posts.length===1,'competition alone');
  posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--competition','ucl','--dry-run']);ok(posts.length===0,'dry-run');
  posts=[];await cli(['match','set','--home','Real Madrid','--away','Inter','--first-leg','junk'],2);ok(posts.length===0,'validate before mutations');
