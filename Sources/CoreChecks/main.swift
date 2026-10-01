@@ -580,6 +580,39 @@ do {
     check((try? Data(contentsOf: crest)) == Data("replacement".utf8) && temps.isEmpty, "a successful replacement swaps the crest and leaves no temporary file")
 } catch { failures += 1; print("FAIL image replacement: \(error)") }
 
+let editTmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-edits-\(UUID().uuidString)")
+do {
+    defer { try? FileManager.default.removeItem(at: editTmp) }
+    var lib = try Store(directory: editTmp).loadLibrary()
+    if let i = lib.clubs.firstIndex(where: { $0.shortName == "Marseille" }) {
+        lib.clubs[i].codes["champions-league"] = "OMR"; lib.clubs[i].codes["ligue1"] = nil
+        lib.clubs[i].defaultCode = "OLM"; lib.clubs[i].competitionIds = ["ligue1"]
+        try Store(directory: editTmp).saveLibrary(lib)
+        let edited = lib.clubs[i]
+        let again = try Store(directory: editTmp).loadLibrary().clubs.first { $0.id == edited.id }
+        check(again?.codes == edited.codes && again?.defaultCode == "OLM" && again?.competitionIds == ["ligue1"], "a restart keeps saved club codes, default code and memberships")
+    } else { check(false, "seed has Marseille") }
+} catch { failures += 1; print("FAIL saved library edits: \(error)") }
+
+if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
+    if let club = seed.clubs.first(where: { $0.competitionIds.contains("champions-league") && $0.competitionIds.count > 1 }),
+       let kept = club.competitionIds.first(where: { $0 != "champions-league" }) {
+        var lib = Library(competitions: seed.competitions.filter { $0.id != "champions-league" }, clubs: [club])
+        lib.clubs[0].competitionIds = [kept]; lib.clubs[0].codes = [:]
+        _ = Store.mergeSeed(seed, into: &lib)
+        check(lib.clubs[0].competitionIds == [kept, "champions-league"] && lib.clubs[0].codes == club.codes.filter { $0.key == "champions-league" },
+              "only a competition new to the library brings its seed membership and code")
+        lib.competitions.removeAll { $0.id == "champions-league" }; lib.clubs[0].competitionIds = []
+        _ = Store.mergeSeed(seed, into: &lib)
+        check(lib.clubs[0].competitionIds.isEmpty && lib.clubs[0].isEligible(for: "ligue1"), "a saved wildcard membership stays unrestricted when a new competition arrives")
+    } else { check(false, "seed has a Champions League club with another membership") }
+
+    let members = seed.clubs.filter { $0.competitionIds.contains("nations-league") }
+    let eligible = Set(seed.clubs.filter { $0.isEligible(for: "nations-league") }.map(\.id))
+    check(!members.isEmpty && eligible == Set(members.map(\.id)), "the Nations League picker lists exactly its \(members.count) nations")
+    check(seed.clubs.filter { $0.isEligible(for: "other") }.count == seed.clubs.count, "competition other lists everyone")
+}
+
 // Security regressions: shared request policy, unsafe numbers, search, files and recovery.
 for (host, origin, method, type, expected) in [
     ("127.0.0.1:8681", nil, "GET", nil, nil),

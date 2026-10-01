@@ -949,14 +949,8 @@ struct ClubPickerButton: View, Equatable {
     /// `LibraryFilters`'s Clubs/Nations split, kept in sync with it).
     private func isNational(_ club: Club) -> Bool { club.competitionIds.contains("international") }
 
-    /// A club with an empty `competitionIds` is in every competition (the library's own escape hatch).
-    /// Competition `other` shows everything. A national team otherwise only shows for `international`;
-    /// any other club shows only where its own `competitionIds` names this competition.
-    private func isEligible(_ club: Club) -> Bool {
-        if club.competitionIds.isEmpty || match.competitionId == "other" { return true }
-        if isNational(club) { return match.competitionId == "international" }
-        return club.competitionIds.contains(match.competitionId)
-    }
+    /// `Club.isEligible(for:)`: memberships decide for clubs and national teams alike (Codex review, 1 Oct).
+    private func isEligible(_ club: Club) -> Bool { club.isEligible(for: match.competitionId) }
 
     /// Search results split into the two groups the popover shows, each sorted alphabetically.
     private var groups: (inCompetition: [Club], nations: [Club]) {

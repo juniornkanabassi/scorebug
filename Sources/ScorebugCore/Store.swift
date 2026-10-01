@@ -110,24 +110,28 @@ public final class Store: @unchecked Sendable {
     public func saveSettings(_ settings: Settings) throws { try save(settings, to: "settings.json") }
 
     /// Brings an existing library up to date with the bundled seed without touching what the user edits:
-    /// adds missing competitions and clubs, fills empty squads, confederations and crest sources, and refreshes
-    /// competition memberships and per-competition codes from the seed. Colours, crests, names and logos are kept.
+    /// adds missing competitions and clubs, fills empty squads, confederations, crest sources and default codes.
+    /// Memberships and per-competition codes are the user's once saved (ClubEditor edits them); only a competition
+    /// this library has never had brings its seed membership and code in. Colours, crests, names and logos are kept.
     /// A club's squad is replaced (not just filled when nil) whenever `seedSquadsVersion` is newer than
     /// `storedSquadsVersion`, since squads.json is refreshed independently of the rest of the seed. Returns true
     /// when anything changed.
     public static func mergeSeed(_ seed: Library, into lib: inout Library, seedSquadsVersion: String? = nil, storedSquadsVersion: String? = nil) -> Bool {
         var changed = false
         let squadsAreNewer = isVersionNewer(seedSquadsVersion, than: storedSquadsVersion)
-        for comp in seed.competitions where !lib.competitions.contains(where: { $0.id == comp.id }) { lib.competitions.append(comp); changed = true }
+        let newCompetitionIds = Set(seed.competitions.map(\.id)).subtracting(lib.competitions.map(\.id))
+        for comp in seed.competitions where newCompetitionIds.contains(comp.id) { lib.competitions.append(comp); changed = true }
         for sc in seed.clubs {
             if let i = lib.clubs.firstIndex(where: { $0.name == sc.name }) {
                 var c = lib.clubs[i]
                 if let sq = sc.squad, c.squad == nil || squadsAreNewer { c.squad = sq }
                 if c.confederation == nil, let cf = sc.confederation { c.confederation = cf }
                 if c.crestSource == nil, let cs = sc.crestSource { c.crestSource = cs }
-                if c.competitionIds != sc.competitionIds { c.competitionIds = sc.competitionIds }
-                if c.codes != sc.codes { c.codes = sc.codes }
-                if c.defaultCode != sc.defaultCode { c.defaultCode = sc.defaultCode }
+                if c.defaultCode.trimmingCharacters(in: .whitespaces).isEmpty { c.defaultCode = sc.defaultCode }
+                if !c.competitionIds.isEmpty {
+                    for id in sc.competitionIds where newCompetitionIds.contains(id) && !c.competitionIds.contains(id) { c.competitionIds.append(id) }
+                }
+                for (id, code) in sc.codes where newCompetitionIds.contains(id) && c.codes[id] == nil { c.codes[id] = code }
                 if c != lib.clubs[i] { lib.clubs[i] = c; changed = true }
             } else { lib.clubs.append(sc); changed = true }
         }

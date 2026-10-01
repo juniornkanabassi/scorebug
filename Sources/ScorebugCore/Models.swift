@@ -296,6 +296,12 @@ public struct Club: Codable, Sendable, Identifiable, Equatable {
 
     public func code(for competitionId: String) -> String { codes[competitionId] ?? defaultCode }
 
+    /// Team picker rule: an empty membership means every competition and "other" shows everything; otherwise the
+    /// club's own memberships decide, national teams included (the Nations League lists its nations).
+    public func isEligible(for competitionId: String) -> Bool {
+        competitionIds.isEmpty || competitionId == "other" || competitionIds.contains(competitionId)
+    }
+
     public func entry(for competitionId: String) -> TeamEntry {
         TeamEntry(clubId: id, name: name, shortName: shortName, code: code(for: competitionId), primaryColour: primaryColour, secondaryColour: secondaryColour, textColour: textColour, crestFile: crestFile, squad: squad)
     }
