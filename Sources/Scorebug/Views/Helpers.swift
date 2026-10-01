@@ -234,15 +234,6 @@ func nameMatches(_ club: Club, in competitionId: String, query: String) -> Bool 
     return club.code(for: competitionId).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current).contains(q)
 }
 
-extension View {
-    /// A small capsule badge: the live phase status ("First half", "Half time"...) shown under the clock,
-    /// and anywhere else a compact status needs to sit apart from plain text.
-    func pillBadge() -> some View {
-        self.padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Capsule().fill(Color.secondary.opacity(0.15)))
-    }
-}
-
 extension Color {
     init(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespaces); if s.hasPrefix("#") { s.removeFirst() }
