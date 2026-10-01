@@ -103,32 +103,18 @@ GET /api/state              100    1.85      2.18
 ```
 
 Command round trip is well above the plain state read, on an otherwise idle disposable instance with a
-placeholder match; worth a look for whoever owns `OverlayServer.swift` and `AppModel.swift` this round
-(not this agent, see the request below).
+placeholder match; worth a look in `OverlayServer.swift` and `AppModel.swift`.
 
 ## Caveat
 
 Both scripts assume the instance is already running (see above). Neither one starts, builds, stops, or
 otherwise manages the Scorebug process.
 
-## Request for agent CH (overlay.js)
+## Build-out capture (overlay.js)
 
-`capture.mjs` freezes the build-out the same way it freezes `show` and `goal`, but `overlay.js` only has
-`?demo=show:<ms>`, not a matching `hide`. Please add this beside the existing `show` branch in the `demo`
-block:
-
-```js
-} else if (kind === "hide") {
-  at = p1;
-  if (buildTimer) { clearTimeout(buildTimer); buildTimer = null; }
-  bug.classList.remove("hidden", "building-in");
-  void bug.offsetWidth;
-  bug.classList.add("building-out");
-  visibleState = false;
-```
-
-Same reasoning as the existing `show` comment: no follow-up timer to swap in `.hidden`, since under a
-headless capture with the animation paused mid-flight, a queued class swap could fire in the same tick and
-wipe the frozen frame before `capture.mjs` reads it.
+`overlay.js` handles `?demo=hide:<ms>` beside `show`: it starts from visible, plays the build-out and
+freezes it at the given millisecond, so `capture.mjs` can freeze the build-out the same way it freezes
+`show` and `goal`. Like `show`, it sets no follow-up timer to swap in `.hidden`, so a queued class swap
+cannot wipe the frozen frame under a headless capture.
 
 `scorebug` is the supported CLI for status, match setup, goals, clock, fixtures and themes. See [AI control](../README.md#ai-control) for every command, examples and MCP setup.
