@@ -1,6 +1,6 @@
 {
   "name": "scorebug-streamdeck",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Stream Deck plugin for Scorebug. Talks to the local server on localhost:8600.",

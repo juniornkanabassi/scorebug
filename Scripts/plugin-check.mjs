@@ -7,4 +7,11 @@ for(const slot of [1,2])for(const [suffix,size] of [['',72],['@2x',144]]){
 }
 assert(readFileSync(new URL('ui/set-competition.html',root),'utf8').includes('<option value="nations-league">Nations League</option>'));
 assert(readFileSync(new URL('bin/plugin.js',root),'utf8').includes('nations-league'));
-console.log('10 Nations League plugin checks passed');
+const manifest=JSON.parse(readFileSync(new URL('manifest.json',root)));
+assert.equal(manifest.Version,'1.0.0.0');
+const pkg=JSON.parse(readFileSync(new URL('../StreamDeckPlugin/package.json',import.meta.url)));
+const lock=JSON.parse(readFileSync(new URL('../StreamDeckPlugin/package-lock.json',import.meta.url)));
+assert.equal(pkg.version,'1.0.0');
+assert.equal(lock.version,pkg.version);
+assert.equal(lock.packages[''].version,pkg.version);
+console.log('14 plugin checks passed');

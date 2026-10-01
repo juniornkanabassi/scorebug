@@ -1,6 +1,6 @@
 {
   "Name": "Scorebug",
-  "Version": "0.10.0.0",
+  "Version": "1.0.0.0",
   "Author": "Junior Nkana Bassi",
   "Description": "Control the Scorebug live overlay from a Stream Deck.",
   "UUID": "com.juniornkanabassi.scorebug",
