@@ -395,7 +395,9 @@ public struct Settings: Codable, Sendable, Equatable {
 public struct OverlaySettings: Codable, Sendable, Equatable {
     public var portraitTop: Int
     public var previewBackdrop: String?
-    public init(portraitTop: Int, previewBackdrop: String? = nil) { self.portraitTop = portraitTop; self.previewBackdrop = previewBackdrop }
+    /// Whether the user override folder is in use; an overlay page reloads its files when this changes.
+    public var themeOverrides: Bool?
+    public init(portraitTop: Int, previewBackdrop: String? = nil, themeOverrides: Bool = false) { self.portraitTop = portraitTop; self.previewBackdrop = previewBackdrop; self.themeOverrides = themeOverrides }
 }
 
 /// What the overlay pages and the Stream Deck receive. One message, full state.

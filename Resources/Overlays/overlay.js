@@ -43,7 +43,8 @@ function secondaryInk(t) {
   if (el.shootoutLabel) el.shootoutLabel.textContent = "PENS"; // absent in a user-overridden 0.7.0 shell
 
   let state = null, match = null, theme = null, themeId = null;
-  let renderedRevision = -1, lastGoalKey = null, skewMs = 0, aggTimer = null;
+  let renderedRevision = -1, renderedCompetition = null, lastGoalKey = null, skewMs = 0, aggTimer = null;
+  let appliedPortraitTop, themeOverrides;
 
   // Preview backdrop: only the app's own preview panes load with ?preview=1, so OBS's browser source (no
   // query) never creates #backdrop and its canvas stays exactly as before.
@@ -160,7 +161,8 @@ function secondaryInk(t) {
     const comp = competitionFor(m);
     loadTheme(m.themeId || (comp ? comp.themeId : m.competitionId));
     el.compLabel.textContent = comp ? comp.shortName : "";
-    const logo = comp && comp.logoFile ? "url(/crests/" + encodeURIComponent(comp.logoFile) + ")" : "none";
+    // ponytail: revision refreshes a replaced logo; use a separate asset revision if local refetches become costly.
+    const logo = comp && comp.logoFile ? "url(/crests/" + encodeURIComponent(comp.logoFile) + "?v=" + m.revision + ")" : "none";
     bug.style.setProperty("--comp-logo", logo);
     bug.classList.toggle("has-comp-logo", logo !== "none");
     for (const [side, t] of [["home", m.home], ["away", m.away]]) {
@@ -252,12 +254,20 @@ function secondaryInk(t) {
   // source and preview pane; accept() calls frame() once more so a command paints at once, not up to 250ms late.
   setInterval(frame, 250);
   function accept(snapshot) {
+    const overlay = snapshot.overlay || {};
+    // The override folder changes which shell, script, css and theme files the server answers with: reload them all.
+    if (themeOverrides !== undefined && overlay.themeOverrides !== undefined && overlay.themeOverrides !== themeOverrides) { location.reload(); return; }
+    if (overlay.themeOverrides !== undefined) themeOverrides = overlay.themeOverrides;
     state = snapshot; skewMs = snapshot.serverTime - Date.now();
-    applyBackdrop(snapshot.overlay && snapshot.overlay.previewBackdrop);
+    applyBackdrop(overlay.previewBackdrop);
+    // Settings broadcasts keep the match revision, so a portrait top change repositions here (Codex review, 1 Oct).
+    if (overlay.portraitTop !== appliedPortraitTop) { appliedPortraitTop = overlay.portraitTop; applyGeometry(); }
     const m = snapshot.matches.find((x) => x.slot === slot);
     if (!m) return;
     match = m;
-    if (m.revision !== renderedRevision) { renderStatic(m); renderedRevision = m.revision; }
+    // Competition edits (name, theme, logo) broadcast without a match revision, so they invalidate the render too.
+    const competition = JSON.stringify(competitionFor(m) || null);
+    if (m.revision !== renderedRevision || competition !== renderedCompetition) { renderStatic(m); renderedRevision = m.revision; renderedCompetition = competition; }
     frame();
   }
   // Debug hook for screenshots and QA: /overlay/h/1?demo=goal:home:1200 fires a goal animation on first render and freezes it at 1200 ms.

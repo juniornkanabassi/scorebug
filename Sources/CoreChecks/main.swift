@@ -559,7 +559,6 @@ do {
     check(LiveDataLogic.rankedScorers(["Kevin De Bruyne"], query: "debruyne").first == "Kevin De Bruyne", "scorer search matches joined surname particles")
 }
 
-
 // Codex review, 1 Oct: image replacement, saved library edits, picker eligibility, live identity and swaps.
 let replaceTmp = FileManager.default.temporaryDirectory.appendingPathComponent("scorebug-replace-\(UUID().uuidString)")
 do {
@@ -642,6 +641,12 @@ do {
     let afterSwap = LiveDataLogic.assignments(match: keyed, liveGoals: feed, eventId: "9")
     check(afterSwap[1].goalId == keyed.goals[0].id && !afterSwap.contains { $0.shouldAdd }, "after a swap the automatic goal is still matched by its identity")
 } catch { failures += 1; print("FAIL live identity: \(error)") }
+
+do {
+    let legacy = Data(#"{"portraitTop":100}"#.utf8)
+    let overlay = try JSONCoding.decoder().decode(OverlaySettings.self, from: legacy)
+    check(overlay.portraitTop == 100 && overlay.themeOverrides == nil, "overlay snapshots from older apps decode without the optional override flag")
+} catch { failures += 1; print("FAIL legacy overlay: \(error)") }
 
 // Security regressions: shared request policy, unsafe numbers, search, files and recovery.
 for (host, origin, method, type, expected) in [

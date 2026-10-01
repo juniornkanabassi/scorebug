@@ -61,15 +61,21 @@ struct StateSocketHandler: WSMessageHandler {
 
 final class OverlayServer: @unchecked Sendable {
     let port: UInt16
-    let resolver: OverlayResolver
     let crestsDirectory: URL
     private weak var model: AppModel?
     private let broadcaster = Broadcaster()
     private var server: HTTPServer?
     private var task: Task<Void, Never>?
+    private let resolverLock = NSLock()
+    private var currentResolver: OverlayResolver
+    /// Replaced by AppModel when "Use override folder" changes; routes read it per request.
+    var resolver: OverlayResolver {
+        get { resolverLock.withLock { currentResolver } }
+        set { resolverLock.withLock { currentResolver = newValue } }
+    }
 
     init(port: UInt16, resolver: OverlayResolver, crestsDirectory: URL, model: AppModel) {
-        self.port = port; self.resolver = resolver; self.crestsDirectory = crestsDirectory; self.model = model
+        self.port = port; self.currentResolver = resolver; self.crestsDirectory = crestsDirectory; self.model = model
     }
 
     func broadcast(_ data: Data) async {
@@ -85,7 +91,7 @@ final class OverlayServer: @unchecked Sendable {
         // IPv4 loopback on purpose: .loopback picks ::1 on macOS, which refuses 127.0.0.1 clients (curl, scripts, the Stream Deck plugin). "localhost" clients fall back to 127.0.0.1 themselves.
         let server = HTTPServer(address: try .inet(ip4: "127.0.0.1", port: port), timeout: 150)
         self.server = server
-        let resolver = self.resolver
+        let resolver: @Sendable () -> OverlayResolver? = { [weak self] in self?.resolver }
         let crests = self.crestsDirectory
         let port = Int(self.port)
         await server.appendRoute("*", handler: { request in
@@ -111,7 +117,7 @@ final class OverlayServer: @unchecked Sendable {
             let o: String? = request.routeParameters["orientation"]
             let s: String? = request.routeParameters["slot"]
             guard let o, ["h", "v"].contains(o), let s, ["1", "2"].contains(s),
-                  let file = resolver.file(for: "shell.html"), let shell = try? String(contentsOf: file, encoding: .utf8) else {
+                  let file = resolver()?.file(for: "shell.html"), let shell = try? String(contentsOf: file, encoding: .utf8) else {
                 return HTTPResponse(statusCode: .notFound)
             }
             let html = shell.replacingOccurrences(of: "{{ORIENTATION}}", with: o).replacingOccurrences(of: "{{SLOT}}", with: s)
@@ -123,10 +129,10 @@ final class OverlayServer: @unchecked Sendable {
             return HTTPResponse(statusCode: .ok, headers: [.contentType: MIME.type(for: url), .cacheControl: "no-cache"], body: data)
         }
         await server.appendRoute("GET /assets/*", handler: { request in
-            serve(resolver.file(for: String(request.path.dropFirst("/assets/".count))))
+            serve(resolver()?.file(for: String(request.path.dropFirst("/assets/".count))))
         })
         await server.appendRoute("GET /themes/*", handler: { request in
-            serve(resolver.file(for: "themes/" + String(request.path.dropFirst("/themes/".count))))
+            serve(resolver()?.file(for: "themes/" + String(request.path.dropFirst("/themes/".count))))
         })
         await server.appendRoute("GET /crests/*", handler: { request in
             let name = String(request.path.dropFirst("/crests/".count)).removingPercentEncoding ?? ""
@@ -164,6 +170,7 @@ final class OverlayServer: @unchecked Sendable {
             return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: data)
         })
         await server.appendRoute("GET /api/themes", handler: { _ in
+            guard let resolver = resolver() else { return HTTPResponse(statusCode: .serviceUnavailable) }
             let themes = resolver.availableThemeIds().compactMap { resolver.themeConfig(id: $0) }.map { ["id": $0.id, "name": $0.name ?? $0.id, "family": $0.family ?? ""] }
             return HTTPResponse(statusCode: .ok, headers: [.contentType: "application/json"], body: try JSONSerialization.data(withJSONObject: themes))
         })

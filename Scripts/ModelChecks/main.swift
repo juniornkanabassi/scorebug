@@ -127,6 +127,38 @@ final class CannedProtocol: URLProtocol {
         check(model.match(1).aggregate == nil && model.match(1).removedLiveGoalKeys.isEmpty && model.match(1).espnEventId == nil && !model.match(1).liveSidesSwapped, "FLAW 7 same-team replacement clears tie, suppression and old link")
         check(model.match(1).kickoff == noLink.kickoff && model.match(1).revision > same.revision && model.liveLineup(slot: 1, side: .home).isEmpty, "FLAW 7 new event keeps fresh kickoff and no old lineup")
         check(!model.match(1).visible && model.match(1).themeId == "stealth" && !model.match(1).autoUpdateLiveData && model.match(1).liveDataDelayMinutes == 7, "FLAW 7 slot display and live-data settings survive replacement")
+        let image = root.appendingPathComponent("mark.svg")
+        try Data("first image".utf8).write(to: image)
+        model.importCompetitionLogo(from: image, for: "champions-league")
+        let logoRevision = model.match(1).revision
+        try Data("replacement image".utf8).write(to: image)
+        model.importCompetitionLogo(from: image, for: "champions-league")
+        check(model.match(1).revision > logoRevision && model.library.competitions.first { $0.id == "champions-league" }?.logoFile == "competition-champions-league.svg", "FLAW 10 same-name logo replacement invalidates the overlay image")
+        let themeFolder = model.store.overlayOverridesDirectory.appendingPathComponent("themes/ligue1")
+        try FileManager.default.createDirectory(at: themeFolder, withIntermediateDirectories: true)
+        try Data(#"{"id":"ligue1","name":"Override sentinel","clockStyle":"freezeAndCount","geometry":{}}"#.utf8).write(to: themeFolder.appendingPathComponent("theme.json"))
+        check(model.themeConfig(id: "ligue1")?.name == "Override sentinel", "FLAW 11 window resolves enabled override")
+        model.startServer()
+        for _ in 0..<200 {
+            if model.serverRunning { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(model.serverRunning, "FLAW 11 disposable HTTP server is listening")
+        func servedTheme() async throws -> String {
+            let (data, response) = try await URLSession.shared.data(from: URL(string: model.baseURL + "/themes/ligue1/theme.json")!)
+            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+            return String(decoding: data, as: UTF8.self)
+        }
+        let enabled = try await servedTheme()
+        check(enabled.contains("Override sentinel"), "FLAW 11 real route serves enabled override")
+        model.settings.themeOverridesEnabled = false; model.saveSettings()
+        check(model.themeConfig(id: "ligue1")?.name != "Override sentinel" && model.snapshot().overlay.themeOverrides == false, "FLAW 11 disabling overrides refreshes window and snapshot")
+        let disabled = try await servedTheme()
+        check(!disabled.contains("Override sentinel"), "FLAW 11 real route serves bundled asset without restarting")
+        model.settings.themeOverridesEnabled = true; model.saveSettings()
+        check(model.themeConfig(id: "ligue1")?.name == "Override sentinel" && model.snapshot().overlay.themeOverrides == true, "FLAW 11 re-enabling overrides refreshes window and snapshot")
+        let restored = try await servedTheme()
+        check(restored.contains("Override sentinel"), "FLAW 11 real route restores override without restarting")
         print("\(checks) model checks passed")
     }
 }

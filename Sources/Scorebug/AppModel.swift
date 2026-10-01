@@ -57,7 +57,7 @@ final class AppModel: ObservableObject {
     private(set) var slotSummaries: [Int: SlotSummary] = [:]
 
     let store: Store
-    let resolver: OverlayResolver
+    private(set) var resolver: OverlayResolver
     let options: LaunchOptions
     private var server: OverlayServer?
     private var themeConfigCache: [String: ThemeConfig] = [:]
@@ -465,7 +465,7 @@ final class AppModel: ObservableObject {
             m.away.squad = nil
             return m
         }
-        return StateSnapshot(serverTime: Date(), matches: matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop, previewBackdrop: settings.previewBackdrop))
+        return StateSnapshot(serverTime: Date(), matches: matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop, previewBackdrop: settings.previewBackdrop, themeOverrides: resolver.overrides != nil))
     }
 
     func snapshotData() -> Data {
@@ -519,7 +519,9 @@ final class AppModel: ObservableObject {
             CrestImage.invalidate(file: name)
             if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) { library.competitions[idx].logoFile = name }
             saveLibrary()
-            broadcast()
+            // The file name can stay the same when its image changes; invalidate existing overlay images too.
+            for idx in state.matches.indices where state.matches[idx].competitionId == competitionId { state.matches[idx].revision += 1 }
+            persistAndBroadcast()
         } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
     }
 
@@ -556,6 +558,13 @@ final class AppModel: ObservableObject {
 
     func saveSettings() {
         themeConfigCache.removeAll()
+        // "Use override folder" takes effect at once for the window and the server; overlays reload on the
+        // snapshot's themeOverrides change (Codex review, 1 Oct).
+        let overrides = settings.themeOverridesEnabled ? store.overlayOverridesDirectory : nil
+        if resolver.overrides != overrides {
+            resolver = OverlayResolver(bundled: resolver.bundled, overrides: overrides)
+            server?.resolver = resolver
+        }
         do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)" }
         // Settings (e.g. portraitTop) ride inside every state snapshot, so overlay clients need a fresh
         // broadcast on change, the same way a match edit does via persistAndBroadcast().
