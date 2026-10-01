@@ -12,15 +12,6 @@ function modeOf(settings: BaseSettings): "play" | "pause" | "toggle" {
 
 @action({ UUID: "com.juniornkanabassi.scorebug.play-pause" })
 export class PlayPause extends StatefulAction {
-	constructor() {
-		super();
-		// The server never streams ticks (ARCHITECTURE-ESSENTIALS rule 3); the clock display is derived locally.
-		// Only repaint while a clock is actually running, so an idle key isn't repainted once a second forever.
-		setInterval(() => {
-			if (server.match(1)?.clock.running || server.match(2)?.clock.running) this.repaintAll();
-		}, 1000);
-	}
-
 	override async onKeyDown(ev: KeyDownEvent<BaseSettings>): Promise<void> {
 		const settings = ev.payload.settings;
 		const mode = modeOf(settings);
