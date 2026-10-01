@@ -34,9 +34,8 @@ struct GoalPrompt: View {
     /// section elsewhere in `SlotView` skipping its own diff (the whole point of the Equatable sections in
     /// `SlotView.swift`) never applies here.
     private var match: Match { model.match(slot) }
-    private var linkedLineup: [String] { model.liveLineups[slot]?[goal.side] ?? [] }
-    private var scoringSquad: [String] { LiveDataLogic.deduplicatedScorers((match.team(goal.side).squad ?? []) + linkedLineup) }
-    private var otherSquad: [String] { LiveDataLogic.deduplicatedScorers((match.team(goal.side.other).squad ?? []) + linkedLineup) }
+    private var scoringSquad: [String] { LiveDataLogic.deduplicatedScorers((match.team(goal.side).squad ?? []) + model.liveLineup(slot: slot, side: goal.side)) }
+    private var otherSquad: [String] { LiveDataLogic.deduplicatedScorers((match.team(goal.side.other).squad ?? []) + model.liveLineup(slot: slot, side: goal.side.other)) }
     private var filteredScoring: [String] { query.isEmpty ? scoringSquad : LiveDataLogic.rankedScorers(scoringSquad, query: query) }
     private var filteredOther: [String] { query.isEmpty ? otherSquad : LiveDataLogic.rankedScorers(otherSquad, query: query) }
     /// The navigable rows in reading order (the scoring side's squad, then the other side's).

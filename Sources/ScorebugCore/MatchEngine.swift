@@ -286,6 +286,7 @@ public enum MatchEngine {
                 swap(&agg.firstLegHome, &agg.firstLegAway)
                 m.aggregate = agg
             }
+            m.liveSidesSwapped.toggle()
             m.lastGoal = nil
         case .setCompetition(let id):
             m.competitionId = id
@@ -303,7 +304,9 @@ public enum MatchEngine {
         case .toggleShowScorers:
             m.showScorers.toggle()
         case .setLiveLink(let eventId, let league):
-            m.espnEventId = eventId; m.espnLeague = eventId == nil ? nil : league; m.liveDataNotice = nil
+            let nextLeague = eventId == nil ? nil : league
+            if m.espnEventId != eventId || m.espnLeague != nextLeague { m.liveSidesSwapped = false }
+            m.espnEventId = eventId; m.espnLeague = nextLeague; m.liveDataNotice = nil
         case .setAutoUpdateLiveData(let enabled):
             m.autoUpdateLiveData = enabled; m.fillScorersFromESPN = enabled
         case .setLiveDataDelay(let minutes):
@@ -339,6 +342,7 @@ public enum MatchEngine {
             fresh.espnEventId = m.espnEventId; fresh.espnLeague = m.espnLeague
             fresh.fillScorersFromESPN = m.fillScorersFromESPN; fresh.autoUpdateLiveData = m.autoUpdateLiveData
             fresh.liveDataDelayMinutes = m.liveDataDelayMinutes; fresh.removedLiveGoalKeys = m.removedLiveGoalKeys
+            fresh.liveSidesSwapped = m.liveSidesSwapped
             m = fresh
         }
         m.revision += 1

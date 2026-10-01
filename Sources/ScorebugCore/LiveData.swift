@@ -28,7 +28,10 @@ public struct LiveMatchData: Sendable, Equatable {
 }
 public struct LiveGoalAssignment: Sendable, Equatable {
     public var goalId: UUID?
+    /// The feed goal with its side mapped onto this match's sides.
     public var liveGoal: LiveGoal
+    /// Identity in the feed's own sides, the form saved in `Goal.autoAddedKey` and `Match.removedLiveGoalKeys`.
+    public var key: String
     public var shouldAdd: Bool
     public var shouldUpdate: Bool
 }
@@ -120,20 +123,37 @@ public struct FotMobLiveSource: LiveSource {
 }
 
 public enum LiveDataLogic {
-    public static func assignments(match: Match, liveGoals: [LiveGoal]) -> [LiveGoalAssignment] {
+    /// Identity of a feed goal by its feed side and minute, not position, so a reorder cannot revive a removed goal.
+    public static func liveKey(eventId: String, _ goal: LiveGoal) -> String { "\(eventId):\(goal.side.rawValue):\(goal.minute):\(goal.added)" }
+
+    /// One assignment per feed goal, in feed order. Feed sides map onto the match's through `liveSidesSwapped`.
+    /// A goal the operator removed is a no-op; a recorded goal carrying a feed goal's key is matched first; the
+    /// rest pair by position per side (Codex review, 1 Oct).
+    public static func assignments(match: Match, liveGoals: [LiveGoal], eventId: String = "") -> [LiveGoalAssignment] {
+        let keys = liveGoals.map { liveKey(eventId: eventId, $0) }
+        let removed = Set(match.removedLiveGoalKeys)
+        let mapped = liveGoals.map { goal -> LiveGoal in var g = goal; if match.liveSidesSwapped { g.side = g.side.other }; return g }
+        var byKey: [Int: Goal] = [:]
+        for i in mapped.indices where !removed.contains(keys[i]) {
+            if let goal = match.goals.first(where: { $0.autoAddedKey == keys[i] && $0.side == mapped[i].side && !byKey.values.contains($0) }) { byKey[i] = goal }
+        }
+        let recorded = Dictionary(grouping: match.goals.filter { goal in !byKey.values.contains(goal) }, by: \.side)
+        let feed = Dictionary(grouping: mapped.indices.filter { !removed.contains(keys[$0]) && byKey[$0] == nil }, by: { mapped[$0].side })
         var sideIndex: [Side: Int] = [.home: 0, .away: 0]
-        let recorded = Dictionary(grouping: match.goals, by: \.side)
-        return liveGoals.compactMap { live in
+        func fillable(_ goal: Goal) -> Bool { goal.scorer == nil || goal.scorer?.isEmpty == true || goal.autoFilled }
+        return mapped.indices.map { i -> LiveGoalAssignment in
+            let live = mapped[i]
+            if removed.contains(keys[i]) { return LiveGoalAssignment(goalId: nil, liveGoal: live, key: keys[i], shouldAdd: false, shouldUpdate: false) }
+            if let goal = byKey[i] { return LiveGoalAssignment(goalId: goal.id, liveGoal: live, key: keys[i], shouldAdd: false, shouldUpdate: fillable(goal)) }
             let index = sideIndex[live.side, default: 0]
             sideIndex[live.side] = index + 1
             let goals = recorded[live.side, default: []]
-            guard goals.indices.contains(index) else { return LiveGoalAssignment(goalId: nil, liveGoal: live, shouldAdd: true, shouldUpdate: false) }
+            guard goals.indices.contains(index) else { return LiveGoalAssignment(goalId: nil, liveGoal: live, key: keys[i], shouldAdd: true, shouldUpdate: false) }
             let goal = goals[index]
             // The feed has fewer goals for this side than recorded (VAR overturn or a correction): positions no longer
             // line up, so leave that side alone rather than rewrite the wrong row (review of 28 Sep).
-            let feedCount = liveGoals.filter { $0.side == live.side }.count
-            let shouldUpdate = feedCount >= goals.count && (goal.scorer == nil || goal.scorer?.isEmpty == true || goal.autoFilled)
-            return LiveGoalAssignment(goalId: goal.id, liveGoal: live, shouldAdd: false, shouldUpdate: shouldUpdate)
+            let shouldUpdate = feed[live.side, default: []].count >= goals.count && fillable(goal)
+            return LiveGoalAssignment(goalId: goal.id, liveGoal: live, key: keys[i], shouldAdd: false, shouldUpdate: shouldUpdate)
         }
     }
     public static func espnSummary(_ data: Data, eventId: String = "") throws -> LiveMatchData {

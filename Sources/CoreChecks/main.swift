@@ -613,6 +613,36 @@ if let seed = SeedLibrary.load(from: Store.locateSeedFile()) {
     check(seed.clubs.filter { $0.isEligible(for: "other") }.count == seed.clubs.count, "competition other lists everyone")
 }
 
+do {
+    var linked = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1), now: at(0))
+    linked = MatchEngine.apply(.setLiveLink(eventId: "9", league: "eng.1"), to: linked, now: at(0))
+    linked = MatchEngine.apply(.swapTeams, to: linked, now: at(0))
+    check(linked.liveSidesSwapped, "swapping a linked match records that the feed's sides are reversed")
+    let restarted = try JSONCoding.decoder().decode(Match.self, from: JSONCoding.encoder().encode(linked))
+    check(restarted.liveSidesSwapped, "the swap survives a save and restart")
+    check(MatchEngine.apply(.reset, to: linked, now: at(0)).liveSidesSwapped, "reset keeps the feed orientation with the link")
+    check(!MatchEngine.apply(.setLiveLink(eventId: "10", league: "eng.1"), to: linked, now: at(0)).liveSidesSwapped, "a new link starts in the current orientation")
+    check(MatchEngine.apply(.setLiveLink(eventId: "9", league: "eng.1"), to: linked, now: at(0)).liveSidesSwapped, "repeating the same link keeps the swapped orientation")
+    check(!MatchEngine.apply(.swapTeams, to: linked, now: at(0)).liveSidesSwapped, "swapping back restores the feed orientation")
+    var legacy = try JSONSerialization.jsonObject(with: JSONCoding.encoder().encode(Match(slot: 1))) as? [String: Any] ?? [:]
+    legacy["liveSidesSwapped"] = nil
+    check((try? JSONCoding.decoder().decode(Match.self, from: JSONSerialization.data(withJSONObject: legacy)))?.liveSidesSwapped == false, "state saved before the swap field decodes unswapped")
+
+    let feed = [LiveGoal(side: .home, minute: 20), LiveGoal(side: .home, minute: 75)]
+    let swapped = LiveDataLogic.assignments(match: linked, liveGoals: feed, eventId: "9")
+    check(swapped.allSatisfy { $0.shouldAdd && $0.liveGoal.side == .away } && swapped.map(\.key) == ["9:home:20:0", "9:home:75:0"], "feed home goals land on the swapped-in side, keyed in the feed's sides")
+
+    var keyed = Match(slot: 1)
+    keyed.goals = [Goal(side: .home, elapsedSeconds: 4440, minuteLabel: "75'", autoFilled: true, autoAdded: true, autoAddedKey: "9:home:75:0")]
+    keyed.removedLiveGoalKeys = ["9:home:20:0"]
+    let afterRemoval = LiveDataLogic.assignments(match: keyed, liveGoals: feed, eventId: "9")
+    check(afterRemoval[0].goalId == nil && !afterRemoval[0].shouldAdd && afterRemoval[1].goalId == keyed.goals[0].id && !afterRemoval[1].shouldAdd,
+          "a removed earlier feed goal neither returns nor turns the later goal into a duplicate")
+    keyed.goals[0].side = .away; keyed.liveSidesSwapped = true
+    let afterSwap = LiveDataLogic.assignments(match: keyed, liveGoals: feed, eventId: "9")
+    check(afterSwap[1].goalId == keyed.goals[0].id && !afterSwap.contains { $0.shouldAdd }, "after a swap the automatic goal is still matched by its identity")
+} catch { failures += 1; print("FAIL live identity: \(error)") }
+
 // Security regressions: shared request policy, unsafe numbers, search, files and recovery.
 for (host, origin, method, type, expected) in [
     ("127.0.0.1:8681", nil, "GET", nil, nil),

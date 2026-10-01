@@ -219,6 +219,9 @@ public struct Match: Codable, Sendable, Equatable {
     public var liveDataDelayMinutes: Int
     public var liveDataNotice: String?
     public var removedLiveGoalKeys: [String]
+    /// True when the teams were swapped after the live link was made, so the feed's home is this match's away.
+    /// Live goal identity keys stay in the feed's own sides. Optional in decoding (false) since schema 1.
+    public var liveSidesSwapped: Bool
 
     public init(slot: Int, competitionId: String = "ligue1", home: TeamEntry = .placeholderHome, away: TeamEntry = .placeholderAway) {
         self.slot = slot; self.competitionId = competitionId; self.home = home; self.away = away
@@ -227,12 +230,12 @@ public struct Match: Codable, Sendable, Equatable {
         self.visible = true; self.lastGoal = nil; self.revision = 0; self.themeId = nil
         self.aggregate = nil; self.showScorers = false; self.espnEventId = nil; self.espnLeague = nil
         self.fillScorersFromESPN = true; self.autoUpdateLiveData = true; self.liveDataDelayMinutes = 5; self.liveDataNotice = nil
-        self.removedLiveGoalKeys = []
+        self.removedLiveGoalKeys = []; self.liveSidesSwapped = false
     }
 
     private enum CodingKeys: String, CodingKey {
         case slot, competitionId, home, away, kickoff, phase, clock, addedMinutes, homeScore, awayScore
-        case goals, shootout, visible, lastGoal, revision, themeId, aggregate, showScorers, espnEventId, espnLeague, fillScorersFromESPN, autoUpdateLiveData, liveDataDelayMinutes, liveDataNotice, removedLiveGoalKeys
+        case goals, shootout, visible, lastGoal, revision, themeId, aggregate, showScorers, espnEventId, espnLeague, fillScorersFromESPN, autoUpdateLiveData, liveDataDelayMinutes, liveDataNotice, removedLiveGoalKeys, liveSidesSwapped
     }
 
     public init(from decoder: Decoder) throws {
@@ -261,6 +264,7 @@ public struct Match: Codable, Sendable, Equatable {
         liveDataDelayMinutes = min(10, max(0, try c.decodeIfPresent(Int.self, forKey: .liveDataDelayMinutes) ?? 5))
         liveDataNotice = try c.decodeIfPresent(String.self, forKey: .liveDataNotice)
         removedLiveGoalKeys = try c.decodeIfPresent([String].self, forKey: .removedLiveGoalKeys) ?? []
+        liveSidesSwapped = try c.decodeIfPresent(Bool.self, forKey: .liveSidesSwapped) ?? false
     }
 
     public func score(_ side: Side) -> Int { side == .home ? homeScore : awayScore }

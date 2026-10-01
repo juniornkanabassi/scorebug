@@ -1,0 +1,132 @@
+import Foundation
+import SwiftUI
+import ScorebugCore
+
+final class CannedProtocol: URLProtocol {
+    static let lock = NSLock()
+    static var payload = Data()
+    static var hold = false
+    static var pending: [CannedProtocol] = []
+    override class func canInit(with request: URLRequest) -> Bool { request.url?.scheme == "https" }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        if request.url?.path.hasSuffix("summary") == true {
+            let held = Self.lock.withLock { if Self.hold { Self.pending.append(self); return true }; return false }
+            if held { return }
+        }
+        finish()
+    }
+    func finish() {
+        let data = request.url?.path.hasSuffix("summary") == true ? Self.payload : Data(#"{"events":[]}"#.utf8)
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+    static func release() { let held = lock.withLock { hold = false; let p = pending; pending = []; return p }; held.forEach { $0.finish() } }
+}
+
+@main struct ModelChecks {
+    @MainActor static func main() async throws {
+        var checks = 0
+        func check(_ condition: @autoclosure () -> Bool, _ label: String) {
+            guard condition() else { fatalError("FAIL \(label)") }
+            checks += 1; print("PASS \(label)")
+        }
+        _ = URLProtocol.registerClass(CannedProtocol.self)
+        defer { URLProtocol.unregisterClass(CannedProtocol.self) }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("data-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = AppModel(options: LaunchOptions(dataDirectory: root, port: Int(ProcessInfo.processInfo.environment["SCOREBUG_CHECK_PORT"]!)!))
+        // Let the initial pre-match poll enter its sleep before controlling the slot.
+        try await Task.sleep(for: .milliseconds(100))
+        model.settings.liveSourceEnabled["FotMob"] = false
+        var linked = Match(slot: 1, competitionId: "champions-league", home: TeamEntry(name: "Original Home", code: "HOM", squad: ["Home Squad"]), away: TeamEntry(name: "Original Away", code: "AWY", squad: ["Away Squad"]))
+        linked = MatchEngine.apply(.startPeriod(.firstHalf), to: linked, now: Date())
+        linked.espnEventId = "12345"; linked.espnLeague = "uefa.champions"; linked.liveDataDelayMinutes = 0
+        linked.kickoff = Date().addingTimeInterval(-3600)
+        func seed(_ match: Match = linked) { model.state.matches[0] = match }
+        CannedProtocol.payload = Data(#"{"header":{"competitions":[{"competitors":[{"homeAway":"home","score":"2","team":{"id":"10","displayName":"Original Home"}},{"homeAway":"away","score":"0","team":{"id":"20","displayName":"Original Away"}}],"details":[{"scoringPlay":true,"clock":{"displayValue":"20'"},"team":{"id":"10"},"athletesInvolved":[{"displayName":"First Scorer"}]},{"scoringPlay":true,"clock":{"displayValue":"75'"},"team":{"id":"10"},"athletesInvolved":[{"displayName":"Second Scorer"}]}]}]},"rosters":[{"team":{"id":"10"},"roster":[{"athlete":{"displayName":"Home Live"}}]},{"team":{"id":"20"},"roster":[{"athlete":{"displayName":"Away Live"}}]}]}"#.utf8)
+        seed(); await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 2 && model.match(1).goals.count == 2, "FLAW 4 feed adds two distinct goals")
+        let laterID = model.match(1).goals[1].id
+        model.apply(.removeGoal(model.match(1).goals[0].id), slot: 1)
+        await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 1 && model.match(1).goals.map(\.id) == [laterID], "FLAW 4 removing the earlier goal never duplicates the later goal")
+        let fullPayload = CannedProtocol.payload
+        var reduced = try JSONSerialization.jsonObject(with: fullPayload) as! [String: Any]
+        var header = reduced["header"] as! [String: Any]
+        var competitions = header["competitions"] as! [[String: Any]]
+        let details = competitions[0]["details"] as! [[String: Any]]
+        competitions[0]["details"] = [details[1]]; header["competitions"] = competitions; reduced["header"] = header
+        CannedProtocol.payload = try JSONSerialization.data(withJSONObject: reduced)
+        var conservative = linked
+        conservative.homeScore = 2
+        conservative.goals = [Goal(side: .home, elapsedSeconds: 1140, minuteLabel: "20'", autoFilled: true), Goal(side: .home, elapsedSeconds: 4440, minuteLabel: "75'", autoFilled: true)]
+        seed(conservative); await model.refreshLiveData(slot: 1)
+        check(model.match(1).goals == conservative.goals, "a shortened feed leaves ambiguous recorded goals untouched")
+        CannedProtocol.payload = fullPayload; await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 2 && model.match(1).goals.map(\.minuteLabel) == ["20'", "75'"], "restoring the feed keeps goal order and score")
+        for useAPI in [false, true] {
+            seed(); await model.refreshLiveData(slot: 1)
+            if useAPI { try model.applyRequest(CommandRequest(command: "goal", side: "home", delta: -1), slot: 1) }
+            else { model.apply(.goal(.home, -1), slot: 1) }
+            check(model.match(1).removedLiveGoalKeys == ["12345:home:75:0"], "FLAW 5 \(useAPI ? "API" : "GUI") minus saves suppression")
+            await model.refreshLiveData(slot: 1)
+            check(model.match(1).homeScore == 1 && model.match(1).goals[0].minuteLabel == "20'", "FLAW 5 \(useAPI ? "API" : "GUI") removed goal stays removed")
+        }
+        var manual = MatchEngine.apply(.goal(.home, 1), to: linked, now: Date())
+        manual = MatchEngine.apply(.setScorer(manual.goals[0].id, "Manual Player", ownGoal: true, penalty: false), to: manual, now: Date())
+        let originalGoal = manual.goals[0]
+        seed(MatchEngine.apply(.startShootout(.home), to: manual, now: Date()))
+        await model.refreshLiveData(slot: 1)
+        check(model.match(1).goals == [originalGoal] && model.match(1).homeScore == 1, "FLAW 3 a shootout poll preserves the manual goal")
+        seed(manual)
+        CannedProtocol.lock.withLock { CannedProtocol.hold = true }
+        let poll = Task { await model.refreshLiveData(slot: 1) }
+        for _ in 0..<200 {
+            if CannedProtocol.lock.withLock({ !CannedProtocol.pending.isEmpty }) { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        check(CannedProtocol.lock.withLock { !CannedProtocol.pending.isEmpty }, "FLAW 3 poll is held at the real network await")
+        model.apply(.startShootout(.home), slot: 1)
+        CannedProtocol.release(); await poll.value
+        check(model.match(1).goals == [originalGoal] && model.match(1).phase == .shootout, "FLAW 3 shootout started during the request rejects stale goals")
+        seed(MatchEngine.apply(.swapTeams, to: linked, now: Date()))
+        await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 0 && model.match(1).awayScore == 2, "FLAW 6 swapped goals follow the original team")
+        check(model.liveLineup(slot: 1, side: .home) == ["Away Live"] && model.liveLineup(slot: 1, side: .away) == ["Home Live"], "FLAW 6 swapped lineups follow the original team")
+        try model.applyRequest(CommandRequest(command: "linkESPN", competitionId: "uefa.champions", eventId: "12345"), slot: 1)
+        check(model.match(1).liveSidesSwapped, "FLAW 6 linking the same event preserves its orientation")
+        model.apply(.goal(.away, -1), slot: 1); await model.refreshLiveData(slot: 1)
+        check(model.match(1).awayScore == 1 && model.match(1).removedLiveGoalKeys == ["12345:home:75:0"], "FLAW 6 swapped removal uses provider identity")
+        let saved = try JSONCoding.decoder().decode(Match.self, from: JSONCoding.encoder().encode(model.match(1)))
+        seed(saved); await model.refreshLiveData(slot: 1)
+        check(model.match(1).awayScore == 1 && model.match(1).liveSidesSwapped, "FLAW 6 restart preserves mapped suppression")
+        seed(); await model.refreshLiveData(slot: 1)
+        let prompt = GoalPromptProbe(model: model, goal: model.match(1).goals[0], slot: 1)
+        check(Set(prompt.scoringSquad) == Set(["Home Squad", "Home Live"]), "FLAW 13 scoring picker has only its own lineup")
+        check(Set(prompt.otherSquad) == Set(["Away Squad", "Away Live"]), "FLAW 13 own-goal picker has the opponent lineup")
+        var delayed = linked; delayed.liveDataDelayMinutes = 5
+        seed(delayed); await model.refreshLiveData(slot: 1)
+        check(model.match(1).goals.isEmpty && model.match(1).homeScore == 0, "delayed polling does not reveal fresh goals")
+        seed(manual)
+        let fixture = Fixture(kickoff: Date(), competitionCode: "uefa.champions", competitionName: "UCL", home: FixtureTeam(name: "Next Home", shortName: "Next Home", code: "NXH"), away: FixtureTeam(name: "Next Away", shortName: "Next Away", code: "NXA"), espnEventId: "67890")
+        let skipped = await model.loadFixture(fixture, slot: 1)
+        check(skipped == nil, "FLAW 7 unforced replacement still refuses a live slot")
+        let loaded = await model.loadFixture(fixture, slot: 1, force: true)
+        check(loaded == false && model.match(1).phase == .preMatch && model.match(1).homeScore == 0 && model.match(1).goals.isEmpty && !model.match(1).clock.running, "FLAW 7 forced replacement clears the old play")
+        var same = model.match(1)
+        same = MatchEngine.apply(.startPeriod(.secondHalf), to: same, now: Date())
+        same.aggregate = Aggregate(firstLegHome: 3, firstLegAway: 2); same.removedLiveGoalKeys = ["67890:home:20:0"]; same.liveSidesSwapped = true
+        same.visible = false; same.themeId = "stealth"; same.autoUpdateLiveData = false; same.liveDataDelayMinutes = 7
+        seed(same)
+        let noLink = Fixture(kickoff: Date().addingTimeInterval(3600), competitionCode: "uefa.champions", competitionName: "UCL", home: fixture.home, away: fixture.away)
+        _ = await model.loadFixture(noLink, slot: 1, force: true)
+        check(model.match(1).aggregate == nil && model.match(1).removedLiveGoalKeys.isEmpty && model.match(1).espnEventId == nil && !model.match(1).liveSidesSwapped, "FLAW 7 same-team replacement clears tie, suppression and old link")
+        check(model.match(1).kickoff == noLink.kickoff && model.match(1).revision > same.revision && model.liveLineup(slot: 1, side: .home).isEmpty, "FLAW 7 new event keeps fresh kickoff and no old lineup")
+        check(!model.match(1).visible && model.match(1).themeId == "stealth" && !model.match(1).autoUpdateLiveData && model.match(1).liveDataDelayMinutes == 7, "FLAW 7 slot display and live-data settings survive replacement")
+        print("\(checks) model checks passed")
+    }
+}

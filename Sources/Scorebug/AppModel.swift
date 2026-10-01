@@ -61,7 +61,8 @@ final class AppModel: ObservableObject {
     let options: LaunchOptions
     private var server: OverlayServer?
     private var themeConfigCache: [String: ThemeConfig] = [:]
-    @Published private(set) var liveLineups: [Int: [Side: [String]]] = [:]
+    /// Last polled lineups per slot, in the feed's own sides; read through `liveLineup(slot:side:)`.
+    @Published private(set) var liveLineups: [Int: (eventId: String, lineups: [Side: [String]])] = [:]
     @Published private(set) var liveSourceStatus: [String: String] = ["ESPN": "Ready", "FotMob": "Not checked", "SofaScore": "Unavailable: HTTP 403"]
     private var liveSeenAt: [String: Date] = [:]
     private var stoppedLiveEvents: Set<String> = []
@@ -153,15 +154,26 @@ final class AppModel: ObservableObject {
         guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return false }
         var saved = false
         profiled(command) {
-            let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
-            state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
-            if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
-                state.matches[idx].removedLiveGoalKeys.append(removedKey)
-            }
+            mutate(command, at: idx)
             saved = persistAndBroadcast()
             if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
         return saved
+    }
+
+    /// The engine step shared by the window, API, Stream Deck and live poll. Removing a feed goal, by id or with
+    /// minus, remembers its identity so the next poll does not bring it back (Codex review, 1 Oct).
+    private func mutate(_ command: Command, at idx: Int) {
+        let goals = state.matches[idx].goals
+        let removedKey: String? = switch command {
+        case .removeGoal(let id): goals.first(where: { $0.id == id })?.autoAddedKey
+        case .goal(let side, let delta) where delta < 0: goals.last(where: { $0.side == side })?.autoAddedKey
+        default: nil
+        }
+        state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
+        if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
+            state.matches[idx].removedLiveGoalKeys.append(removedKey)
+        }
     }
 
     // ponytail: last 500 successful responses per session; durable retry history only if needed.
@@ -199,11 +211,7 @@ final class AppModel: ObservableObject {
             guard state.matches[idx].goals.contains(where: { $0.side == side }) else { throw EngineError.badRequest("no goal exists for that side") }
         }
         profiled(command) {
-            let removedKey: String? = if case .removeGoal(let id) = command { state.matches[idx].goals.first(where: { $0.id == id })?.autoAddedKey } else { nil }
-            state.matches[idx] = MatchEngine.apply(command, to: state.matches[idx], now: Date())
-            if let removedKey, !state.matches[idx].goals.contains(where: { $0.autoAddedKey == removedKey }), !state.matches[idx].removedLiveGoalKeys.contains(removedKey) {
-                state.matches[idx].removedLiveGoalKeys.append(removedKey)
-            }
+            mutate(command, at: idx)
             persistAndBroadcast(deferUIUpdate: true)
             if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
@@ -276,14 +284,22 @@ final class AppModel: ObservableObject {
             else { library.clubs.append(club) }
         }
         saveLibrary()
-        var saveFailed = false
-        if let competition { saveFailed = !setCompetition(competition.id, slot: slot) || saveFailed }
-        saveFailed = !apply(.setTeam(.home, homeClub.entry(for: competitionId)), slot: slot) || saveFailed
-        saveFailed = !apply(.setTeam(.away, awayClub.entry(for: competitionId)), slot: slot) || saveFailed
-        saveFailed = !apply(.setKickoff(fixture.kickoff), slot: slot) || saveFailed
+        // Replace the event, including when the next fixture has the same teams. A normal reset keeps the old link and tie.
+        let old = state.matches[idx]
+        var fresh = Match(slot: slot, competitionId: competitionId, home: homeClub.entry(for: competitionId), away: awayClub.entry(for: competitionId))
+        fresh.visible = old.visible; fresh.themeId = old.themeId
+        fresh.fillScorersFromESPN = old.fillScorersFromESPN; fresh.autoUpdateLiveData = old.autoUpdateLiveData
+        fresh.liveDataDelayMinutes = old.liveDataDelayMinutes; fresh.revision = old.revision + 1
+        fresh.kickoff = fixture.kickoff
         if let eventId = fixture.espnEventId, let league = competition?.sourceIds["espn"] ?? (fixture.competitionCode.hasPrefix("uefa") ? fixture.competitionCode : nil) {
-            saveFailed = !apply(.setLiveLink(eventId: eventId, league: league), slot: slot) || saveFailed
-        } else { saveFailed = !(await linkESPN(slot: slot, date: fixture.kickoff)) || saveFailed }
+            fresh.espnEventId = eventId; fresh.espnLeague = league
+        }
+        state.matches[idx] = fresh
+        stoppedLiveEvents = stoppedLiveEvents.filter { !$0.hasPrefix("\(slot):") }
+        liveSeenAt = liveSeenAt.filter { !$0.key.hasPrefix("\(slot):") }
+        liveLineups[slot] = nil
+        var saveFailed = !persistAndBroadcast()
+        if fresh.espnEventId == nil { saveFailed = !(await linkESPN(slot: slot, date: fixture.kickoff)) || saveFailed }
         return saveFailed
     }
 
@@ -317,26 +333,40 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func refreshLiveData(slot: Int) async {
+    /// The live poll takes goals only during play and breaks: never before kick-off, after the final whistle or in a
+    /// shootout, where the engine refuses a match goal (Codex review, 1 Oct).
+    private static func takesLiveGoals(_ phase: Phase) -> Bool {
+        ![.preMatch, .fullTime, .extraFullTime, .finished, .shootout].contains(phase)
+    }
+
+    /// The linked feed's lineup for one of this match's sides, mapped through a swap; empty once the link changes.
+    func liveLineup(slot: Int, side: Side) -> [String] {
+        let m = match(slot)
+        guard let feed = liveLineups[slot], feed.eventId == m.espnEventId else { return [] }
+        return feed.lineups[m.liveSidesSwapped ? side.other : side] ?? []
+    }
+
+    func refreshLiveData(slot: Int) async {
         var m = match(slot)
         var now = Date()
         guard m.autoUpdateLiveData, let eventId = m.espnEventId, let league = m.espnLeague,
-              !stoppedLiveEvents.contains("\(slot):\(eventId)"),
-              m.phase != .preMatch, m.phase != .fullTime, m.phase != .extraFullTime, m.phase != .finished,
+              !stoppedLiveEvents.contains("\(slot):\(eventId)"), AppModel.takesLiveGoals(m.phase),
               (m.kickoff.map { now >= $0 } ?? m.phase.isLivePeriod), settings.liveSourceEnabled["ESPN"] != false else { return }
         do {
             let live = try await Task.detached(priority: .utility) {
                 try await ESPNLiveSource(league: league).fetchGoals(eventId: eventId)
             }.value
             let eventKey = "\(slot):\(eventId)"
-            liveLineups[slot] = live.lineups
+            liveLineups[slot] = (eventId, live.lineups)
             liveSourceStatus["ESPN"] = "OK · \(Date.now.formatted(date: .omitted, time: .shortened))"
             let liveHome = live.goals.filter { $0.side == .home }, liveAway = live.goals.filter { $0.side == .away }
             if settings.liveSourceEnabled["FotMob"] == true, let kickoff = m.kickoff {
+                // Searched in the feed's own orientation, so FotMob's counts line up with ESPN's after a swap.
+                let (feedHome, feedAway) = m.liveSidesSwapped ? (m.away.name, m.home.name) : (m.home.name, m.away.name)
                 do {
                     let secondary = FotMobLiveSource()
                     if let secondaryEvent = try await Task.detached(priority: .utility, operation: {
-                        try await secondary.findEvent(home: m.home.name, away: m.away.name, date: kickoff)
+                        try await secondary.findEvent(home: feedHome, away: feedAway, date: kickoff)
                     }).value {
                         let other = try await Task.detached(priority: .utility) {
                             try await secondary.fetchGoals(eventId: secondaryEvent.id)
@@ -356,43 +386,35 @@ final class AppModel: ObservableObject {
             }
             // Re-read after the network waits: the operator may have added or removed a goal meanwhile (review of 28 Sep).
             m = match(slot); now = Date()
-            // Also re-check the phase: a reset or full time during the waits must not take stale goals (Codex review, 28 Sep).
-            guard m.autoUpdateLiveData, m.espnEventId == eventId, m.phase != .preMatch, m.phase != .fullTime,
-                  m.phase != .extraFullTime, m.phase != .finished else { return }
+            // Also re-check the phase: a reset, full time or shootout during the waits must not take stale goals (Codex reviews, 28 Sep and 1 Oct).
+            guard m.autoUpdateLiveData, m.espnEventId == eventId, AppModel.takesLiveGoals(m.phase) else { return }
             if m.liveDataNotice != nil { apply(.setLiveNotice(nil), slot: slot) }
-            let all = live.goals
-            let assignments = LiveDataLogic.assignments(match: m, liveGoals: all)
-            for (idx, assignment) in assignments.enumerated() {
+            var mature = true
+            for (idx, assignment) in LiveDataLogic.assignments(match: m, liveGoals: live.goals, eventId: eventId).enumerated() {
                 let goal = assignment.liveGoal
-                // Identity by side and minute, not position, so a feed reorder can't revive a removed goal (review of 28 Sep).
-                let liveKey = "\(eventId):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
-                if m.removedLiveGoalKeys.contains(liveKey) { continue }
-                let key = "\(slot):\(eventId):\(idx):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
-                let seen = liveSeenAt[key] ?? now
-                liveSeenAt[key] = seen
-                guard now.timeIntervalSince(seen) >= Double(m.liveDataDelayMinutes * 60) else { continue }
+                let seenKey = "\(slot):\(idx):\(assignment.key)"
+                let seen = liveSeenAt[seenKey] ?? now
+                liveSeenAt[seenKey] = seen
+                guard now.timeIntervalSince(seen) >= Double(m.liveDataDelayMinutes * 60) else { mature = false; continue }
                 if assignment.shouldAdd {
+                    let before = Set(match(slot).goals.map(\.id))
                     apply(.goal(goal.side, 1), slot: slot)
-                    guard let addedId = match(slot).lastGoal?.goalId else { continue }
+                    // Only a goal this call created takes the feed's details, never an older goal (Codex review, 1 Oct).
+                    guard let addedId = match(slot).lastGoal?.goalId, !before.contains(addedId) else { continue }
                     setGoalMinuteFromLive(addedId, goal: goal, slot: slot)
                     apply(.setScorer(addedId, goal.scorer.map(LiveDataLogic.displayScorer), ownGoal: goal.ownGoal, penalty: goal.penalty), slot: slot)
-                    setAutoAdded(addedId, liveKey: liveKey, slot: slot)
+                    setAutoAdded(addedId, liveKey: assignment.key, slot: slot)
                     setAutoFilled(addedId, slot: slot)
                 } else if assignment.shouldUpdate, let goalId = assignment.goalId {
                     let scorer = goal.scorer.map(LiveDataLogic.displayScorer) ?? match(slot).goals.first(where: { $0.id == goalId })?.scorer
                     apply(.setScorer(goalId, scorer, ownGoal: goal.ownGoal, penalty: goal.penalty), slot: slot)
                     setGoalMinuteFromLive(goalId, goal: goal, slot: slot)
-                    setAutoFilled(goalId, slot: slot)
+                    // The filled row carries this feed goal's identity (re-keyed if the feed corrected its minute), so
+                    // removing it suppresses that goal and later polls match it before position.
+                    markGoal(goalId, slot: slot) { $0.autoFilled = true; $0.autoAddedKey = assignment.key }
                 }
             }
-            if live.isFinished {
-                let mature = all.enumerated().allSatisfy { idx, goal in
-                    let key = "\(slot):\(eventId):\(idx):\(goal.side.rawValue):\(goal.minute):\(goal.added)"
-                    guard let seen = liveSeenAt[key] else { return false }
-                    return now.timeIntervalSince(seen) >= Double(m.liveDataDelayMinutes * 60)
-                }
-                if mature { stoppedLiveEvents.insert(eventKey) }
-            }
+            if live.isFinished && mature { stoppedLiveEvents.insert(eventKey) }
         } catch { liveSourceStatus["ESPN"] = "Error: \(error.localizedDescription)" }
     }
 
