@@ -214,27 +214,16 @@ struct CrestView: View {
     }
 }
 
-/// Case- and diacritic-insensitive squad search: matches anywhere in the name, the surname, or the initial
-/// in a "K. Mbappé" style entry, so typing "mbap" or "k" both find the right player.
+/// Case- and diacritic-insensitive squad search: matches anywhere in the name, which covers the surname and
+/// the initial in a "K. Mbappé" style entry, so typing "mbap" or "k" both find the right player.
 func squadNameMatches(_ name: String, query: String) -> Bool {
     let q = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
     guard !q.isEmpty else { return true }
-    let folded = name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-    if folded.contains(q) { return true }
-    let dotParts = name.split(separator: ".", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-    if dotParts.count == 2 {
-        let initial = dotParts[0].folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        let surname = dotParts[1].folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        if surname.hasPrefix(q) || initial.hasPrefix(q) { return true }
-    } else if let last = name.split(separator: " ").last {
-        let surname = String(last).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        if surname.hasPrefix(q) { return true }
-    }
-    return false
+    return name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current).contains(q)
 }
 
 /// Case- and diacritic-insensitive match for the club picker's search field: name, short name (both via
-/// `squadNameMatches`'s substring/surname folding, so "etienne" finds Saint-Étienne and "psg" still falls
+/// `squadNameMatches`'s folded substring match, so "etienne" finds Saint-Étienne and "psg" still falls
 /// through to the code check below) and the club's broadcast code for the competition in play (so "psg"
 /// matches Paris Saint-Germain by code even where the name alone would not).
 func nameMatches(_ club: Club, in competitionId: String, query: String) -> Bool {
