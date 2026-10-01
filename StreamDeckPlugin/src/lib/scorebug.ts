@@ -144,7 +144,8 @@ class ServerClient {
 		// "refused" means the request never reached a server (the app isn't running), so it is safe to launch and
 		// resend. Any other failure (timeout, reset) may have been applied already: never resend it, or a goal
 		// could count twice on air (review of 28 Sep).
-		const sendCommand = async (): Promise<"sent" | "refused" | "unknown"> => {
+		// "rejected" and "unsaved" reached the app, so they alert but never resend (Codex review, 1 Oct).
+		const sendCommand = async (): Promise<"sent" | "rejected" | "unsaved" | "refused" | "unknown"> => {
 			try {
 				const res = await fetch(`http://${HOST}:${PORT}/api/match/${slot}/command`, {
 					method: "POST",
@@ -152,7 +153,14 @@ class ServerClient {
 					body: JSON.stringify({ command, ...body }),
 					signal: AbortSignal.timeout(3000)
 				});
-				if (!res.ok) streamDeck.logger.warn(`scorebug: ${command} rejected (${res.status})`);
+				if (!res.ok) {
+					streamDeck.logger.warn(`scorebug: ${command} rejected (${res.status})`);
+					return "rejected";
+				}
+				if (res.headers.get("X-Scorebug-Save-Failed")) {
+					streamDeck.logger.warn(`scorebug: ${command} applied but not saved`);
+					return "unsaved";
+				}
 				return "sent";
 			} catch (err) {
 				const code = (err as { cause?: { code?: string } })?.cause?.code;
@@ -175,9 +183,9 @@ class ServerClient {
 		}
 		// A command got through, so the app is up: reconnect now rather than after the backoff, or the key keeps
 		// showing OFFLINE and invites a second press (review of 28 Sep).
-		if (result === "sent" && !this.online) this.#reconnectNow();
-		const delivered = result === "sent";
-		if (!delivered) await onUnavailable?.();
+		const reachedApp = result !== "refused" && result !== "unknown";
+		if (reachedApp && !this.online) this.#reconnectNow();
+		if (result !== "sent") await onUnavailable?.();
 	}
 }
 
