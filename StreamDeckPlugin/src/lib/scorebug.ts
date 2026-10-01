@@ -43,15 +43,9 @@ export interface MatchState {
 	showScorers: boolean;
 	shootout?: ShootoutState;
 }
-export interface CompetitionInfo {
-	id: string;
-	name: string;
-	shortName: string;
-}
 interface Snapshot {
 	serverTime: number;
 	matches: MatchState[];
-	competitions: CompetitionInfo[];
 }
 
 const HOST = "127.0.0.1";
@@ -136,10 +130,6 @@ class ServerClient {
 
 	match(slot: number): MatchState | undefined {
 		return this.#snapshot?.matches.find((m) => m.slot === slot);
-	}
-
-	competitions(): CompetitionInfo[] {
-		return this.#snapshot?.competitions ?? [];
 	}
 
 	get online(): boolean {

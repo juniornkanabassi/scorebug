@@ -24,16 +24,6 @@ export class SetCompetition extends StatefulAction {
 		const competitionId = typeof settings.competitionId === "string" ? settings.competitionId : undefined;
 		const variant = competitionId && ART_COMPETITIONS.has(competitionId) ? competitionId : "default";
 		await a.setImage(iconPath("set-competition", variant, slot));
-		if (!match) {
-			await a.setTitle(server.offlineTitle);
-			return;
-		}
-		// The art already carries the code and full name; only the "default" tile needs a text fallback.
-		if (variant !== "default") {
-			await a.setTitle(undefined);
-			return;
-		}
-		const known = server.competitions().find((c) => c.id === competitionId);
-		await a.setTitle(undefined);
+		await a.setTitle(match ? undefined : server.offlineTitle);
 	}
 }
