@@ -12,7 +12,7 @@ if [[ -e "$ARCHIVE_PATH" ]]; then
 fi
 swift build --scratch-path "$BUILD_ROOT" -c release --product Scorebug
 BIN_PATH=$(swift build --scratch-path "$BUILD_ROOT" -c release --show-bin-path)
-BUILD_STAGE=$(mktemp -d /private/tmp/scorebug-package.XXXXXX)
+BUILD_STAGE=$(mktemp -d "${TMPDIR:-/private/tmp}/scorebug-package.XXXXXX")
 APP_PATH="$BUILD_STAGE/Scorebug.app"
 mkdir -p "$APP_PATH/Contents/MacOS" "$APP_PATH/Contents/Resources"
 cp "$BIN_PATH/Scorebug" "$APP_PATH/Contents/MacOS/Scorebug"

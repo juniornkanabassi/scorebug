@@ -1,6 +1,6 @@
 # Scorebug source
 
-Read `../AGENTS.md` and `../00 Project State/ARCHITECTURE-ESSENTIALS.md` first.
+In the canonical `Scorebug/Source` checkout, read `../AGENTS.md` and `../00 Project State/ARCHITECTURE-ESSENTIALS.md` first. In a worktree, read those files in the Scorebug project folder; the worktree's parent may belong to another app.
 
 Build and check:
 
@@ -72,6 +72,8 @@ args = ["/Applications/JuniorOS Apps/Scorebug.app/Contents/Resources/mcp/scorebu
 The adapter uses only Node built-ins and forwards tools to the CLI; this small shim may be copied to other JuniorOS apps with its CLI path changed. The supported CLI and app versions are 1.0.0 or later, apart from older-app status. Scorebug keeps HTTP on 127.0.0.1, with no Unix socket. Host, Origin and JSON content type are checked for every request. Added time, shootout, live-data linking, library edits and settings remain on the API, window and Stream Deck. No token savings have been measured.
 
 Disposable checks: `node Scripts/scorebug-check.mjs`, `SCOREBUG_PORT=8680 node Scripts/security-check.mjs`, `SCOREBUG_PORT=8680 node Scripts/mcp-check.mjs`, and `node Scripts/plugin-check.mjs` after building the plugin. `SCOREBUG_INSTALL_ROOT` makes installation inert: no launch, registration, production quit or CLI symlink.
+
+Review regressions: `sh Scripts/model-check.sh` compiles the actual model and server with canned provider responses and disposable data; `node Scripts/overlay-check.mjs` and `node Scripts/plugin-command-check.mjs` exercise the actual overlay and shared plugin client without a browser or Stream Deck. The model check needs Python 3 and can reuse a scratch build via `SCOREBUG_BUILD_ROOT`; all its default paths are under `/private/tmp/fix-scorebug-*`.
 
 ## Local verification [2026-10-01]
 
