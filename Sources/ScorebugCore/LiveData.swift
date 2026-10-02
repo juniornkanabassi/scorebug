@@ -7,8 +7,10 @@ public struct LiveGoal: Codable, Sendable, Equatable {
     public var scorer: String?
     public var ownGoal: Bool
     public var penalty: Bool
-    public init(side: Side, minute: Int, added: Int = 0, scorer: String? = nil, ownGoal: Bool = false, penalty: Bool = false) {
-        self.side = side; self.minute = minute; self.added = added; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
+    /// The provider's own id for this goal (ESPN keyEvents[].id), nil when it cannot be resolved unambiguously.
+    public var providerId: String?
+    public init(side: Side, minute: Int, added: Int = 0, scorer: String? = nil, ownGoal: Bool = false, penalty: Bool = false, providerId: String? = nil) {
+        self.side = side; self.minute = minute; self.added = added; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty; self.providerId = providerId
     }
     public var minuteLabel: String { added > 0 ? "\(minute)+\(added)'" : "\(minute)'" }
 }
@@ -123,8 +125,41 @@ public struct FotMobLiveSource: LiveSource {
 }
 
 public enum LiveDataLogic {
-    /// Identity of a feed goal by its feed side and minute, not position, so a reorder cannot revive a removed goal.
-    public static func liveKey(eventId: String, _ goal: LiveGoal) -> String { "\(eventId):\(goal.side.rawValue):\(goal.minute):\(goal.added)" }
+    /// Identity of a feed goal, never its position, so a reorder cannot revive a removed goal: the provider's goal id
+    /// when known, which survives a minute correction (SB-R3), otherwise its feed side and minute.
+    public static func liveKey(eventId: String, _ goal: LiveGoal) -> String {
+        goal.providerId.map { "\(eventId):id:\($0)" } ?? legacyKey(eventId: eventId, goal)
+    }
+    /// The side-and-minute key, the only form saved before provider ids.
+    public static func legacyKey(eventId: String, _ goal: LiveGoal) -> String { "\(eventId):\(goal.side.rawValue):\(goal.minute):\(goal.added)" }
+
+    /// Moves saved side-and-minute keys (removals and automatic goals) onto provider ids, only where exactly one current
+    /// feed goal with an id has that legacy key. Anything else keeps its key: an unmatched legacy removal suppresses
+    /// nothing new, and an id-less feed keeps matching legacy keys as before.
+    public static func migrateLegacyKeys(match: Match, liveGoals: [LiveGoal], eventId: String) -> Match {
+        let legacy = Dictionary(grouping: liveGoals, by: { legacyKey(eventId: eventId, $0) })
+        func migrated(_ key: String) -> String {
+            guard let goals = legacy[key], goals.count == 1, goals[0].providerId != nil else { return key }
+            return liveKey(eventId: eventId, goals[0])
+        }
+        var m = match
+        var removed: [String] = []
+        for key in m.removedLiveGoalKeys.map(migrated) where !removed.contains(key) { removed.append(key) }
+        m.removedLiveGoalKeys = removed
+        for i in m.goals.indices { m.goals[i].autoAddedKey = m.goals[i].autoAddedKey.map(migrated) }
+        return m
+    }
+
+    /// The feed's orientation from its own team names: true when they match this match's teams crossed, false when
+    /// straight, nil when neither or both (renamed or identical clubs), so the stored flag stands. Read on every poll,
+    /// an unlink and re-link of a swapped match cannot lose the swap (SB-R4).
+    public static func feedSidesSwapped(match: Match, feedHome: String, feedAway: String) -> Bool? {
+        func keys(_ team: TeamEntry) -> Set<String> { [Store.matchKey(team.name), Store.matchKey(team.shortName)] }
+        let feedHome = Store.matchKey(feedHome), feedAway = Store.matchKey(feedAway)
+        let straight = keys(match.home).contains(feedHome) && keys(match.away).contains(feedAway)
+        let crossed = keys(match.home).contains(feedAway) && keys(match.away).contains(feedHome)
+        return straight == crossed ? nil : crossed
+    }
 
     /// One assignment per feed goal, in feed order. Feed sides map onto the match's through `liveSidesSwapped`.
     /// A goal the operator removed is a no-op; a recorded goal carrying a feed goal's key is matched first; the
@@ -170,7 +205,34 @@ public enum LiveDataLogic {
         let homeId = string(homeTeam["id"]) ?? string(home["id"]) ?? ""
         let awayId = string(awayTeam["id"]) ?? string(away["id"]) ?? ""
         var goals: [LiveGoal] = []
-        for detail in competition["details"] as? [[String: Any]] ?? [] where detail["scoringPlay"] as? Bool == true {
+        // details carry no goal id but keyEvents do. Checked on event 401861081 (Belgium v France, 28 Sep 2026): keyEvent
+        // 53001733 is the details goal with the same team 478, clock value 5256 and scorer 286831. A detail takes an id
+        // only when exactly one scoring keyEvent matches it and that keyEvent matches no other detail; otherwise the
+        // goal keeps the side-and-minute identity. An own goal's keyEvent team is unverified, so it is not compared.
+        let details = (competition["details"] as? [[String: Any]] ?? []).filter { $0["scoringPlay"] as? Bool == true }
+        let keyEvents = (root["keyEvents"] as? [[String: Any]] ?? []).filter { $0["scoringPlay"] as? Bool == true && $0["shootout"] as? Bool != true && string($0["id"]) != nil }
+        func teamId(_ row: [String: Any]) -> String? { string((row["team"] as? [String: Any])?["id"]) }
+        func scorerId(_ row: [String: Any]) -> String? {
+            let athletes = (row["athletesInvolved"] as? [[String: Any]]) ?? (row["participants"] as? [[String: Any]])?.compactMap { $0["athlete"] as? [String: Any] }
+            return athletes?.first.flatMap { string($0["id"]) }
+        }
+        func sameClock(_ a: [String: Any], _ b: [String: Any]) -> Bool {
+            let x = a["clock"] as? [String: Any], y = b["clock"] as? [String: Any]
+            if let x = x?["value"] as? Double, let y = y?["value"] as? Double { return x == y }
+            if let x = string(x?["displayValue"]), let y = string(y?["displayValue"]), !x.isEmpty { return x == y }
+            return false
+        }
+        func same(_ detail: [String: Any], _ event: [String: Any]) -> Bool {
+            guard sameClock(detail, event), detail["ownGoal"] as? Bool == true || teamId(detail) == teamId(event) else { return false }
+            if let a = scorerId(detail), let b = scorerId(event) { return a == b }
+            return true
+        }
+        let candidates = details.map { detail in keyEvents.indices.filter { same(detail, keyEvents[$0]) } }
+        for (index, detail) in details.enumerated() {
+            var providerId: String?
+            if candidates[index].count == 1, let event = candidates[index].first, candidates.filter({ $0.contains(event) }).count == 1 {
+                providerId = string(keyEvents[event]["id"])
+            }
             let team = detail["team"] as? [String: Any] ?? [:]
             let scorerTeamId = string(team["id"]) ?? ""
             guard let side: Side = scorerTeamId == homeId ? .home : scorerTeamId == awayId ? .away : nil else { continue }
@@ -188,7 +250,7 @@ public enum LiveDataLogic {
             let athlete = athletes.first ?? [:]
             goals.append(LiveGoal(side: side, minute: minute, added: added,
                 scorer: string(athlete["displayName"]) ?? string(athlete["shortName"]),
-                ownGoal: detail["ownGoal"] as? Bool ?? false, penalty: detail["penaltyKick"] as? Bool ?? false))
+                ownGoal: detail["ownGoal"] as? Bool ?? false, penalty: detail["penaltyKick"] as? Bool ?? false, providerId: providerId))
         }
         let rosters = root["rosters"] as? [[String: Any]] ?? []
         var names: [Side: [String]] = [.home: [], .away: []]

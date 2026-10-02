@@ -387,7 +387,7 @@ struct CompetitionEditor: View {
             if case .success(let url) = result {
                 let ok = url.startAccessingSecurityScopedResource(); defer { if ok { url.stopAccessingSecurityScopedResource() } }
                 model.importCompetitionLogo(from: url, for: competition.id)
-                if let c = model.library.competitions.first(where: { $0.id == competition.id }) { competition.logoFile = c.logoFile }
+                if let c = model.library.competitions.first(where: { $0.id == competition.id }) { competition.logoFile = c.logoFile; competition.logoVersion = c.logoVersion }
             }
         }
         .onChange(of: competition) { _, new in model.updateCompetition(new) }
@@ -472,7 +472,7 @@ struct ClubEditor: View {
             if case .success(let url) = result {
                 let ok = url.startAccessingSecurityScopedResource(); defer { if ok { url.stopAccessingSecurityScopedResource() } }
                 model.importCrest(from: url, for: club.id)
-                if let updated = model.library.clubs.first(where: { $0.id == club.id }) { club.crestFile = updated.crestFile }
+                if let updated = model.library.clubs.first(where: { $0.id == club.id }) { club.crestFile = updated.crestFile; club.crestVersion = updated.crestVersion }
             }
         }
         .onChange(of: squadText) { _, new in

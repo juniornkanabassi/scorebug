@@ -640,7 +640,78 @@ do {
     keyed.goals[0].side = .away; keyed.liveSidesSwapped = true
     let afterSwap = LiveDataLogic.assignments(match: keyed, liveGoals: feed, eventId: "9")
     check(afterSwap[1].goalId == keyed.goals[0].id && !afterSwap.contains { $0.shouldAdd }, "after a swap the automatic goal is still matched by its identity")
+
+    // SB-R3: ESPN goal identity. Shape copied from the summary for event 401861081 (Belgium v France, 28 Sep 2026):
+    // details carry no id, the matching scoring keyEvent does.
+    func summary(_ details: String, _ keyEvents: String) -> Data {
+        Data(#"{"header":{"competitions":[{"competitors":[{"homeAway":"home","id":"459","team":{"id":"459","displayName":"Belgium"}},{"homeAway":"away","id":"478","team":{"id":"478","displayName":"France"}}],"details":[\#(details)]}]},"keyEvents":[\#(keyEvents)]}"#.utf8)
+    }
+    let oliseDetail = #"{"clock":{"value":5256.0,"displayValue":"88'"},"scoringPlay":true,"team":{"id":"478"},"participants":[{"athlete":{"id":"286831","displayName":"Michael Olise"}}],"addedClock":{"value":0.0,"displayValue":""},"penaltyKick":false,"ownGoal":false}"#
+    let oliseEvent = #"{"id":"53001733","type":{"id":"70","type":"goal"},"clock":{"value":5256.0,"displayValue":"88'"},"scoringPlay":true,"shootout":false,"team":{"id":"478"},"participants":[{"athlete":{"id":"286831"}}]}"#
+    let parsed = try LiveDataLogic.espnSummary(summary(oliseDetail, oliseEvent), eventId: "401861081")
+    check(parsed.goals.count == 1 && parsed.goals[0].providerId == "53001733" && parsed.goals[0].side == .away && parsed.goals[0].minute == 88 && parsed.goals[0].scorer == "Michael Olise",
+          "the ESPN goal takes its keyEvent id with its details intact")
+    let noKeyEvents = try LiveDataLogic.espnSummary(summary(oliseDetail, ""), eventId: "401861081").goals[0]
+    check(noKeyEvents.providerId == nil && LiveDataLogic.liveKey(eventId: "401861081", noKeyEvents) == "401861081:away:88:0", "a summary without keyEvents keeps the minute identity")
+    let twoEvents = try LiveDataLogic.espnSummary(summary(oliseDetail, oliseEvent + "," + oliseEvent.replacingOccurrences(of: "53001733", with: "53001734")), eventId: "401861081")
+    check(twoEvents.goals[0].providerId == nil, "two matching keyEvents leave the goal without an id")
+    let otherScorer = try LiveDataLogic.espnSummary(summary(oliseDetail, oliseEvent.replacingOccurrences(of: "286831", with: "1")), eventId: "401861081")
+    check(otherScorer.goals[0].providerId == nil, "a keyEvent with another scorer is not this goal")
+    let ownGoalDetail = oliseDetail.replacingOccurrences(of: #""ownGoal":false"#, with: #""ownGoal":true"#)
+    let ownGoalEvent = oliseEvent.replacingOccurrences(of: #""team":{"id":"478"}"#, with: #""team":{"id":"459"}"#)
+    let ownGoal = try LiveDataLogic.espnSummary(summary(ownGoalDetail, ownGoalEvent), eventId: "401861081").goals[0]
+    check(ownGoal.ownGoal && ownGoal.side == .away && ownGoal.providerId == "53001733", "an own goal keeps the credited side whichever team its keyEvent names")
+
+    let olise = parsed.goals[0], idKey = LiveDataLogic.liveKey(eventId: "401861081", olise)
+    var removedById = Match(slot: 1); removedById.removedLiveGoalKeys = [idKey]
+    removedById = try JSONCoding.decoder().decode(Match.self, from: JSONCoding.encoder().encode(removedById))
+    var movedOlise = olise; movedOlise.minute = 89
+    check(idKey == "401861081:id:53001733" && !LiveDataLogic.assignments(match: removedById, liveGoals: [movedOlise], eventId: "401861081")[0].shouldAdd,
+          "a removed goal stays removed across a restart when the feed corrects its minute")
+    let replacement = LiveGoal(side: .away, minute: 89, providerId: "53009999")
+    check(LiveDataLogic.assignments(match: removedById, liveGoals: [replacement], eventId: "401861081")[0].shouldAdd,
+          "a new goal arriving in the same poll the removed goal is overturned is never suppressed")
+
+    var legacyRemoval = Match(slot: 1); legacyRemoval.removedLiveGoalKeys = ["401861081:away:88:0", "401861081:home:20:0"]
+    legacyRemoval = LiveDataLogic.migrateLegacyKeys(match: legacyRemoval, liveGoals: [olise], eventId: "401861081")
+    check(legacyRemoval.removedLiveGoalKeys == [idKey, "401861081:home:20:0"] && !LiveDataLogic.assignments(match: legacyRemoval, liveGoals: [movedOlise], eventId: "401861081")[0].shouldAdd,
+          "an old minute removal moves onto the id of the exact matching goal and survives a later correction")
+    var legacyGoal = Match(slot: 1)
+    legacyGoal.goals = [Goal(side: .away, elapsedSeconds: 5220, minuteLabel: "88'", autoFilled: true, autoAdded: true, autoAddedKey: "401861081:away:88:0")]
+    legacyGoal = LiveDataLogic.migrateLegacyKeys(match: legacyGoal, liveGoals: [olise], eventId: "401861081")
+    check(legacyGoal.goals[0].autoAddedKey == idKey && LiveDataLogic.assignments(match: legacyGoal, liveGoals: [movedOlise], eventId: "401861081")[0].goalId == legacyGoal.goals[0].id,
+          "an old automatic goal moves onto the id and keeps matching after a correction")
+    let twins = [LiveGoal(side: .away, minute: 88, providerId: "1"), LiveGoal(side: .away, minute: 88, providerId: "2")]
+    var twinRemoval = Match(slot: 1); twinRemoval.removedLiveGoalKeys = ["401861081:away:88:0"]
+    check(LiveDataLogic.migrateLegacyKeys(match: twinRemoval, liveGoals: twins, eventId: "401861081").removedLiveGoalKeys == ["401861081:away:88:0"],
+          "an old key shared by two goals is not guessed onto either")
+    var swappedById = Match(slot: 1); swappedById.liveSidesSwapped = true
+    swappedById.goals = [Goal(side: .home, elapsedSeconds: 5220, minuteLabel: "88'", autoFilled: true, autoAdded: true, autoAddedKey: idKey)]
+    let swappedAssignment = LiveDataLogic.assignments(match: swappedById, liveGoals: [movedOlise], eventId: "401861081")[0]
+    check(swappedAssignment.goalId == swappedById.goals[0].id && swappedAssignment.liveGoal.side == .home && swappedAssignment.key == idKey, "after a swap a goal is still matched by its provider id")
+
+    // SB-R4: orientation follows the feed's team names, so an unlink and re-link cannot lose a swap.
+    var relinked = MatchEngine.apply(.startPeriod(.firstHalf), to: Match(slot: 1, home: TeamEntry(name: "Fulham", code: "FUL"), away: TeamEntry(name: "Manchester United", shortName: "Man Utd", code: "MUN")), now: at(0))
+    relinked = MatchEngine.apply(.setLiveLink(eventId: "9", league: "eng.1"), to: relinked, now: at(0))
+    relinked = MatchEngine.apply(.swapTeams, to: relinked, now: at(0))
+    relinked = MatchEngine.apply(.setLiveLink(eventId: nil, league: nil), to: relinked, now: at(0))
+    relinked = MatchEngine.apply(.setLiveLink(eventId: "9", league: "eng.1"), to: relinked, now: at(0))
+    check(LiveDataLogic.feedSidesSwapped(match: relinked, feedHome: "Fulham", feedAway: "Man Utd") == true, "a swapped match re-linked after an unlink reads as reversed from the feed")
+    check(LiveDataLogic.feedSidesSwapped(match: relinked, feedHome: "Manchester United", feedAway: "Fulham") == false, "a feed in the match's orientation reads as straight")
+    check(LiveDataLogic.feedSidesSwapped(match: relinked, feedHome: "Spurs", feedAway: "Fulham") == nil, "unrecognised feed names keep the stored orientation")
+    check(LiveDataLogic.feedSidesSwapped(match: Match(slot: 1), feedHome: "Home", feedAway: "Away") == false, "placeholder teams read straight")
 } catch { failures += 1; print("FAIL live identity: \(error)") }
+
+do {
+    // SB-R1/R2: asset versions are optional, so libraries and matches saved before them decode unversioned.
+    var club = Club(name: "Club", shortName: "Club", defaultCode: "CLB", primaryColour: "#000000", crestFile: "club.png")
+    let legacyClub = try JSONCoding.decoder().decode(Club.self, from: JSONCoding.encoder().encode(club))
+    check(legacyClub.crestVersion == nil && legacyClub.entry(for: "ligue1").crestVersion == nil, "a club saved before crest versions decodes unversioned")
+    club.crestVersion = 2
+    check(club.entry(for: "ligue1").crestVersion == 2, "a club's crest version reaches the match entry")
+    let legacyCompetition = try JSONCoding.decoder().decode(Competition.self, from: Data(#"{"id":"ligue1","name":"Ligue 1","shortName":"L1","themeId":"ligue1","sourceIds":{},"logoFile":"competition-ligue1.png"}"#.utf8))
+    check(legacyCompetition.logoVersion == nil, "a competition saved before logo versions decodes unversioned")
+} catch { failures += 1; print("FAIL asset versions: \(error)") }
 
 do {
     let legacy = Data(#"{"portraitTop":100}"#.utf8)

@@ -55,6 +55,32 @@ final class CannedProtocol: URLProtocol {
         await model.refreshLiveData(slot: 1)
         check(model.match(1).homeScore == 1 && model.match(1).goals.map(\.id) == [laterID], "FLAW 4 removing the earlier goal never duplicates the later goal")
         let fullPayload = CannedProtocol.payload
+        // SB-R3: ESPN keyEvents give each goal an id that survives a minute correction (event 401861081 shape).
+        func withKeyEvents(_ events: [(id: String, clock: String)], replacing: (String, String)? = nil) throws -> Data {
+            var root = try JSONSerialization.jsonObject(with: fullPayload) as! [String: Any]
+            root["keyEvents"] = events.map { ["id": $0.id, "scoringPlay": true, "shootout": false, "clock": ["displayValue": $0.clock], "team": ["id": "10"]] as [String: Any] }
+            let text = String(decoding: try JSONSerialization.data(withJSONObject: root), as: UTF8.self)
+            return Data((replacing.map { text.replacingOccurrences(of: $0.0, with: $0.1) } ?? text).utf8)
+        }
+        CannedProtocol.payload = try withKeyEvents([("501", "20'"), ("502", "75'")])
+        seed(); await model.refreshLiveData(slot: 1)
+        check(model.match(1).goals.compactMap(\.autoAddedKey) == ["12345:id:501", "12345:id:502"], "SB-R3 automatic goals carry the provider id")
+        model.apply(.removeGoal(model.match(1).goals[0].id), slot: 1)
+        CannedProtocol.payload = try withKeyEvents([("501", "21'"), ("502", "75'")], replacing: (#""displayValue":"20'""#, #""displayValue":"21'""#))
+        await model.refreshLiveData(slot: 1)
+        let restarted = try JSONCoding.decoder().decode(Match.self, from: JSONCoding.encoder().encode(model.match(1)))
+        seed(restarted); await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 1 && model.match(1).removedLiveGoalKeys == ["12345:id:501"], "SB-R3 a removed goal stays removed after a minute correction and a restart")
+        CannedProtocol.payload = try withKeyEvents([("503", "21'"), ("502", "75'")], replacing: (#""displayValue":"20'""#, #""displayValue":"21'""#))
+        await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 2 && model.match(1).goals.contains { $0.autoAddedKey == "12345:id:503" }, "SB-R3 a different goal replacing the removed one in the same poll is added")
+        var legacy = linked
+        legacy.homeScore = 1; legacy.removedLiveGoalKeys = ["12345:home:20:0"]
+        legacy.goals = [Goal(side: .home, elapsedSeconds: 4440, minuteLabel: "75'", autoFilled: true, autoAdded: true, autoAddedKey: "12345:home:75:0")]
+        CannedProtocol.payload = try withKeyEvents([("501", "20'"), ("502", "75'")])
+        seed(legacy); await model.refreshLiveData(slot: 1)
+        check(model.match(1).homeScore == 1 && model.match(1).removedLiveGoalKeys == ["12345:id:501"] && model.match(1).goals.map(\.autoAddedKey) == ["12345:id:502"], "SB-R3 saved minute keys move onto the ids of the exact matching goals")
+        CannedProtocol.payload = fullPayload
         var reduced = try JSONSerialization.jsonObject(with: fullPayload) as! [String: Any]
         var header = reduced["header"] as! [String: Any]
         var competitions = header["competitions"] as! [[String: Any]]
@@ -101,6 +127,11 @@ final class CannedProtocol: URLProtocol {
         check(model.match(1).liveSidesSwapped, "FLAW 6 linking the same event preserves its orientation")
         model.apply(.goal(.away, -1), slot: 1); await model.refreshLiveData(slot: 1)
         check(model.match(1).awayScore == 1 && model.match(1).removedLiveGoalKeys == ["12345:home:75:0"], "FLAW 6 swapped removal uses provider identity")
+        model.apply(.setLiveLink(eventId: nil, league: nil), slot: 1)
+        try model.applyRequest(CommandRequest(command: "linkESPN", competitionId: "uefa.champions", eventId: "12345"), slot: 1)
+        await model.refreshLiveData(slot: 1)
+        check(model.match(1).liveSidesSwapped && model.match(1).homeScore == 0 && model.match(1).awayScore == 1 && model.liveLineup(slot: 1, side: .home) == ["Away Live"],
+              "SB-R4 unlink and re-link of a swapped match keeps goals and lineups on the original team")
         let saved = try JSONCoding.decoder().decode(Match.self, from: JSONCoding.encoder().encode(model.match(1)))
         seed(saved); await model.refreshLiveData(slot: 1)
         check(model.match(1).awayScore == 1 && model.match(1).liveSidesSwapped, "FLAW 6 restart preserves mapped suppression")
@@ -131,9 +162,25 @@ final class CannedProtocol: URLProtocol {
         try Data("first image".utf8).write(to: image)
         model.importCompetitionLogo(from: image, for: "champions-league")
         let logoRevision = model.match(1).revision
+        let logoVersion = model.snapshot().competitions.first { $0.id == "champions-league" }?.logoVersion ?? 0
         try Data("replacement image".utf8).write(to: image)
         model.importCompetitionLogo(from: image, for: "champions-league")
-        check(model.match(1).revision > logoRevision && model.library.competitions.first { $0.id == "champions-league" }?.logoFile == "competition-champions-league.svg", "FLAW 10 same-name logo replacement invalidates the overlay image")
+        let replacedLogo = model.snapshot().competitions.first { $0.id == "champions-league" }
+        check(replacedLogo?.logoVersion == logoVersion + 1 && replacedLogo?.logoFile == "competition-champions-league.svg", "FLAW 10 same-name logo replacement bumps the logo's version in the snapshot")
+        check(model.match(1).revision == logoRevision, "SB-R1 logo replacement leaves the match revision alone")
+        let crestClub = Club(name: "Crest Club", shortName: "Crest", defaultCode: "CRC", primaryColour: "#000000")
+        model.upsertClub(crestClub)
+        model.apply(.setTeam(.home, crestClub.entry(for: model.match(1).competitionId)), slot: 1)
+        let crestImage = root.appendingPathComponent("crest.png")
+        try Data("first crest".utf8).write(to: crestImage)
+        model.importCrest(from: crestImage, for: crestClub.id)
+        let firstCrest = model.match(1).home
+        try Data("replacement crest".utf8).write(to: crestImage)
+        model.importCrest(from: crestImage, for: crestClub.id)
+        let crestFiles = try FileManager.default.contentsOfDirectory(atPath: model.store.crestsDirectory.path).filter { $0.hasPrefix(crestClub.id.uuidString) }
+        check(firstCrest.crestFile == model.match(1).home.crestFile && model.match(1).home.crestVersion == (firstCrest.crestVersion ?? 0) + 1
+              && model.library.clubs.first { $0.id == crestClub.id }?.crestVersion == model.match(1).home.crestVersion, "SB-R2 same-name crest replacement bumps the shown and saved crest version")
+        check(crestFiles == [firstCrest.crestFile], "SB-R2 a replacement leaves one crest file, no cache-busting copies")
         let themeFolder = model.store.overlayOverridesDirectory.appendingPathComponent("themes/ligue1")
         try FileManager.default.createDirectory(at: themeFolder, withIntermediateDirectories: true)
         try Data(#"{"id":"ligue1","name":"Override sentinel","clockStyle":"freezeAndCount","geometry":{}}"#.utf8).write(to: themeFolder.appendingPathComponent("theme.json"))

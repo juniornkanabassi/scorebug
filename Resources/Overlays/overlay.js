@@ -142,16 +142,23 @@ function secondaryInk(t) {
     if (g.maxWidth != null) bug.style.setProperty("--bug-max-width", g.maxWidth + "px");
     bug.style.setProperty("--bug-scale", String(g.scale != null ? g.scale : 1));
   }
+  // The asset's own version, bumped only when an image is replaced under the same name, makes a replacement load
+  // while goals and live polls keep the URL, and so the cached image (SB-R1, SB-R2). No version, no query.
+  function assetUrl(file, version) { return "/crests/" + encodeURIComponent(file) + (version ? "?v=" + version : ""); }
   const badCrests = new Set();
   function setCrest(node, team) {
-    if (team.crestFile && !badCrests.has(team.crestFile)) {
-      const url = "/crests/" + encodeURIComponent(team.crestFile);
+    const url = team.crestFile ? assetUrl(team.crestFile, team.crestVersion) : null;
+    if (url && !badCrests.has(url)) {
+      if (node.dataset.crestUrl === url) return; // unchanged asset: no repaint, no new probe
+      node.dataset.crestUrl = url;
       node.classList.remove("monogram"); node.textContent = ""; node.style.background = "";
       node.style.backgroundImage = "url(" + url + ")";
       const probe = new Image();
-      probe.onerror = () => { badCrests.add(team.crestFile); setCrest(node, Object.assign({}, team, { crestFile: null })); };
+      // A failure only falls back while this image is still the one shown, never over a newer replacement.
+      probe.onerror = () => { badCrests.add(url); if (node.dataset.crestUrl === url) setCrest(node, Object.assign({}, team, { crestFile: null })); };
       probe.src = url;
     } else {
+      node.dataset.crestUrl = "";
       node.classList.add("monogram"); node.style.backgroundImage = "";
       node.style.background = team.primaryColour; node.style.color = team.textColour;
       node.textContent = (team.code || "?").slice(0, 2);
@@ -161,12 +168,11 @@ function secondaryInk(t) {
     const comp = competitionFor(m);
     loadTheme(m.themeId || (comp ? comp.themeId : m.competitionId));
     el.compLabel.textContent = comp ? comp.shortName : "";
-    // ponytail: revision refreshes a replaced logo; use a separate asset revision if local refetches become costly.
-    const logo = comp && comp.logoFile ? "url(/crests/" + encodeURIComponent(comp.logoFile) + "?v=" + m.revision + ")" : "none";
+    const logo = comp && comp.logoFile ? "url(" + assetUrl(comp.logoFile, comp.logoVersion) + ")" : "none";
     bug.style.setProperty("--comp-logo", logo);
     bug.classList.toggle("has-comp-logo", logo !== "none");
     for (const [side, t] of [["home", m.home], ["away", m.away]]) {
-      bug.style.setProperty("--" + side + "-crest", t.crestFile ? "url(/crests/" + encodeURIComponent(t.crestFile) + ")" : "none");
+      bug.style.setProperty("--" + side + "-crest", t.crestFile ? "url(" + assetUrl(t.crestFile, t.crestVersion) + ")" : "none");
       bug.style.setProperty("--" + side + "-primary", t.primaryColour);
       bug.style.setProperty("--" + side + "-secondary", t.secondaryColour);
       bug.style.setProperty("--" + side + "-text", t.textColour);

@@ -27,6 +27,10 @@ Then open `http://127.0.0.1:8680/` for the source list, `/overlay/h/1` or `/over
 
 Overlays are in `Resources/Overlays/`; during development the app finds them from the source tree, and `build.sh` copies them into the bundle.
 
+The 1.0.1 candidate refreshes replaced crests and competition logos without reloading them on every score update. Live goals use ESPN's event IDs when available, so removing a goal still works after its minute is corrected. Re-linking a swapped fixture restores its orientation when the feed's team names match.
+
+If ESPN omits a goal ID or supplies ambiguous details, matching falls back to the minute. A previously removed goal can then reappear. Keep automatic updates off when this happens and use the manual controls. Unrecognised team names keep the saved orientation.
+
 ## AI control
 
 Accepted localhost-only limitation (review 6): FlyingFox 0.27.1 decodes request lines and headers without a size cap or decoding deadline; the handler timeout starts afterwards. Only local processes can grow or stall headers indefinitely. Revisit if the listener binds beyond loopback or upstream adds limits; do not vendor or fork FlyingFox.

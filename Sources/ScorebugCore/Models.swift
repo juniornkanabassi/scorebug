@@ -164,12 +164,14 @@ public struct TeamEntry: Codable, Sendable, Equatable {
     public var secondaryColour: String
     public var textColour: String
     public var crestFile: String?
+    /// Bumped when the crest image is replaced under the same file name, so overlays fetch it again. Optional; nil on older saves.
+    public var crestVersion: Int?
     /// Current squad copied from the club, "K. Mbappé" style, for the scorer picker. Optional since schema 1.
     public var squad: [String]?
 
-    public init(clubId: UUID? = nil, name: String, shortName: String? = nil, code: String, primaryColour: String = "#222222", secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, squad: [String]? = nil) {
+    public init(clubId: UUID? = nil, name: String, shortName: String? = nil, code: String, primaryColour: String = "#222222", secondaryColour: String = "#FFFFFF", textColour: String = "#FFFFFF", crestFile: String? = nil, crestVersion: Int? = nil, squad: [String]? = nil) {
         self.clubId = clubId; self.name = name; self.shortName = shortName ?? name; self.code = code
-        self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour; self.crestFile = crestFile; self.squad = squad
+        self.primaryColour = primaryColour; self.secondaryColour = secondaryColour; self.textColour = textColour; self.crestFile = crestFile; self.crestVersion = crestVersion; self.squad = squad
     }
 
     public static let placeholderHome = TeamEntry(name: "Home", shortName: "Home", code: "HOM", primaryColour: "#1D4ED8")
@@ -283,6 +285,8 @@ public struct Club: Codable, Sendable, Identifiable, Equatable {
     public var secondaryColour: String
     public var textColour: String
     public var crestFile: String?
+    /// See `TeamEntry.crestVersion`. Optional; nil on older saves.
+    public var crestVersion: Int?
     /// File name to look for when importing a crest folder, for example "PSG.png".
     public var crestSource: String?
     public var sourceIds: [String: String]
@@ -307,7 +311,7 @@ public struct Club: Codable, Sendable, Identifiable, Equatable {
     }
 
     public func entry(for competitionId: String) -> TeamEntry {
-        TeamEntry(clubId: id, name: name, shortName: shortName, code: code(for: competitionId), primaryColour: primaryColour, secondaryColour: secondaryColour, textColour: textColour, crestFile: crestFile, squad: squad)
+        TeamEntry(clubId: id, name: name, shortName: shortName, code: code(for: competitionId), primaryColour: primaryColour, secondaryColour: secondaryColour, textColour: textColour, crestFile: crestFile, crestVersion: crestVersion, squad: squad)
     }
 }
 
@@ -319,6 +323,8 @@ public struct Competition: Codable, Sendable, Identifiable, Equatable {
     public var sourceIds: [String: String]
     /// Optional official mark imported by the user, stored under crests/. Optional since schema 1.
     public var logoFile: String?
+    /// Bumped when the logo is replaced under the same file name, so overlays fetch it again. Optional; nil on older saves.
+    public var logoVersion: Int?
     public init(id: String, name: String, shortName: String, themeId: String, sourceIds: [String: String] = [:], logoFile: String? = nil) {
         self.id = id; self.name = name; self.shortName = shortName; self.themeId = themeId; self.sourceIds = sourceIds; self.logoFile = logoFile
     }

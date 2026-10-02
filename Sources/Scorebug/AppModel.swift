@@ -358,6 +358,14 @@ final class AppModel: ObservableObject {
             }.value
             let eventKey = "\(slot):\(eventId)"
             liveLineups[slot] = (eventId, live.lineups)
+            // Feed bookkeeping that holds in any phase, skipped if the link changed during the request: orientation
+            // from the feed's team names (SB-R4) and saved minute keys moved onto provider goal ids (SB-R3).
+            if let idx = state.matches.firstIndex(where: { $0.slot == slot }), state.matches[idx].espnEventId == eventId {
+                var edited = LiveDataLogic.migrateLegacyKeys(match: state.matches[idx], liveGoals: live.goals, eventId: eventId)
+                if let swapped = LiveDataLogic.feedSidesSwapped(match: edited, feedHome: live.homeName, feedAway: live.awayName) { edited.liveSidesSwapped = swapped }
+                if edited != state.matches[idx] { state.matches[idx] = edited; persistAndBroadcast() }
+                m = edited
+            }
             liveSourceStatus["ESPN"] = "OK · \(Date.now.formatted(date: .omitted, time: .shortened))"
             let liveHome = live.goals.filter { $0.side == .home }, liveAway = live.goals.filter { $0.side == .away }
             if settings.liveSourceEnabled["FotMob"] == true, let kickoff = m.kickoff {
@@ -500,13 +508,18 @@ final class AppModel: ObservableObject {
         do {
             let name = try store.importCrest(from: url, for: clubId)
             CrestImage.invalidate(file: name)
-            if let idx = library.clubs.firstIndex(where: { $0.id == clubId }) { library.clubs[idx].crestFile = name }
+            // A replacement often keeps the file name, so the version tells overlays to fetch the image again (SB-R2).
+            var version: Int?
+            if let idx = library.clubs.firstIndex(where: { $0.id == clubId }) {
+                library.clubs[idx].crestFile = name; library.clubs[idx].crestVersion = (library.clubs[idx].crestVersion ?? 0) + 1
+                version = library.clubs[idx].crestVersion
+            }
             saveLibrary()
             // Live matches using this club pick up the crest.
             for slot in [1, 2] {
                 let m = match(slot)
                 for side in Side.allCases where m.team(side).clubId == clubId {
-                    var entry = m.team(side); entry.crestFile = name
+                    var entry = m.team(side); entry.crestFile = name; entry.crestVersion = version ?? (entry.crestVersion ?? 0) + 1
                     apply(.setTeam(side, entry), slot: slot)
                 }
             }
@@ -517,11 +530,13 @@ final class AppModel: ObservableObject {
         do {
             let name = try store.importCompetitionLogo(from: url, for: competitionId)
             CrestImage.invalidate(file: name)
-            if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) { library.competitions[idx].logoFile = name }
+            // The file name can stay the same when its image changes; the logo's own version refreshes overlays,
+            // so goals and live polls never change the logo URL (SB-R1).
+            if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) {
+                library.competitions[idx].logoFile = name; library.competitions[idx].logoVersion = (library.competitions[idx].logoVersion ?? 0) + 1
+            }
             saveLibrary()
-            // The file name can stay the same when its image changes; invalidate existing overlay images too.
-            for idx in state.matches.indices where state.matches[idx].competitionId == competitionId { state.matches[idx].revision += 1 }
-            persistAndBroadcast()
+            broadcast()
         } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
     }
 
