@@ -116,11 +116,31 @@ function secondaryInk(t) {
   }
   const competitionFor = (m) => (state.competitions || []).find((c) => c.id === m.competitionId);
 
+  // Each theme file loads once per theme. A failed theme.json or theme.css retries only on the 30 s poll or the first
+  // snapshot after a socket reconnect (retryTheme), never after success. themeJsonSeq drops a late answer for an
+  // earlier request, including the first A after A-B-A, so it cannot overwrite the current theme.
+  let themeJsonState = null, themeJsonSeq = 0, themeCssState = null;
   function loadTheme(id) {
     if (id === themeId) return;
     themeId = id; body.dataset.theme = id;
-    el.themeCss.href = "/themes/" + id + "/theme.css?v=" + Date.now();
-    fetch("/themes/" + id + "/theme.json").then((r) => (r.ok ? r.json() : null)).then((t) => { theme = t; body.dataset.family = (t && t.family) || ""; applyGeometry(); }).catch(() => { theme = null; });
+    loadThemeCss(); loadThemeJson();
+  }
+  function loadThemeCss() {
+    themeCssState = "loading";
+    el.themeCss.onload = () => { themeCssState = "ok"; };
+    el.themeCss.onerror = () => { themeCssState = "failed"; };
+    el.themeCss.href = "/themes/" + themeId + "/theme.css?v=" + Date.now();
+  }
+  function loadThemeJson() {
+    const seq = ++themeJsonSeq;
+    themeJsonState = "loading";
+    fetch("/themes/" + themeId + "/theme.json").then((r) => { if (!r.ok) throw new Error("theme.json " + r.status); return r.json(); }).then(
+      (t) => { if (seq !== themeJsonSeq) return; themeJsonState = "ok"; theme = t; body.dataset.family = (t && t.family) || ""; applyGeometry(); },
+      () => { if (seq !== themeJsonSeq) return; themeJsonState = "failed"; theme = null; body.dataset.family = ""; });
+  }
+  function retryTheme() {
+    if (themeJsonState === "failed") loadThemeJson();
+    if (themeCssState === "failed") loadThemeCss();
   }
   function applyGeometry() {
     const g = theme && theme.geometry && theme.geometry[orientation];
@@ -259,7 +279,7 @@ function secondaryInk(t) {
   // Clock text only changes once a second, so a 4Hz interval (not a 60Hz rAF loop) is enough for every OBS
   // source and preview pane; accept() calls frame() once more so a command paints at once, not up to 250ms late.
   setInterval(frame, 250);
-  function accept(snapshot) {
+  function accept(snapshot, retryAssets) {
     const overlay = snapshot.overlay || {};
     // The override folder changes which shell, script, css and theme files the server answers with: reload them all.
     if (themeOverrides !== undefined && overlay.themeOverrides !== undefined && overlay.themeOverrides !== themeOverrides) { location.reload(); return; }
@@ -274,6 +294,7 @@ function secondaryInk(t) {
     // Competition edits (name, theme, logo) broadcast without a match revision, so they invalidate the render too.
     const competition = JSON.stringify(competitionFor(m) || null);
     if (m.revision !== renderedRevision || competition !== renderedCompetition) { renderStatic(m); renderedRevision = m.revision; renderedCompetition = competition; }
+    if (retryAssets) retryTheme(); // an unchanged revision skips renderStatic, so a failed theme retries here
     frame();
   }
   // Debug hook for screenshots and QA: /overlay/h/1?demo=goal:home:1200 fires a goal animation on first render and freezes it at 1200 ms.
@@ -326,10 +347,11 @@ function secondaryInk(t) {
   let retry = 500;
   function connect() {
     const ws = new WebSocket((location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + "/ws");
-    ws.onmessage = (ev) => { try { accept(JSON.parse(ev.data)); retry = 500; } catch (e) { console.error(e); } };
+    let first = true;
+    ws.onmessage = (ev) => { try { accept(JSON.parse(ev.data), first); first = false; retry = 500; } catch (e) { console.error(e); } };
     ws.onclose = () => { setTimeout(connect, retry); retry = Math.min(retry * 2, 8000); };
     ws.onerror = () => ws.close();
   }
   connect();
-  setInterval(() => fetch("/api/state").then((r) => r.json()).then(accept).catch(() => {}), 30000);
+  setInterval(() => fetch("/api/state").then((r) => r.json()).then((s) => accept(s, true)).catch(() => {}), 30000);
 })();

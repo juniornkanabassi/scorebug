@@ -29,6 +29,8 @@ Overlays are in `Resources/Overlays/`; during development the app finds them fro
 
 The 1.0.1 candidate refreshes replaced crests and competition logos without reloading them on every score update. Live goals use ESPN's event IDs when available, so removing a goal still works after its minute is corrected. Re-linking a swapped fixture restores its orientation when the feed's team names match.
 
+1.0.2 lets an open overlay page recover its theme. If theme.json or theme.css fails, the page retries on its 30-second state poll or its next socket reconnect, with no reload and no new match revision. Start Scorebug before OBS. If OBS opens a browser source while the server is down, it shows a navigation error page that runs no overlay script and cannot recover. Use Refresh on that source once Scorebug is serving. This repairs one proven cause of blank OBS sources, not every recorded one.
+
 If ESPN omits a goal ID or supplies ambiguous details, matching falls back to the minute. A previously removed goal can then reappear. Keep automatic updates off when this happens and use the manual controls. Unrecognised team names keep the saved orientation.
 
 ## AI control
