@@ -31,6 +31,8 @@ The 1.0.1 candidate refreshes replaced crests and competition logos without relo
 
 1.0.2 lets an open overlay page recover its theme. If theme.json or theme.css fails, the page retries on its 30-second state poll or its next socket reconnect, with no reload and no new match revision. Start Scorebug before OBS. If OBS opens a browser source while the server is down, it shows a navigation error page that runs no overlay script and cannot recover. Use Refresh on that source once Scorebug is serving. This repairs one proven cause of blank OBS sources, not every recorded one.
 
+1.0.3 never shows an overlay a change that was not saved. If writing `state.json` fails (a full disk, say), the command is undone, nothing is broadcast, the window shows "Could not save state" and API responses carry `X-Scorebug-Save-Failed: true`; retry once the disk is fixed. Overlay snapshots read settings and competitions as last saved, so an unsaved setting or competition edit stays in the window until a save succeeds.
+
 If ESPN omits a goal ID or supplies ambiguous details, matching falls back to the minute. A previously removed goal can then reappear. Keep automatic updates off when this happens and use the manual controls. Unrecognised team names keep the saved orientation.
 
 ## AI control
