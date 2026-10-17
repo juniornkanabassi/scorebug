@@ -772,14 +772,14 @@ do { _ = try recovery.loadState(); check(false, "corrupt state must throw") } ca
 }
 // Rule 3: a failed save (here a read-only data folder) broadcasts nothing and keeps the last saved state.
 let commitStore = try Store(directory: securityFolder.appendingPathComponent("commit"))
-var committed = MatchState()
+let committed = MatchState()
 var broadcasts = 0
-check(commitStore.commitState(&committed, broadcast: { broadcasts += 1 }) == nil && broadcasts == 1, "saved state is broadcast")
+check(commitStore.commitState(committed, broadcast: { broadcasts += 1 }) == nil && broadcasts == 1, "saved state is broadcast")
 try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: commitStore.directory.path)
 var unsaved = committed
 unsaved.matches[0] = MatchEngine.apply(.startPeriod(.firstHalf), to: unsaved.matches[0], now: at(0))
 check(unsaved != committed, "candidate state differs from the saved one")
-check(commitStore.commitState(&unsaved, broadcast: { broadcasts += 1 }) != nil && broadcasts == 1 && unsaved == committed, "failed save is not broadcast and rolls back to the saved state")
+check(commitStore.commitState(unsaved, broadcast: { broadcasts += 1 }) != nil && broadcasts == 1 && commitStore.savedState == committed, "failed save is not broadcast and rolls back to the saved state")
 try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: commitStore.directory.path)
 let forbiddenCrest = FixtureTeam(name: "Canary", shortName: "CA", code: "CAN", crestURL: outside)
 let noFileCrest = await FixtureService.crest(for: forbiddenCrest, in: root, loader: { _ in fatalError("file URL reached loader") })

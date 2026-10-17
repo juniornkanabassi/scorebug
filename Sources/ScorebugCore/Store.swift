@@ -107,18 +107,22 @@ public final class Store: @unchecked Sendable {
         return state
     }
     public func saveState(_ state: MatchState) throws { try save(state, to: "state.json"); savedState = state }
-    /// Save, then broadcast (rule 3). A failed save rolls `state` back to `savedState`, skips `broadcast` and returns
-    /// the error, so no overlay shows a change a crash would lose.
-    public func commitState(_ state: inout MatchState, broadcast: () -> Void) -> Error? {
-        do { try saveState(state) } catch { state = savedState; return error }
+    /// Save, then broadcast (rule 3). A failed save skips `broadcast` and returns the error; the caller then goes back
+    /// to `savedState`, so no overlay shows a change a crash would lose. By value: `broadcast` reads the caller's state.
+    public func commitState(_ state: MatchState, broadcast: () -> Void) -> Error? {
+        do { try saveState(state) } catch { return error }
         broadcast()
         return nil
     }
 
+    /// Settings as last read from or written to disk; a failed save goes back to these.
+    public private(set) var savedSettings = Settings()
     public func loadSettings() throws -> Settings {
-        try load("settings.json", as: Settings.self, schemaOf: { $0.schema }) ?? Settings()
+        let settings = try load("settings.json", as: Settings.self, schemaOf: { $0.schema }) ?? Settings()
+        savedSettings = settings
+        return settings
     }
-    public func saveSettings(_ settings: Settings) throws { try save(settings, to: "settings.json") }
+    public func saveSettings(_ settings: Settings) throws { try save(settings, to: "settings.json"); savedSettings = settings }
 
     /// Brings an existing library up to date with the bundled seed without touching what the user edits:
     /// adds missing competitions and clubs, fills empty squads, confederations, crest sources and default codes.

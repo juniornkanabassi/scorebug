@@ -206,6 +206,21 @@ final class CannedProtocol: URLProtocol {
         check(model.themeConfig(id: "ligue1")?.name == "Override sentinel" && model.snapshot().overlay.themeOverrides == true, "FLAW 11 re-enabling overrides refreshes window and snapshot")
         let restored = try await servedTheme()
         check(restored.contains("Override sentinel"), "FLAW 11 real route restores override without restarting")
+        // Rule 3: with the data folder read-only, a command, a setting and a competition edit change nothing an overlay sees.
+        func servedState() async throws -> Data { try await URLSession.shared.data(from: URL(string: model.baseURL + "/api/state")!).0 }
+        func stripTime(_ data: Data) throws -> NSDictionary { let d = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as! NSMutableDictionary; d.removeObject(forKey: "serverTime"); return d }
+        let savedMatch = model.match(1), savedTop = model.settings.portraitTop, savedCompetition = model.library.competitions[0]
+        let beforeFailure = try stripTime(try await servedState())
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
+        check(!model.apply(.goal(.home, 1), slot: 1) && model.match(1) == savedMatch && model.stateSaveFailed, "rule 3 failed save rolls the command back")
+        model.settings.portraitTop = savedTop + 10; model.saveSettings()
+        check(model.settings.portraitTop == savedTop && model.snapshot().overlay.portraitTop == savedTop, "rule 3 failed settings save rolls back")
+        var edited = savedCompetition; edited.name += " unsaved"; model.updateCompetition(edited)
+        check(model.library.competitions[0] == savedCompetition, "rule 3 failed library save rolls the competition back")
+        let afterFailure = try stripTime(try await servedState())
+        check(afterFailure == beforeFailure, "rule 3 served state is unchanged after failed saves")
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+        check(model.apply(.goal(.home, 1), slot: 1) && model.match(1).homeScore == savedMatch.homeScore + 1, "rule 3 the next save after recovery applies")
         print("\(checks) model checks passed")
     }
 }

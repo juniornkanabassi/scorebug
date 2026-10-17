@@ -350,6 +350,7 @@ final class AppModel: ObservableObject {
         guard m.autoUpdateLiveData, let eventId = m.espnEventId, let league = m.espnLeague,
               !stoppedLiveEvents.contains("\(slot):\(eventId)"), AppModel.takesLiveGoals(m.phase),
               (m.kickoff.map { now >= $0 } ?? m.phase.isLivePeriod), settings.liveSourceEnabled["ESPN"] != false else { return }
+        let failuresBefore = stateSaveFailures
         do {
             let live = try await Task.detached(priority: .utility) {
                 try await ESPNLiveSource(league: league).fetchGoals(eventId: eventId)
@@ -420,7 +421,8 @@ final class AppModel: ObservableObject {
                     markGoal(goalId, slot: slot) { $0.autoFilled = true; $0.autoAddedKey = assignment.key }
                 }
             }
-            if live.isFinished && mature { stoppedLiveEvents.insert(eventKey) }
+            // A rolled-back save must be retried by the next poll, so only a fully saved finish stops polling.
+            if live.isFinished && mature && stateSaveFailures == failuresBefore { stoppedLiveEvents.insert(eventKey) }
         } catch { liveSourceStatus["ESPN"] = "Error: \(error.localizedDescription)" }
     }
 
@@ -433,11 +435,12 @@ final class AppModel: ObservableObject {
     }
 
     private(set) var stateSaveFailed = false
+    private var stateSaveFailures = 0
     @discardableResult
     private func persistAndBroadcast(deferUIUpdate: Bool = false) -> Bool {
         // A failed save puts the last saved state back and broadcasts nothing (rule 3).
-        if let error = store.commitState(&state, broadcast: broadcast) {
-            stateSaveFailed = true; lastError = "Could not save state: \(error.localizedDescription)"
+        if let error = store.commitState(state, broadcast: broadcast) {
+            state = store.savedState; stateSaveFailed = true; stateSaveFailures += 1; lastError = "Could not save state: \(error.localizedDescription)"
         } else { stateSaveFailed = false }
         updateSlotSummaries()
         if deferUIUpdate {
@@ -490,8 +493,9 @@ final class AppModel: ObservableObject {
 
     // Clubs never ride in the snapshot (only competitions do), so saving the library has nothing to broadcast;
     // `updateCompetition` and `importCompetitionLogo` broadcast themselves for the part that does.
-    func saveLibrary() {
-        do { try store.saveLibrary(library) } catch { lastError = "Could not save library: \(error.localizedDescription)" }
+    @discardableResult
+    func saveLibrary() -> Bool {
+        do { try store.saveLibrary(library); return true } catch { lastError = "Could not save library: \(error.localizedDescription)"; return false }
     }
 
     func upsertClub(_ club: Club) {
@@ -532,18 +536,20 @@ final class AppModel: ObservableObject {
             CrestImage.invalidate(file: name)
             // The file name can stay the same when its image changes; the logo's own version refreshes overlays,
             // so goals and live polls never change the logo URL (SB-R1).
-            if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) {
-                library.competitions[idx].logoFile = name; library.competitions[idx].logoVersion = (library.competitions[idx].logoVersion ?? 0) + 1
-            }
-            saveLibrary()
+            guard let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) else { return }
+            let old = library.competitions[idx]
+            library.competitions[idx].logoFile = name; library.competitions[idx].logoVersion = (old.logoVersion ?? 0) + 1
+            // Competitions ride in the snapshot, so an unsaved change goes back rather than reach an overlay (rule 3).
+            guard saveLibrary() else { library.competitions[idx] = old; return }
             broadcast()
         } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
     }
 
     func updateCompetition(_ comp: Competition) {
         guard let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) else { return }
+        let old = library.competitions[idx]
         library.competitions[idx] = comp
-        saveLibrary()
+        guard saveLibrary() else { library.competitions[idx] = old; return }
         broadcast()
     }
 
@@ -572,6 +578,10 @@ final class AppModel: ObservableObject {
     func zoom(_ delta: Int) { zoomLevel = min(3, max(-2, zoomLevel + delta)) }
 
     func saveSettings() {
+        // Settings ride in the snapshot and choose the served files, so nothing changes until they are saved (rule 3).
+        do { try store.saveSettings(settings) } catch {
+            lastError = "Could not save settings: \(error.localizedDescription)"; settings = store.savedSettings; return
+        }
         themeConfigCache.removeAll()
         // "Use override folder" takes effect at once for the window and the server; overlays reload on the
         // snapshot's themeOverrides change (Codex review, 1 Oct).
@@ -580,7 +590,6 @@ final class AppModel: ObservableObject {
             resolver = OverlayResolver(bundled: resolver.bundled, overrides: overrides)
             server?.resolver = resolver
         }
-        do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)" }
         // Settings (e.g. portraitTop) ride inside every state snapshot, so overlay clients need a fresh
         // broadcast on change, the same way a match edit does via persistAndBroadcast().
         broadcast()
