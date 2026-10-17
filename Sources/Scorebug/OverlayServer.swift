@@ -146,7 +146,7 @@ final class OverlayServer: @unchecked Sendable {
 
         await server.appendRoute("GET /preview/backdrop", handler: { [weak self] request in
             guard let model = self?.model else { return HTTPResponse(statusCode: .serviceUnavailable) }
-            let path = await MainActor.run { model.settings.previewBackdrop }
+            let path = await MainActor.run { model.store.savedSettings.previewBackdrop }
             guard let path, path != "pitch", let data = FileManager.default.contents(atPath: path) else {
                 return HTTPResponse(statusCode: .notFound)
             }
