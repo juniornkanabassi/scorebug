@@ -131,9 +131,7 @@ final class AppModel: ObservableObject {
             }
             state.matches[idx] = m
         }
-        try? store.saveState(state)
-        updateSlotSummaries()
-        objectWillChange.send()  // state is not @Published (perf012), so say so here too
+        persistAndBroadcast()
     }
 
     // MARK: Matches
@@ -156,7 +154,7 @@ final class AppModel: ObservableObject {
         profiled(command) {
             mutate(command, at: idx)
             saved = persistAndBroadcast()
-            if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
+            if saved, case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
         return saved
     }
@@ -184,7 +182,7 @@ final class AppModel: ObservableObject {
         if let key, let cached = commandResponses[key] { return (cached.0, cached.1) }
         try applyRequest(request, slot: slot)
         let data = snapshotData()
-        if let key {
+        if let key, !stateSaveFailed {
             commandResponses[key] = (data, stateSaveFailed); commandResponseOrder.append(key)
             if commandResponseOrder.count > 500 { commandResponses.removeValue(forKey: commandResponseOrder.removeFirst()) }
         }
@@ -212,8 +210,7 @@ final class AppModel: ObservableObject {
         }
         profiled(command) {
             mutate(command, at: idx)
-            persistAndBroadcast(deferUIUpdate: true)
-            if case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
+            if persistAndBroadcast(deferUIUpdate: true), case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
     }
 
@@ -295,10 +292,11 @@ final class AppModel: ObservableObject {
             fresh.espnEventId = eventId; fresh.espnLeague = league
         }
         state.matches[idx] = fresh
+        guard persistAndBroadcast() else { return true }
         stoppedLiveEvents = stoppedLiveEvents.filter { !$0.hasPrefix("\(slot):") }
         liveSeenAt = liveSeenAt.filter { !$0.key.hasPrefix("\(slot):") }
         liveLineups[slot] = nil
-        var saveFailed = !persistAndBroadcast()
+        var saveFailed = false
         if fresh.espnEventId == nil { saveFailed = !(await linkESPN(slot: slot, date: fixture.kickoff)) || saveFailed }
         return saveFailed
     }
@@ -437,9 +435,11 @@ final class AppModel: ObservableObject {
     private(set) var stateSaveFailed = false
     @discardableResult
     private func persistAndBroadcast(deferUIUpdate: Bool = false) -> Bool {
-        do { try store.saveState(state); stateSaveFailed = false } catch { stateSaveFailed = true; lastError = "Could not save state: \(error.localizedDescription)" }
+        // A failed save puts the last saved state back and broadcasts nothing (rule 3).
+        if let error = store.commitState(&state, broadcast: broadcast) {
+            stateSaveFailed = true; lastError = "Could not save state: \(error.localizedDescription)"
+        } else { stateSaveFailed = false }
         updateSlotSummaries()
-        broadcast()
         if deferUIUpdate {
             // Coalesce rapid API commands so the window diff cannot hold up the next response.
             pendingUIUpdate?.cancel()

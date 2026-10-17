@@ -99,10 +99,21 @@ public final class Store: @unchecked Sendable {
         try? Data(version.utf8).write(to: url("squads-version.txt"), options: .atomic)
     }
 
+    /// The match state as last read from or written to disk: all an overlay may ever be shown (rule 3).
+    public private(set) var savedState = MatchState()
     public func loadState() throws -> MatchState {
-        try load("state.json", as: MatchState.self, schemaOf: { $0.schema }) ?? MatchState()
+        let state = try load("state.json", as: MatchState.self, schemaOf: { $0.schema }) ?? MatchState()
+        savedState = state
+        return state
     }
-    public func saveState(_ state: MatchState) throws { try save(state, to: "state.json") }
+    public func saveState(_ state: MatchState) throws { try save(state, to: "state.json"); savedState = state }
+    /// Save, then broadcast (rule 3). A failed save rolls `state` back to `savedState`, skips `broadcast` and returns
+    /// the error, so no overlay shows a change a crash would lose.
+    public func commitState(_ state: inout MatchState, broadcast: () -> Void) -> Error? {
+        do { try saveState(state) } catch { state = savedState; return error }
+        broadcast()
+        return nil
+    }
 
     public func loadSettings() throws -> Settings {
         try load("settings.json", as: Settings.self, schemaOf: { $0.schema }) ?? Settings()
