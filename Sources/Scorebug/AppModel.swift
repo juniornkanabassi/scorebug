@@ -55,6 +55,8 @@ final class AppModel: ObservableObject {
     @Published var serverRunning = false
     @Published var lastError: String?
     private(set) var slotSummaries: [Int: SlotSummary] = [:]
+    /// Competitions as last saved; snapshots read these and `store.savedSettings`, never unsaved edits (rule 3).
+    private var savedCompetitions: [Competition] = []
 
     let store: Store
     private(set) var resolver: OverlayResolver
@@ -89,6 +91,7 @@ final class AppModel: ObservableObject {
         self.resolver = OverlayResolver(bundled: bundled, overrides: settings.themeOverridesEnabled ? store.overlayOverridesDirectory : nil)
         CrestImage.directory = store.crestsDirectory
         ScaledFonts.scale = zoomScale
+        savedCompetitions = library.competitions
         updateSlotSummaries()
         if loadErrors.isEmpty, options.dataDirectory == Store.defaultDirectory() { importDefaultCrestFolderIfPresent() }
         if !loadErrors.isEmpty { lastError = loadErrors.joined(separator: "\n") }
@@ -476,7 +479,8 @@ final class AppModel: ObservableObject {
             m.away.squad = nil
             return m
         }
-        return StateSnapshot(serverTime: Date(), matches: matches, competitions: library.competitions, overlay: OverlaySettings(portraitTop: settings.portraitTop, previewBackdrop: settings.previewBackdrop, themeOverrides: resolver.overrides != nil))
+        let saved = store.savedSettings
+        return StateSnapshot(serverTime: Date(), matches: matches, competitions: savedCompetitions, overlay: OverlaySettings(portraitTop: saved.portraitTop, previewBackdrop: saved.previewBackdrop, themeOverrides: resolver.overrides != nil))
     }
 
     func snapshotData() -> Data {
@@ -495,7 +499,7 @@ final class AppModel: ObservableObject {
     // `updateCompetition` and `importCompetitionLogo` broadcast themselves for the part that does.
     @discardableResult
     func saveLibrary() -> Bool {
-        do { try store.saveLibrary(library); return true } catch { lastError = "Could not save library: \(error.localizedDescription)"; return false }
+        do { try store.saveLibrary(library); savedCompetitions = library.competitions; return true } catch { lastError = "Could not save library: \(error.localizedDescription)"; return false }
     }
 
     func upsertClub(_ club: Club) {
@@ -536,21 +540,17 @@ final class AppModel: ObservableObject {
             CrestImage.invalidate(file: name)
             // The file name can stay the same when its image changes; the logo's own version refreshes overlays,
             // so goals and live polls never change the logo URL (SB-R1).
-            guard let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) else { return }
-            let old = library.competitions[idx]
-            library.competitions[idx].logoFile = name; library.competitions[idx].logoVersion = (old.logoVersion ?? 0) + 1
-            // Competitions ride in the snapshot, so an unsaved change goes back rather than reach an overlay (rule 3).
-            guard saveLibrary() else { library.competitions[idx] = old; return }
-            broadcast()
+            if let idx = library.competitions.firstIndex(where: { $0.id == competitionId }) {
+                library.competitions[idx].logoFile = name; library.competitions[idx].logoVersion = (library.competitions[idx].logoVersion ?? 0) + 1
+            }
+            if saveLibrary() { broadcast() }
         } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
     }
 
     func updateCompetition(_ comp: Competition) {
         guard let idx = library.competitions.firstIndex(where: { $0.id == comp.id }) else { return }
-        let old = library.competitions[idx]
         library.competitions[idx] = comp
-        guard saveLibrary() else { library.competitions[idx] = old; return }
-        broadcast()
+        if saveLibrary() { broadcast() }
     }
 
     /// Interface text size, Cmd-plus and Cmd-minus, remembered between launches. This scales font point sizes
@@ -578,10 +578,8 @@ final class AppModel: ObservableObject {
     func zoom(_ delta: Int) { zoomLevel = min(3, max(-2, zoomLevel + delta)) }
 
     func saveSettings() {
-        // Settings ride in the snapshot and choose the served files, so nothing changes until they are saved (rule 3).
-        do { try store.saveSettings(settings) } catch {
-            lastError = "Could not save settings: \(error.localizedDescription)"; settings = store.savedSettings; return
-        }
+        // Snapshots read saved settings and the resolver chooses served files, so neither moves until the save lands (rule 3).
+        do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)"; return }
         themeConfigCache.removeAll()
         // "Use override folder" takes effect at once for the window and the server; overlays reload on the
         // snapshot's themeOverrides change (Codex review, 1 Oct).

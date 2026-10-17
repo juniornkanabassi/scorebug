@@ -213,14 +213,18 @@ final class CannedProtocol: URLProtocol {
         let beforeFailure = try stripTime(try await servedState())
         try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
         check(!model.apply(.goal(.home, 1), slot: 1) && model.match(1) == savedMatch && model.stateSaveFailed, "rule 3 failed save rolls the command back")
-        model.settings.portraitTop = savedTop + 10; model.saveSettings()
-        check(model.settings.portraitTop == savedTop && model.snapshot().overlay.portraitTop == savedTop, "rule 3 failed settings save rolls back")
+        model.settings.portraitTop = savedTop + 10
+        check(model.snapshot().overlay.portraitTop == savedTop, "rule 3 a setting edited but not yet saved stays off the snapshot")
+        model.saveSettings()
+        check(model.snapshot().overlay.portraitTop == savedTop, "rule 3 a failed settings save stays off the snapshot")
         var edited = savedCompetition; edited.name += " unsaved"; model.updateCompetition(edited)
-        check(model.library.competitions[0] == savedCompetition, "rule 3 failed library save rolls the competition back")
+        check(model.snapshot().competitions[0] == savedCompetition, "rule 3 a failed competition save stays off the snapshot")
         let afterFailure = try stripTime(try await servedState())
         check(afterFailure == beforeFailure, "rule 3 served state is unchanged after failed saves")
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
         check(model.apply(.goal(.home, 1), slot: 1) && model.match(1).homeScore == savedMatch.homeScore + 1, "rule 3 the next save after recovery applies")
+        model.saveSettings(); model.updateCompetition(edited)
+        check(model.snapshot().overlay.portraitTop == savedTop + 10 && model.snapshot().competitions[0] == edited, "rule 3 settings and competitions show once saved")
         print("\(checks) model checks passed")
     }
 }
