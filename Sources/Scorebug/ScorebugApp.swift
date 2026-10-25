@@ -48,12 +48,13 @@ struct ScorebugApp: App {
     init() {
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
         // A running pre-rename Scorebug owns the same store and port: hand over to it rather than open a second writer.
-        if options.dataDirectory == Store.defaultDirectory(),
-           let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
+        let production = options.dataDirectory == Store.defaultDirectory()
+        if production, let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
             if !options.background { legacy.activate() }
             exit(0)
         }
-        Self.adoptLegacyPreferences()
+        // Only the production launch migrates: a disposable run shares this defaults domain and must not set the marker.
+        if production { Self.adoptLegacyPreferences() }
         launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
