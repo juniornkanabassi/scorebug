@@ -197,16 +197,16 @@ export async function main(args=process.argv.slice(2)) {
   else if(name==='goal edit') {
    const m=(await api('/api/state')).matches.find(m=>m.slot===slot);
    const goalId=values['goal-id'],goal=m.goals.find(g=>g.id.toLowerCase()===goalId.toLowerCase()),retry=values['request-id'];let state;
-   // With a retry id and the goal gone, the app decides (strict): it replays the first reply or refuses a fresh id.
+   // Goal edits still read the scorer fallback; a retry always reaches the app.
    if(!goal&&!retry)throw new Failure('no_such_goal','No goal with that id in this slot; see scorebug status --json');
    if(values.scorer!==undefined||['own-goal','no-own-goal','penalty','no-penalty'].some(k=>values[k])) {
     const flag=(on,off)=>values[on]?true:values[off]?false:undefined;
-    state=await send('setScorer',{goalId,scorer:values.scorer??goal?.scorer??undefined,ownGoal:flag('own-goal','no-own-goal'),penalty:flag('penalty','no-penalty'),...(retry?{requestId:retry+':scorer',...(goal?{}:{strict:true})}:{})});
+    state=await send('setScorer',{strict:true,goalId,scorer:values.scorer??goal?.scorer??undefined,ownGoal:flag('own-goal','no-own-goal'),penalty:flag('penalty','no-penalty'),...(retry?{requestId:retry+':scorer'}:{})});
    }
-   if(values.minute!==undefined)state=await send('setGoalMinute',{goalId,minute:values.minute,plus:values.plus,...(retry?{requestId:retry+':minute',...(goal?{}:{strict:true})}:{})});
+   if(values.minute!==undefined)state=await send('setGoalMinute',{strict:true,goalId,minute:values.minute,plus:values.plus,...(retry?{requestId:retry+':minute'}:{})});
    result=summary(state,slot);
   } else if(['period end','shootout start','shootout kick','shootout undo','shootout edit','shootout remove'].includes(name)) {
-   let state,unchanged=false;
+   let state;
    if(!values['request-id']) {
     state=await api('/api/state');
     const m=state.matches.find(m=>m.slot===slot);
@@ -216,12 +216,9 @@ export async function main(args=process.argv.slice(2)) {
     if(name!=='period end'&&name!=='shootout start'&&!m.shootout)throw new Failure('not_applied','No shootout in this slot; use shootout start');
     if(name==='shootout undo'&&!m.shootout.kicks.length)throw new Failure('not_applied','No kicks to undo');
     if((name==='shootout edit'||name==='shootout remove')&&m.shootout.kicks.filter(k=>k.side===values.side).length<values.kick)throw new Failure('not_applied',`The ${values.side} side has not taken kick ${values.kick}`);
-   } else if(name==='shootout edit')state=await api('/api/state');
-   // An edit to the result a kick already has is a no-op success, with or without a retry id (strict would refuse it).
-   const kick=name==='shootout edit'&&state.matches.find(m=>m.slot===slot).shootout?.kicks.filter(k=>k.side===values.side)[values.kick-1];
-   unchanged=!!kick&&kick.result===values.result;
+   }
    const [action,params]={'period end':['endPeriod',{}],'shootout start':['startShootout',{side:values.first??'home'}],'shootout kick':['recordKick',{result:values.result,...(values.side?{side:values.side}:{})}],'shootout undo':['undoKick',{}],'shootout edit':['setKick',{side:values.side,index:values.kick-1,result:values.result}],'shootout remove':['removeKick',{side:values.side,index:values.kick-1}]}[name];
-   if(!unchanged)state=await send(action,{...params,strict:true});
+   state=await send(action,{...params,strict:true});
    result=summary(state,slot);
   } else if(name==='added set')result=summary(await send('setAddedMinutes',{minutes:values.minutes}),slot);
   else if(name==='added adjust')result=summary(await send('adjustAddedMinutes',{delta:values.by}),slot);

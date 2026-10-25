@@ -211,13 +211,33 @@ final class AppModel: ObservableObject {
             guard state.matches[idx].phase != .shootout else { throw EngineError.badRequest("goals cannot be removed during a shootout") }
             guard state.matches[idx].goals.contains(where: { $0.side == side }) else { throw EngineError.badRequest("no goal exists for that side") }
         }
-        if request.strict == true, case .startShootout = command, state.matches[idx].shootout != nil {
-            throw EngineError.notApplied("A shootout is already under way; use shootout undo/edit/remove")
+        if request.strict == true {
+            let match = state.matches[idx]
+            switch command {
+            case .startShootout:
+                guard match.shootout == nil else { throw EngineError.notApplied("A shootout is already under way; use shootout undo/edit/remove") }
+                guard match.phase != .preMatch else { throw EngineError.notApplied("A shootout needs the match to have kicked off") }
+            case .recordKick, .undoKick, .setKick, .removeKick:
+                guard let shootout = match.shootout else { throw EngineError.notApplied("No shootout in this slot") }
+                switch command {
+                case .undoKick:
+                    guard !shootout.kicks.isEmpty else { throw EngineError.notApplied("No kicks to undo") }
+                case .setKick(let side, let index, _), .removeKick(let side, let index):
+                    guard MatchEngine.kickIndex(shootout, side, index) != nil else {
+                        let kick = index == Int.max ? "at index \(index)" : "\(index + 1)"
+                        throw EngineError.notApplied("The \(side.rawValue) side has not taken kick \(kick)")
+                    }
+                default: break
+                }
+            case .setScorer(let id, _, _, _), .setGoalMinute(let id, _, _):
+                guard match.goals.contains(where: { $0.id == id }) else { throw EngineError.notApplied("No goal with that id in this slot") }
+            default: break
+            }
         }
         try profiled(command) {
             let before = state.matches[idx]
             mutate(command, at: idx)
-            if request.strict == true {
+            if request.strict == true, case .endPeriod = command {
                 var after = state.matches[idx]
                 // A revision bump alone is not a match change.
                 after.revision = before.revision

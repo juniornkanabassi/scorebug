@@ -4,7 +4,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 const library = JSON.parse(readFileSync(new URL('../Resources/seed-library.json', import.meta.url)));
-let posts = [], fail = false, ignore = false;
+let posts = [], fail = false, afterGet;
 const match = {slot:1, home:{name:'Home',code:'HOM'},away:{name:'Away',code:'AWY'},homeScore:0,awayScore:0,phase:'preMatch',clock:{periodBaseSeconds:0,accumulated:0,running:false},visible:true,goals:[],competitionId:'champions-league'};
 const state = {matches:[match,{...match,slot:2}],serverTime:Date.now(),competitions:library.competitions};
 const fixture = {home:{name:'Real Madrid',shortName:'Real',code:'RMA'},away:{name:'Inter',shortName:'Inter',code:'INT'},kickoff:'2026-09-30T19:00:00Z',competitionCode:'uefa.champions'};
@@ -18,22 +18,31 @@ const server = http.createServer(async(req,res)=>{
   const key=p.requestId&&`${req.url}|${p.requestId}`;
   if(key&&responses.has(key)){res.end(responses.get(key));return;}
   const before=JSON.stringify(match);
-  if(p.strict&&p.command==='startShootout'&&match.shootout){res.writeHead(409);res.end('A shootout is already under way; use shootout undo/edit/remove');return;}
-  if(!ignore) {
-   if(p.command==='endPeriod')match.phase={firstHalf:'halfTime',secondHalf:'fullTime',extraFirst:'extraHalfTime',extraSecond:'fullTime'}[match.phase]??match.phase;
-   if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
-   const goal=match.goals?.find(g=>g.id===p.goalId);if(goal&&p.command==='setScorer')goal.scorer=p.scorer;if(goal&&p.command==='setGoalMinute')goal.minuteLabel=`${p.minute}'`;
-   if(p.command==='pause')match.clock.running=false;
-   if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
-   if(p.command==='clearAggregate')delete match.aggregate;
-   if(p.command==='goal') {match.homeScore++;match.lastGoal={goalId:'00000000-0000-0000-0000-000000000001'};}
-   if(p.command==='startShootout'&&match.phase!=='preMatch')match.shootout={firstKicker:p.side,kicks:[]};
-   if(p.command==='recordKick'&&match.shootout)match.shootout.kicks.push({side:p.side??'home',result:p.result});
-   if(p.command==='undoKick'&&match.shootout)match.shootout.kicks.pop();
-   if(p.command==='setKick')match.shootout.kicks.filter(k=>k.side===p.side)[p.index].result=p.result;
-   if(p.command==='removeKick')match.shootout.kicks.splice(match.shootout.kicks.findIndex(k=>k===match.shootout.kicks.filter(k=>k.side===p.side)[p.index]),1);
+  if(p.strict) {
+   let refusal;
+   if(p.command==='startShootout')refusal=match.shootout?'A shootout is already under way; use shootout undo/edit/remove':match.phase==='preMatch'?'A shootout needs the match to have kicked off':undefined;
+   if(['recordKick','undoKick','setKick','removeKick'].includes(p.command)) {
+    if(!match.shootout)refusal='No shootout in this slot';
+    else if(p.command==='undoKick'&&!match.shootout.kicks.length)refusal='No kicks to undo';
+    else if(['setKick','removeKick'].includes(p.command)&&!match.shootout.kicks.filter(k=>k.side===p.side)[p.index])refusal=`The ${p.side} side has not taken kick ${p.index+1}`;
+   }
+   if(['setScorer','setGoalMinute'].includes(p.command)&&!match.goals.some(g=>g.id.toLowerCase()===p.goalId.toLowerCase()))refusal='No goal with that id in this slot';
+   if(refusal){res.writeHead(409);res.end(refusal);return;}
   }
-  if(p.strict&&JSON.stringify(match)===before){res.writeHead(409);res.end('The command did not change the match');return;}
+  if(p.command==='endPeriod')match.phase={firstHalf:'halfTime',secondHalf:'fullTime',extraFirst:'extraHalfTime',extraSecond:'fullTime'}[match.phase]??match.phase;
+  if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
+  const goal=match.goals?.find(g=>g.id===p.goalId);if(goal&&p.command==='setScorer')goal.scorer=p.scorer;if(goal&&p.command==='setGoalMinute')goal.minuteLabel=`${p.minute}'`;
+  if(p.command==='pause')match.clock.running=false;
+  if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
+  if(p.command==='clearAggregate')delete match.aggregate;
+  if(p.command==='goal') {match.homeScore++;match.lastGoal={goalId:'00000000-0000-0000-0000-000000000001'};}
+  if(p.command==='startShootout'&&match.phase!=='preMatch')match.shootout={firstKicker:p.side,kicks:[]};
+  if(p.command==='recordKick'&&match.shootout)match.shootout.kicks.push({side:p.side??'home',result:p.result});
+  if(p.command==='undoKick'&&match.shootout)match.shootout.kicks.pop();
+  const kick=match.shootout?.kicks.filter(k=>k.side===p.side)[p.index];
+  if(p.command==='setKick'&&kick)kick.result=p.result;
+  if(p.command==='removeKick'&&kick)match.shootout.kicks.splice(match.shootout.kicks.indexOf(kick),1);
+  if(p.strict&&p.command==='endPeriod'&&JSON.stringify(match)===before){res.writeHead(409);res.end('The command did not change the match');return;}
   const response=JSON.stringify(state);
   if(key)responses.set(key,response);
   res.end(response); return;
@@ -41,6 +50,7 @@ const server = http.createServer(async(req,res)=>{
  const path=req.url.split('?')[0];
  const value={'/api/library':library,'/api/state':state,'/api/status':{version:'1.0.0',port:server.address().port},'/api/themes':[{id:'stealth',name:'Stealth',family:'stealth'}],'/api/fixtures':[fixture]}[path];
  if(value===undefined)res.writeHead(404);res.end(JSON.stringify(value??{}));
+ if(path==='/api/state'&&afterGet){afterGet();afterGet=undefined;}
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const port=server.address().port;
@@ -90,15 +100,18 @@ try {
  await sent(['live','auto','--state','off'],{command:'setAutoUpdateLiveData',showScorers:false});
  await sent(['live','delay','--minutes','2'],{command:'setLiveDataDelay',minutes:2});
  match.goals=[{id:'00000000-0000-0000-0000-000000000001',side:'home',minuteLabel:"45+2'",scorer:'X'}];
- await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--minute','45','--plus','2'],{command:'setGoalMinute',goalId:'00000000-0000-0000-0000-000000000001',minute:45,plus:2});
- await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--no-own-goal'],{command:'setScorer',goalId:'00000000-0000-0000-0000-000000000001',scorer:'X',ownGoal:false});
- await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--minute','30'],{command:'setGoalMinute',goalId:'00000000-0000-0000-0000-000000000001',minute:30});
+ await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--minute','45','--plus','2'],{strict:true,command:'setGoalMinute',goalId:'00000000-0000-0000-0000-000000000001',minute:45,plus:2});
+ await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--no-own-goal'],{strict:true,command:'setScorer',goalId:'00000000-0000-0000-0000-000000000001',scorer:'X',ownGoal:false});
+ await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--minute','30'],{strict:true,command:'setGoalMinute',goalId:'00000000-0000-0000-0000-000000000001',minute:30});
  ok((await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000009','--minute','3'],1)).error.code==='no_such_goal','goal edit unknown id');
  match.goals=[{id:'00000000-0000-0000-0000-000000000001',side:'home',scorer:'X',minuteLabel:"23'"}];posts=[];
  await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','X','--minute','24','--request-id','same-scorer']);
- ok(posts.length===2&&posts.every(p=>!p.strict)&&match.goals[0].minuteLabel==="24'",'unchanged scorer does not block the minute edit');
+ ok(posts.length===2&&posts.every(p=>p.strict===true)&&match.goals[0].minuteLabel==="24'",'unchanged scorer does not block the minute edit');
  posts=[];const gone=await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000009','--minute','3','--request-id','gone'],1);
  ok(gone.error.code==='not_applied'&&posts.length===1&&posts[0].strict===true&&posts[0].requestId==='gone:minute','goal edit with a retry id lets the app decide (strict)');
+ afterGet=()=>{match.goals=[];};posts=[];
+ const deleted=await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','Y'],1);
+ ok(deleted.error.code==='not_applied'&&deleted.error.message==='No goal with that id in this slot'&&posts.length===1&&posts[0].strict,'goal deleted between GET and POST is refused');
  await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001'],2);
  await cli(['goal','edit','--goal-id','x','--minute','3'],2);
  await cli(['aggregate','set','--first-leg','x'],2);await cli(['live','link','--event-id','abc','--league','x'],2);
@@ -130,12 +143,19 @@ try {
   if(args[1]==='start')delete match.shootout;
  };
  for(const [i,args] of races.entries()) {
-  ignore=true;prepare(args);posts=[];
-  ok((await cli(args,1)).error.code==='not_applied'&&posts.length===1,`ignored ${args.join(' ')} is not applied`);
+  prepare(args);posts=[];
+  const invalidate=()=>{
+   if(args[0]==='period'||args[1]==='start')match.phase='preMatch';
+   else if(['undo','edit','remove'].includes(args[1]))match.shootout.kicks=[];
+   else delete match.shootout;
+  };
+  afterGet=invalidate;
+  ok((await cli(args,1)).error.code==='not_applied'&&posts.length===1,`racing ${args.join(' ')} is not applied`);
   const id=`retry-${i}`;
   const refused=await cli([...args,'--request-id',id],1);
-  ok(refused.error.code==='not_applied'&&refused.error.message==='The command did not change the match',`fresh id for ignored ${args.join(' ')} is refused`);
-  ignore=false;prepare(args);
+  const message=args[0]==='period'?'The command did not change the match':args[1]==='start'?'A shootout needs the match to have kicked off':args[1]==='undo'?'No kicks to undo':args[1]==='kick'?'No shootout in this slot':'The home side has not taken kick 1';
+  ok(refused.error.code==='not_applied'&&refused.error.message===message,`fresh id for invalid ${args.join(' ')} is refused`);
+  prepare(args);
   const success=await cli([...args,'--request-id',id]);
   match.phase='preMatch';delete match.shootout;posts=[];
   const replay=await cli([...args,'--request-id',id]);
@@ -143,10 +163,13 @@ try {
  }
  prepare(['shootout','edit']);posts=[];
  await cli(['shootout','edit','--side','home','--kick','1','--result','scored']);
- ok(posts.length===0,'unchanged kick edit succeeds without a POST');
+ ok(posts.length===1&&posts[0].strict,'unchanged kick edit succeeds with a POST');
  prepare(['shootout','edit']);posts=[];
- await cli(['shootout','edit','--side','home','--kick','1','--result','scored','--request-id','same-kick']);
- ok(posts.length===0,'unchanged kick edit with a retry id succeeds without a POST');
+ const sameKick=await cli(['shootout','edit','--side','home','--kick','1','--result','scored','--request-id','same-kick']);
+ ok(posts.length===1&&posts[0].strict,'unchanged kick edit with a retry id POSTs');
+ match.shootout.kicks[0].result='missed';posts=[];
+ const sameKickReplay=await cli(['shootout','edit','--side','home','--kick','1','--result','scored','--request-id','same-kick']);
+ ok(posts.length===1&&JSON.stringify(sameKickReplay)===JSON.stringify(sameKick)&&match.shootout.kicks[0].result==='missed','no-op kick retry replays without reapplying');
  const retryCommands=[
   ['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','Y','--minute','46'],
   ...races,
@@ -161,7 +184,6 @@ try {
   assert.deepEqual(posts.map(p=>p.requestId),args[0]==='goal'?['r'.repeat(121)+':scorer','r'.repeat(121)+':minute']:['r'.repeat(121)]);checks++;
   posts=[];await cli([...args,'--request-id','r'.repeat(122)],2);ok(posts.length===0,'overlong retry id rejected before POST');
  }
- ignore=false;
  delete match.shootout;match.phase='preMatch';match.clock.running=false;
  fail=true;const bad=await cli(['show'],1);ok(bad.error.code==='bad_request'&&bad.error.message==='fake refusal','400 error');fail=false;
  const reference=JSON.parse(readFileSync(new URL('./setup-match-reference.json',import.meta.url)));

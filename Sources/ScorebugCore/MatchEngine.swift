@@ -364,7 +364,7 @@ public enum MatchEngine {
     }
 
     /// The global index into `shootout.kicks` for the `index`-th kick (0-based) that side has taken, or nil if out of range.
-    private static func kickIndex(_ s: Shootout, _ side: Side, _ index: Int) -> Int? {
+    public static func kickIndex(_ s: Shootout, _ side: Side, _ index: Int) -> Int? {
         let matching = s.kicks.indices.filter { s.kicks[$0].side == side }
         guard index >= 0, index < matching.count else { return nil }
         return matching[index]

@@ -20,15 +20,21 @@ await request('/api/state', 200, { headers: { origin: `http://localhost:${port}`
 await request('/api/state', 200);
 await request('/api/match/1/command', 413, { method: 'POST', headers: { 'content-type': 'application/json' }, body: ' '.repeat(65537) });
 await post({ command: 'reset' });
-await post({ command: 'recordKick', result: 'scored', strict: true }, 409);
+await post({ command: 'startShootout', strict: true }, 409);
+await post({ command: 'endPeriod', strict: true }, 409);
+for (const command of ['recordKick', 'undoKick', 'setKick', 'removeKick']) await post({ command, side: 'home', index: 0, result: 'scored', strict: true }, 409);
+for (const command of ['setScorer', 'setGoalMinute']) await post({ command, goalId: '00000000-0000-0000-0000-000000000001', scorer: 'X', minute: 24, strict: true }, 409);
 await post({ command: 'startPeriod', period: 'secondHalf' });
 const shootout = await post({ command: 'startShootout', strict: true, requestId: 'security-shootout' });
+await post({ command: 'undoKick', strict: true }, 409);
 await post({ command: 'recordKick', result: 'scored', strict: true });
+for (const command of ['setKick', 'removeKick']) await post({ command, side: 'away', index: 0, result: 'scored', strict: true }, 409);
 await post({ command: 'startShootout', strict: true }, 409);
 const kept = await (await request('/api/state', 200)).json(); assert.equal(kept.matches[0].shootout.kicks.length, 1); checks++;
-await post({ command: 'setKick', side: 'home', index: 0, result: 'scored', strict: true, requestId: 'security-edit' }, 409);
-await post({ command: 'setKick', side: 'home', index: 0, result: 'missed' });
 const edited = await post({ command: 'setKick', side: 'home', index: 0, result: 'scored', strict: true, requestId: 'security-edit' });
+await post({ command: 'setKick', side: 'home', index: 0, result: 'missed' });
+assert.deepEqual(await post({ command: 'setKick', side: 'home', index: 0, result: 'scored', strict: true, requestId: 'security-edit' }), edited); checks++;
+const corrected = await (await request('/api/state', 200)).json(); assert.equal(corrected.matches[0].shootout.kicks[0].result, 'missed'); checks++;
 assert.equal(edited.matches[0].shootout.kicks[0].result, 'scored'); checks++;
 await post({ command: 'reset' });
 assert.deepEqual(await post({ command: 'startShootout', strict: true, requestId: 'security-shootout' }), shootout); checks++;
@@ -56,6 +62,7 @@ for (const [origin, expected] of [['https://evil.test', 403], [`http://127.0.0.1
     r.on('response', res => done(res)); r.on('upgrade', (res, socket) => done(res, socket)); r.on('error', reject); r.end();
   });
 }
+console.log(`${checks} security runtime assertions passed before oversized-header observation`);
 // Review 6 is accepted only while the listener is loopback-only; keep observing it.
 await new Promise((resolve, reject) => {
   const r = http(`${base}/api/status`, { headers: { 'X-Oversized': 'x'.repeat(65537) }, timeout: 3000 }, res => {
