@@ -21,6 +21,10 @@ try {
  for(let i=0;i<2;i++){
   const goal=await tool('goal_add',{side:'home',scorer:'Test',minute:23,requestId:'mcp-g1'});assert.equal(JSON.parse(goal.result.content[0].text).result.score[0],1);checks++;
  }
+ const goalId=JSON.parse((await tool('status')).result.content[0].text).result.matches[0].goals[0].id;
+ for(let i=0;i<2;i++){const edit=await tool('goal_edit',{goalId,scorer:'Edited',requestId:'mcp-e1'});assert.equal(JSON.parse(edit.result.content[0].text).result.goals[0].scorer,'Edited');checks++;}
+ const noShootout=await tool('shootout_kick',{result:'scored'});assert(noShootout.result.isError&&noShootout.result.content[0].text.includes('not_applied'));checks++;
+ assert.equal(JSON.parse((await tool('added_set',{minutes:3})).result.content[0].text).result.addedMinutes,3);checks++;
  const missing=await tool('reset');assert.equal(missing.result.isError,true);checks++;
  assert.equal((await tool('unknown')).error.code,-32602);checks++;
  assert.equal((await tool('goal_add',{side:'home',port:8600})).error.code,-32602);checks++;

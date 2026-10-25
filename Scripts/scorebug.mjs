@@ -196,13 +196,14 @@ export async function main(args=process.argv.slice(2)) {
   } else if(name==='theme set')result=summary(await send('setTheme',{themeId:values.id==='default'?'':values.id}),slot);
   else if(name==='goal edit') {
    const m=(await api('/api/state')).matches.find(m=>m.slot===slot);
-   if(!m.goals.some(g=>g.id.toLowerCase()===values['goal-id'].toLowerCase()))throw new Failure('no_such_goal','No goal with that id in this slot; see scorebug status --json');
-   const goalId=values['goal-id'];let state;
+   const goalId=values['goal-id'],goal=m.goals.find(g=>g.id.toLowerCase()===goalId.toLowerCase()),retry=values['request-id'];let state;
+   // With a retry id the app decides (strict), so a retry reaches its cached reply even if the goal has gone since.
+   if(!goal&&!retry)throw new Failure('no_such_goal','No goal with that id in this slot; see scorebug status --json');
    if(values.scorer!==undefined||['own-goal','no-own-goal','penalty','no-penalty'].some(k=>values[k])) {
     const flag=(on,off)=>values[on]?true:values[off]?false:undefined;
-    state=await send('setScorer',{goalId,scorer:values.scorer??m.goals.find(g=>g.id.toLowerCase()===goalId.toLowerCase()).scorer??undefined,ownGoal:flag('own-goal','no-own-goal'),penalty:flag('penalty','no-penalty'),...(values['request-id']?{requestId:values['request-id']+':scorer'}:{})});
+    state=await send('setScorer',{goalId,scorer:values.scorer??goal?.scorer??undefined,ownGoal:flag('own-goal','no-own-goal'),penalty:flag('penalty','no-penalty'),...(retry?{requestId:retry+':scorer',strict:true}:{})});
    }
-   if(values.minute!==undefined)state=await send('setGoalMinute',{goalId,minute:values.minute,plus:values.plus,...(values['request-id']?{requestId:values['request-id']+':minute'}:{})});
+   if(values.minute!==undefined)state=await send('setGoalMinute',{goalId,minute:values.minute,plus:values.plus,...(retry?{requestId:retry+':minute',strict:true}:{})});
    result=summary(state,slot);
   } else if(['period end','shootout start','shootout kick','shootout undo','shootout edit','shootout remove'].includes(name)) {
    let state,unchanged=false;

@@ -22,6 +22,7 @@ const server = http.createServer(async(req,res)=>{
   if(!ignore) {
    if(p.command==='endPeriod')match.phase={firstHalf:'halfTime',secondHalf:'fullTime',extraFirst:'extraHalfTime',extraSecond:'fullTime'}[match.phase]??match.phase;
    if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
+   const goal=match.goals?.find(g=>g.id===p.goalId);if(goal&&p.command==='setScorer')goal.scorer=p.scorer;if(goal&&p.command==='setGoalMinute')goal.minuteLabel=`${p.minute}'`;
    if(p.command==='pause')match.clock.running=false;
    if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
    if(p.command==='clearAggregate')delete match.aggregate;
@@ -93,6 +94,8 @@ try {
  await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--no-own-goal'],{command:'setScorer',goalId:'00000000-0000-0000-0000-000000000001',scorer:'X',ownGoal:false});
  await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--minute','30'],{command:'setGoalMinute',goalId:'00000000-0000-0000-0000-000000000001',minute:30});
  ok((await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000009','--minute','3'],1)).error.code==='no_such_goal','goal edit unknown id');
+ posts=[];const gone=await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000009','--minute','3','--request-id','gone'],1);
+ ok(gone.error.code==='not_applied'&&posts.length===1&&posts[0].strict===true&&posts[0].requestId==='gone:minute','goal edit with a retry id lets the app decide (strict)');
  await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001'],2);
  await cli(['goal','edit','--goal-id','x','--minute','3'],2);
  await cli(['aggregate','set','--first-leg','x'],2);await cli(['live','link','--event-id','abc','--league','x'],2);
