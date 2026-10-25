@@ -4,7 +4,7 @@
    block carrying the crest and a rolling GOOOOL!, then the digits roll to the new score. */
 /* AR reel steady frame `laliga-laliga-ar-reel_00-18_steady`: measured red competition square and black club cells. */
 body[data-theme="la-liga"] .bug { --h: 52px; --ll-black: #090614; --ll-white: #F4F4F4; --ll-red: #FF4B44; --ll-comp-red: #F44D4C; --kick-pending: #555; --kick-scored: #2BD576; --kick-missed: #FF4B44;
-  font-family: "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
+  font-family: "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3)); }
 /* Re-measured 25 Oct 2026 from the AR reel steady frame at 0:18 (Barcelona 1-0 Villarreal, 45:08), 57px rows:
    the mark and the clock share one 85px column (1.48h), the black club cell is 59px (1.04h) plus a 6px colour tab
    (0.11h) on its right edge, against the score cells, and the score column is 61px (1.07h). The old 0.96h mark, 2.06h club
@@ -20,8 +20,9 @@ body[data-theme="la-liga"] .team .code { position: absolute; max-width: calc(var
 body[data-theme="la-liga"] .team .crest.monogram { animation: none; opacity: 0; }
 body[data-theme="la-liga"] .team .crest.monogram + .code { animation: none; opacity: 1; }
 @keyframes ll-swap { 0%, 45% { opacity: 1; } 50%, 95% { opacity: 0; } 100% { opacity: 1; } }
-/* Colour tab on the right edge, secondary over primary (the reel's Barcelona tab is blue over garnet). */
-body[data-theme="la-liga"] .team.home::before, body[data-theme="la-liga"] .team.away::before { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--h) * 0.11); }
+/* Colour tab on the right edge, secondary over primary (the reel's Barcelona tab is blue over garnet). It overlaps the
+   score cell by 1px to hide the anti-aliased seam of fractional columns; the inset keyline keeps a white half apart. */
+body[data-theme="la-liga"] .team.home::before, body[data-theme="la-liga"] .team.away::before { content: ""; position: absolute; right: -1px; top: 0; bottom: 0; width: calc(var(--h) * 0.11); box-shadow: inset -1px 0 0 rgba(0,0,0,0.25); }
 body[data-theme="la-liga"] .team.home::before { background: linear-gradient(var(--home-secondary) 50%, var(--home-primary) 50%); }
 body[data-theme="la-liga"] .team.away::before { background: linear-gradient(var(--away-secondary) 50%, var(--away-primary) 50%); }
 /* Club divider: a grey hairline inset from both sides of the black cell, as in the reel. */
@@ -33,8 +34,8 @@ body[data-theme="la-liga"] .score.away { border-top: 1px solid #9a9a9a; }
    theme's .clock previously had no font-family override so it inherited "Barlow Condensed" 700 from .bug above.
    Match .score's family and weight instead. */
 /* 25 Oct 2026: the clock fills its grid cell under the mark, and its digits are lighter than the score's (the reel's
-   45:08 spans 1.12h at a 0.37h cap height); 600 at 0.46h with no tracking fits run-on time up to 120:00. */
-body[data-theme="la-liga"] .clock { background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-size: calc(var(--h) * 0.46); font-weight: 600; letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: hidden; min-width: 0; }
+   45:08 spans 1.12h at a 0.37h cap height); 600 at 0.44h with no tracking fits run-on time up to 120:00. */
+body[data-theme="la-liga"] .clock { background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-size: calc(var(--h) * 0.44); font-weight: 600; letter-spacing: 0; font-variant-numeric: tabular-nums; overflow: hidden; min-width: 0; }
 body[data-theme="la-liga"] .clock.stopped { color: #c00; }
 body[data-theme="la-liga"] .added { height: calc(var(--h) * 0.7); justify-content: flex-start; padding: 0 12px; background: var(--ll-black); color: #fff; gap: 8px; font-size: calc(var(--h) * 0.44); }
 body[data-theme="la-liga"] .added .counter { color: #bbb; font-size: calc(var(--h) * 0.36); }
@@ -55,8 +56,9 @@ body[data-theme="la-liga"] .main::after { content: "GOOOOL!"; left: 100%; right:
 body[data-theme="la-liga"] .bug.goal .main::after { opacity: 1; animation: ll-plate 3.2s cubic-bezier(.3,.8,.2,1) forwards; will-change: clip-path; transform: translateZ(0); }
 @keyframes ll-plate { 0% { clip-path: inset(0 100% 0 0); } 18% { clip-path: inset(0 0 0 0); } 80% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 0 0 100%); } }
 /* Slot 2 sits at the right edge of the landscape canvas (overlay.css mirrors the bug), so its plate slides out to
-   the LEFT of the bar with the crest on its right end; otherwise the plate ran off the canvas (final rehearsal, 6 Sep). */
-body[data-orientation="h"][data-slot="2"][data-theme="la-liga"] .main::after { left: auto; right: 100%; justify-content: flex-end; padding-left: 0; padding-right: calc(var(--h) * 2.05);
+   the LEFT of the bar with the crest on its right end; otherwise the plate ran off the canvas (final rehearsal, 6 Sep).
+   A 4px gap keeps its red from merging with the mark's slightly different red. */
+body[data-orientation="h"][data-slot="2"][data-theme="la-liga"] .main::after { left: auto; right: calc(100% + 4px); justify-content: flex-end; padding-left: 0; padding-right: calc(var(--h) * 2.05);
   background-position: right calc(var(--h) * 0.35) center; clip-path: inset(0 0 0 100%); }
 body[data-orientation="h"][data-slot="2"][data-theme="la-liga"] .bug.goal .main::after { animation-name: ll-plate-2; }
 @keyframes ll-plate-2 { 0% { clip-path: inset(0 0 0 100%); } 18% { clip-path: inset(0 0 0 0); } 80% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
