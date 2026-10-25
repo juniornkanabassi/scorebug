@@ -2,6 +2,10 @@
 # Builds Scorebug.app and writes Outputs/Scorebug <version>.zip. Refuses to overwrite a delivered archive.
 set -euo pipefail
 cd "${0:A:h}"
+# The commit this builds, taken before compiling ("-dirty" with uncommitted changes); release.sh publishes only a
+# clean HEAD's build.
+SOURCE_COMMIT=$(git rev-parse HEAD)
+[[ -z $(git status --porcelain) ]] || SOURCE_COMMIT+="-dirty"
 BUILD_ROOT="${SCOREBUG_BUILD_ROOT:-/private/tmp/scorebug-build}"
 OUTPUT_ROOT="${SCOREBUG_OUTPUT_ROOT:-../Outputs}"
 APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist)
@@ -17,10 +21,6 @@ APP_PATH="$BUILD_STAGE/Scorebug.app"
 mkdir -p "$APP_PATH/Contents/MacOS" "$APP_PATH/Contents/Resources"
 cp "$BIN_PATH/Scorebug" "$APP_PATH/Contents/MacOS/Scorebug"
 cp Resources/Info.plist "$APP_PATH/Contents/Info.plist"
-# The commit this builds ("-dirty" with uncommitted changes); release.sh publishes only a clean HEAD's build.
-SOURCE_COMMIT=$(git rev-parse HEAD)
-[[ -z $(git status --porcelain) ]] || SOURCE_COMMIT+="-dirty"
-/usr/libexec/PlistBuddy -c "Add :ScorebugSourceCommit string $SOURCE_COMMIT" "$APP_PATH/Contents/Info.plist"
 # Sparkle, found through the app's rpath @executable_path/../Frameworks; ditto keeps its symlinks.
 [[ -d "$BIN_PATH/Sparkle.framework" ]] || { print -u2 "No Sparkle.framework in $BIN_PATH"; exit 1; }
 mkdir -p "$APP_PATH/Contents/Frameworks"
@@ -33,6 +33,9 @@ cp Scripts/scorebug.mjs Scripts/match-lib.mjs "$APP_PATH/Contents/Resources/Scri
 cp mcp/scorebug-mcp.mjs "$APP_PATH/Contents/Resources/mcp/"
 [[ -f Resources/squads.json ]] && cp Resources/squads.json "$APP_PATH/Contents/Resources/squads.json"
 
+# Stamped once the bundle is assembled: a checkout that moved or changed meanwhile marks it dirty.
+[[ $(git rev-parse HEAD) == ${SOURCE_COMMIT%-dirty} && -z $(git status --porcelain) ]] || SOURCE_COMMIT="${SOURCE_COMMIT%-dirty}-dirty"
+/usr/libexec/PlistBuddy -c "Add :ScorebugSourceCommit string $SOURCE_COMMIT" "$APP_PATH/Contents/Info.plist"
 if /usr/bin/xattr -p com.apple.FinderInfo "$APP_PATH" >/dev/null 2>&1; then /usr/bin/xattr -d com.apple.FinderInfo "$APP_PATH"; fi
 # Releases are Developer ID signed with the hardened runtime, notarised and stapled, so they open on any Mac
 # (the same certificate and "JuniorOS" notarytool profile as Video Prompter and Talk & Read). A Mac without the
