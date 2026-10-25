@@ -116,6 +116,10 @@ trap 'detach && rm -rf "$WORK"' EXIT
 step "1. Build"
 if [[ -z $ZIP ]]; then
   (( ! DRY )) || export SCOREBUG_OUTPUT_ROOT="$OUT/Outputs"
+  # Its own scratch folder: a build elsewhere sharing the cache could replace the executable before it is packaged.
+  BUILD_ROOT="$WORK/build"
+  export SCOREBUG_BUILD_ROOT="$BUILD_ROOT"
+  SIGN_UPDATE="$BUILD_ROOT/artifacts/sparkle/Sparkle/bin/sign_update"
   zsh "$ROOT/build.sh" || die "build.sh failed (if its zip already exists, pass that zip with --zip)"
   OUTPUTS=${SCOREBUG_OUTPUT_ROOT:-../Outputs}
   [[ $OUTPUTS == /* ]] || OUTPUTS="$ROOT/$OUTPUTS"   # build.sh resolves it from its own folder
@@ -128,7 +132,11 @@ fi
 # what is checked, signed and published.
 SRC_ZIP=$ZIP ZIP="$WORK/input.zip"
 /bin/cp "$SRC_ZIP" "$ZIP" || die "could not copy $SRC_ZIP"
+# Sparkle installs the first matching bundle it finds in the zip, so the zip must hold this one app and nothing else.
+# (ditto's __MACOSX entries carry that app's own extended attributes)
+/usr/bin/zipinfo -1 "$ZIP" | grep -qvE '^(__MACOSX/)?Scorebug.app/' && die "$SRC_ZIP holds more than Scorebug.app"
 /usr/bin/ditto -x -k "$ZIP" "$WORK/app" || die "could not unpack $SRC_ZIP"
+[[ -d $WORK/app/Scorebug.app && ! -L $WORK/app/Scorebug.app ]] || die "$SRC_ZIP does not hold Scorebug.app as a folder"
 APP="$WORK/app/Scorebug.app"
 plist() { /usr/libexec/PlistBuddy -c "Print $1" "$APP/Contents/Info.plist" 2>/dev/null || true; }
 VERSION=$(plist CFBundleShortVersionString)
@@ -170,6 +178,7 @@ for arch in ${=ARCHS}; do
   CDHASH=$(cdhash "$APP" $arch)
   [[ -n $CDHASH && $(cdhash "$DAPP" $arch) == $CDHASH ]] || problems+=("the $arch code in the disk image has CDHash '$(cdhash "$DAPP" $arch)', the zipped app '$CDHASH'")
 done
+/usr/bin/diff -rq --no-dereference "$APP" "$DAPP" >/dev/null 2>&1 || problems+=("the app in the disk image differs from the zipped app")
 detach || die "the disk image is still mounted at $MNT"
 DEVELOPER_ID='anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] exists and certificate leaf[field.1.2.840.113635.100.6.1.13] exists and certificate leaf[subject.OU] = M6L2VW4W5Z'
 /usr/bin/codesign --verify -R="$DEVELOPER_ID" "$APP" 2>/dev/null || problems+=("the zipped app is not signed with Junior's Developer ID (team M6L2VW4W5Z), so its updater would stay off")
@@ -280,7 +289,10 @@ item = f"""    <item>
     </item>
 """
 at = feed.find("<item")
-at = feed.rfind("\n", 0, at if at >= 0 else feed.index("</channel>")) + 1   # the start of that line
+at = at if at >= 0 else feed.index("</channel>")
+line = feed.rfind("\n", 0, at) + 1
+if not feed[line:at].strip():   # only indentation before it: insert at the start of that line
+    at = line
 feed = feed[:at] + item + feed[at:]
 if items(feed)[0] != (int(build), version):   # the whole feed still reads, with the new item first
     sys.exit("the new item did not read back as the first item")
