@@ -1,10 +1,17 @@
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
-// The installed production copy: install.sh's folder, then a DMG install. A disposable copy shares the bundle id, so
-// the id is only the last resort.
+// The installed production copy: install.sh's folder, then a DMG install, skipping a pre-rename copy left behind. A
+// disposable copy shares the bundle id, so the id is only the last resort.
 const INSTALLS = ["/Applications/JuniorOS Apps/Scorebug.app", "/Applications/Scorebug.app"];
 const BUNDLE_ID = "com.juniornkanabassi.Scorebug";
+const isRenamed = (app: string) => {
+	try {
+		return readFileSync(`${app}/Contents/Info.plist`, "utf8").includes(`<string>${BUNDLE_ID}</string>`);
+	} catch {
+		return false;
+	}
+};
 const COOLDOWN_MS = 15_000;
 const TIMEOUT_MS = 10_000;
 const POLL_MS = 250;
@@ -12,7 +19,7 @@ let lastLaunch = Number.NEGATIVE_INFINITY;
 
 function launchApp(): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const app = INSTALLS.find((path) => existsSync(path));
+		const app = INSTALLS.find(isRenamed);
 		const target = app ? ["-a", app] : ["-b", BUNDLE_ID];
 		execFile("/usr/bin/open", ["-g", ...target, "--args", "--background"], (error) => {
 			if (error) reject(error);

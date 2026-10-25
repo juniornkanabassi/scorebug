@@ -3,7 +3,7 @@
 import { parseArgs } from 'node:util';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { pickClub, pickCompetition, teamEntry } from './match-lib.mjs';
 const exec = promisify(execFile);
@@ -48,8 +48,11 @@ function summary(state,slot) {
  });
  return slot?matches[0]:matches;
 }
-// The installed production copy (install.sh's folder, then a DMG install); a disposable copy shares the bundle id.
-const installedApp=()=>{const app=['/Applications/JuniorOS Apps/Scorebug.app','/Applications/Scorebug.app'].find(existsSync);return app?['-a',app]:['-b','com.juniornkanabassi.Scorebug'];};
+// The installed production copy (install.sh's folder, then a DMG install), never a pre-rename copy left behind; a
+// disposable copy shares the bundle id, so the id is the last resort.
+const BUNDLE_ID='com.juniornkanabassi.Scorebug';
+const isRenamed=app=>{try{return readFileSync(`${app}/Contents/Info.plist`,'utf8').includes(`<string>${BUNDLE_ID}</string>`);}catch{return false;}};
+const installedApp=()=>{const app=['/Applications/JuniorOS Apps/Scorebug.app','/Applications/Scorebug.app'].find(isRenamed);return app?['-a',app]:['-b',BUNDLE_ID];};
 export async function main(args=process.argv.slice(2)) {
  let json=args.includes('--json');
  try {
