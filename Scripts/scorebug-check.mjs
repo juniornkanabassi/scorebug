@@ -8,25 +8,34 @@ let posts = [], fail = false, ignore = false;
 const match = {slot:1, home:{name:'Home',code:'HOM'},away:{name:'Away',code:'AWY'},homeScore:0,awayScore:0,phase:'preMatch',clock:{periodBaseSeconds:0,accumulated:0,running:false},visible:true,goals:[],competitionId:'champions-league'};
 const state = {matches:[match,{...match,slot:2}],serverTime:Date.now(),competitions:library.competitions};
 const fixture = {home:{name:'Real Madrid',shortName:'Real',code:'RMA'},away:{name:'Inter',shortName:'Inter',code:'INT'},kickoff:'2026-09-30T19:00:00Z',competitionCode:'uefa.champions'};
+const responses = new Map();
 const server = http.createServer(async(req,res)=>{
  let body=''; for await(const b of req) body+=b;
  res.setHeader('content-type','application/json');
  if(req.method==='POST') {
   const p=JSON.parse(body); posts.push(p);
   if(fail) {res.writeHead(400);res.end('fake refusal');return;}
-  if(ignore) {res.end(JSON.stringify(state));return;}
-  if(p.command==='endPeriod')match.phase={firstHalf:'halfTime',secondHalf:'fullTime',extraFirst:'extraHalfTime',extraSecond:'fullTime'}[match.phase]??match.phase;
-  if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
-  if(p.command==='pause')match.clock.running=false;
-  if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
-  if(p.command==='clearAggregate')delete match.aggregate;
-  if(p.command==='goal') {match.homeScore++;match.lastGoal={goalId:'00000000-0000-0000-0000-000000000001'};}
-  if(p.command==='startShootout')match.shootout={firstKicker:p.side,kicks:[]};
-  if(p.command==='recordKick')match.shootout.kicks.push({side:p.side??'home',result:p.result});
-  if(p.command==='undoKick')match.shootout.kicks.pop();
-  if(p.command==='setKick')match.shootout.kicks.filter(k=>k.side===p.side)[p.index].result=p.result;
-  if(p.command==='removeKick')match.shootout.kicks.splice(match.shootout.kicks.findIndex(k=>k===match.shootout.kicks.filter(k=>k.side===p.side)[p.index]),1);
-  res.end(JSON.stringify(state)); return;
+  const key=p.requestId&&`${req.url}|${p.requestId}`;
+  if(key&&responses.has(key)){res.end(responses.get(key));return;}
+  const before=JSON.stringify(match);
+  if(p.strict&&p.command==='startShootout'&&match.shootout){res.writeHead(409);res.end('A shootout is already under way; use shootout undo/edit/remove');return;}
+  if(!ignore) {
+   if(p.command==='endPeriod')match.phase={firstHalf:'halfTime',secondHalf:'fullTime',extraFirst:'extraHalfTime',extraSecond:'fullTime'}[match.phase]??match.phase;
+   if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
+   if(p.command==='pause')match.clock.running=false;
+   if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
+   if(p.command==='clearAggregate')delete match.aggregate;
+   if(p.command==='goal') {match.homeScore++;match.lastGoal={goalId:'00000000-0000-0000-0000-000000000001'};}
+   if(p.command==='startShootout'&&match.phase!=='preMatch')match.shootout={firstKicker:p.side,kicks:[]};
+   if(p.command==='recordKick'&&match.shootout)match.shootout.kicks.push({side:p.side??'home',result:p.result});
+   if(p.command==='undoKick'&&match.shootout)match.shootout.kicks.pop();
+   if(p.command==='setKick')match.shootout.kicks.filter(k=>k.side===p.side)[p.index].result=p.result;
+   if(p.command==='removeKick')match.shootout.kicks.splice(match.shootout.kicks.findIndex(k=>k===match.shootout.kicks.filter(k=>k.side===p.side)[p.index]),1);
+  }
+  if(p.strict&&JSON.stringify(match)===before){res.writeHead(409);res.end('The command did not change the match');return;}
+  const response=JSON.stringify(state);
+  if(key)responses.set(key,response);
+  res.end(response); return;
  }
  const path=req.url.split('?')[0];
  const value={'/api/library':library,'/api/state':state,'/api/status':{version:'1.0.0',port:server.address().port},'/api/themes':[{id:'stealth',name:'Stealth',family:'stealth'}],'/api/fixtures':[fixture]}[path];
@@ -93,35 +102,42 @@ try {
  match.phase='preMatch';ok((await cli(['period','end'],1)).error.code==='not_applied','period end needs a live period');
  ok((await cli(['shootout','start'],1)).error.code==='not_applied','shootout needs kick-off');
  match.phase='secondHalf';
- await sent(['period','end'],{command:'endPeriod'});
- await sent(['shootout','start','--first','away'],{command:'startShootout',side:'away'});
- await sent(['shootout','kick','--result','scored'],{command:'recordKick',result:'scored'});
- await sent(['shootout','kick','--result','missed','--side','away'],{command:'recordKick',result:'missed',side:'away'});
+ await sent(['period','end'],{strict:true,command:'endPeriod'});
+ await sent(['shootout','start','--first','away'],{strict:true,command:'startShootout',side:'away'});
+ await sent(['shootout','kick','--result','scored'],{strict:true,command:'recordKick',result:'scored'});
+ await sent(['shootout','kick','--result','missed','--side','away'],{strict:true,command:'recordKick',result:'missed',side:'away'});
  posts=[];const already=await cli(['shootout','start'],1);
  ok(already.error.code==='not_applied'&&already.error.message==='A shootout is already under way; use shootout undo/edit/remove'&&posts.length===0&&match.shootout.kicks.length===2,'starting an existing shootout is refused without a POST');
  const shoot=await cli(['status']);ok(shoot.result.matches[0].shootout.score[0]===1&&shoot.result.matches[0].shootout.kicks.length===2,'status reports the shootout');
- await sent(['shootout','edit','--side','home','--kick','1','--result','missed'],{command:'setKick',side:'home',index:0,result:'missed'});
+ await sent(['shootout','edit','--side','home','--kick','1','--result','missed'],{strict:true,command:'setKick',side:'home',index:0,result:'missed'});
  ok((await cli(['shootout','remove','--side','home','--kick','2'],1)).error.code==='not_applied','remove a kick not taken');
- await sent(['shootout','remove','--side','away','--kick','1'],{command:'removeKick',side:'away',index:0});
- await sent(['shootout','kick','--result','scored','--side','home'],{command:'recordKick',result:'scored',side:'home'});
- await sent(['shootout','undo'],{command:'undoKick'});
- await sent(['shootout','undo'],{command:'undoKick'});
+ await sent(['shootout','remove','--side','away','--kick','1'],{strict:true,command:'removeKick',side:'away',index:0});
+ await sent(['shootout','kick','--result','scored','--side','home'],{strict:true,command:'recordKick',result:'scored',side:'home'});
+ await sent(['shootout','undo'],{strict:true,command:'undoKick'});
+ await sent(['shootout','undo'],{strict:true,command:'undoKick'});
  ok((await cli(['shootout','undo'],1)).error.code==='not_applied','undo with no kicks');
- // Ignored POSTs expose races; request ids allow a cached response with no new effect.
+ // Strict refusals are not cached; successful request ids replay before preflight.
  const races=[['period','end'],['shootout','start'],['shootout','kick','--result','scored'],['shootout','undo'],['shootout','edit','--side','home','--kick','1','--result','missed'],['shootout','remove','--side','home','--kick','1']];
  const prepare=args=>{
   match.phase='secondHalf';
   match.shootout={firstKicker:'home',kicks:[{side:'home',result:'scored'},{side:'away',result:'missed'}]};
   if(args[1]==='start')delete match.shootout;
  };
- ignore=true;
- for(const args of races) {
-  prepare(args);posts=[];
+ for(const [i,args] of races.entries()) {
+  ignore=true;prepare(args);posts=[];
   ok((await cli(args,1)).error.code==='not_applied'&&posts.length===1,`ignored ${args.join(' ')} is not applied`);
-  prepare(args);await cli([...args,'--request-id','cached']);
-  ok(posts.at(-1).requestId==='cached',`${args.join(' ')} accepts a cached response`);
+  const id=`retry-${i}`;
+  const refused=await cli([...args,'--request-id',id],1);
+  ok(refused.error.code==='not_applied'&&refused.error.message==='The command did not change the match',`fresh id for ignored ${args.join(' ')} is refused`);
+  ignore=false;prepare(args);
+  const success=await cli([...args,'--request-id',id]);
+  match.phase='preMatch';delete match.shootout;posts=[];
+  const replay=await cli([...args,'--request-id',id]);
+  ok(JSON.stringify(replay)===JSON.stringify(success)&&posts.length===1,`${args.join(' ')} replays despite changed state`);
  }
- prepare(['shootout','edit']);await cli(['shootout','edit','--side','home','--kick','1','--result','scored']);checks++;
+ prepare(['shootout','edit']);posts=[];
+ await cli(['shootout','edit','--side','home','--kick','1','--result','scored']);
+ ok(posts.length===0,'unchanged kick edit succeeds without a POST');
  const retryCommands=[
   ['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','Y','--minute','46'],
   ...races,
@@ -131,7 +147,7 @@ try {
  ];
  match.goals=[{id:'00000000-0000-0000-0000-000000000001',side:'home',scorer:'X'}];
  for(const args of retryCommands) {
-  prepare(args);posts=[];
+  responses.clear();prepare(args);posts=[];
   await cli([...args,'--request-id','r'.repeat(121)]);
   assert.deepEqual(posts.map(p=>p.requestId),args[0]==='goal'?['r'.repeat(121)+':scorer','r'.repeat(121)+':minute']:['r'.repeat(121)]);checks++;
   posts=[];await cli([...args,'--request-id','r'.repeat(122)],2);ok(posts.length===0,'overlong retry id rejected before POST');

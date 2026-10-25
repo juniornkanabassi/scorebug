@@ -134,7 +134,7 @@ export async function main(args=process.argv.slice(2)) {
     }
     throw new Failure('not_running','Connection failed; an ambiguous command was not retried');
    }
-   if(!r.ok)throw new Failure(({400:'bad_request',403:'forbidden',415:'unsupported_media_type',409:'match_live',502:'fixture_service_failed'})[r.status]??`http_${r.status}`,await r.text());
+   if(!r.ok)throw new Failure(({400:'bad_request',403:'forbidden',415:'unsupported_media_type',409:path.endsWith('/command')?'not_applied':'match_live',502:'fixture_service_failed'})[r.status]??`http_${r.status}`,await r.text());
    if(r.headers.get('x-scorebug-save-failed')==='true')throw new Failure('save_failed','Change was applied but could not be saved; check Scorebug before retrying');
    return r.json();
   }
@@ -205,21 +205,20 @@ export async function main(args=process.argv.slice(2)) {
    if(values.minute!==undefined)state=await send('setGoalMinute',{goalId,minute:values.minute,plus:values.plus,...(values['request-id']?{requestId:values['request-id']+':minute'}:{})});
    result=summary(state,slot);
   } else if(['period end','shootout start','shootout kick','shootout undo','shootout edit','shootout remove'].includes(name)) {
-   const m=(await api('/api/state')).matches.find(m=>m.slot===slot);
-   if(name==='period end'&&!['firstHalf','secondHalf','extraFirst','extraSecond'].includes(m.phase))throw new Failure('not_applied','No live period to end');
-   if(name==='shootout start'&&m.shootout)throw new Failure('not_applied','A shootout is already under way; use shootout undo/edit/remove');
-   if(name==='shootout start'&&m.phase==='preMatch')throw new Failure('not_applied','A shootout needs the match to have kicked off');
-   if(name!=='period end'&&name!=='shootout start'&&!m.shootout)throw new Failure('not_applied','No shootout in this slot; use shootout start');
-   if(name==='shootout undo'&&!m.shootout.kicks.length)throw new Failure('not_applied','No kicks to undo');
-   if((name==='shootout edit'||name==='shootout remove')&&m.shootout.kicks.filter(k=>k.side===values.side).length<values.kick)throw new Failure('not_applied',`The ${values.side} side has not taken kick ${values.kick}`);
-   const [action,params]={'period end':['endPeriod',{}],'shootout start':['startShootout',{side:values.first??'home'}],'shootout kick':['recordKick',{result:values.result,...(values.side?{side:values.side}:{})}],'shootout undo':['undoKick',{}],'shootout edit':['setKick',{side:values.side,index:values.kick-1,result:values.result}],'shootout remove':['removeKick',{side:values.side,index:values.kick-1}]}[name];
-   const state=await send(action,params),after=state.matches.find(m=>m.slot===slot);
+   let state,unchanged=false;
    if(!values['request-id']) {
-    if(name==='period end'&&after.phase===m.phase)throw new Failure('not_applied','The live period did not end');
-    if(name==='shootout start'&&!after.shootout)throw new Failure('not_applied','No shootout was started');
-    if(['shootout kick','shootout undo','shootout remove'].includes(name)&&(after.shootout?.kicks.length??0)===m.shootout.kicks.length)throw new Failure('not_applied','The shootout kick count did not change');
-    if(name==='shootout edit'&&m.shootout.kicks.filter(k=>k.side===values.side)[values.kick-1].result!==values.result&&after.shootout?.kicks.filter(k=>k.side===values.side)[values.kick-1]?.result===m.shootout.kicks.filter(k=>k.side===values.side)[values.kick-1].result)throw new Failure('not_applied','The shootout kick result did not change');
+    state=await api('/api/state');
+    const m=state.matches.find(m=>m.slot===slot);
+    if(name==='period end'&&!['firstHalf','secondHalf','extraFirst','extraSecond'].includes(m.phase))throw new Failure('not_applied','No live period to end');
+    if(name==='shootout start'&&m.shootout)throw new Failure('not_applied','A shootout is already under way; use shootout undo/edit/remove');
+    if(name==='shootout start'&&m.phase==='preMatch')throw new Failure('not_applied','A shootout needs the match to have kicked off');
+    if(name!=='period end'&&name!=='shootout start'&&!m.shootout)throw new Failure('not_applied','No shootout in this slot; use shootout start');
+    if(name==='shootout undo'&&!m.shootout.kicks.length)throw new Failure('not_applied','No kicks to undo');
+    if((name==='shootout edit'||name==='shootout remove')&&m.shootout.kicks.filter(k=>k.side===values.side).length<values.kick)throw new Failure('not_applied',`The ${values.side} side has not taken kick ${values.kick}`);
+    unchanged=name==='shootout edit'&&m.shootout.kicks.filter(k=>k.side===values.side)[values.kick-1].result===values.result;
    }
+   const [action,params]={'period end':['endPeriod',{}],'shootout start':['startShootout',{side:values.first??'home'}],'shootout kick':['recordKick',{result:values.result,...(values.side?{side:values.side}:{})}],'shootout undo':['undoKick',{}],'shootout edit':['setKick',{side:values.side,index:values.kick-1,result:values.result}],'shootout remove':['removeKick',{side:values.side,index:values.kick-1}]}[name];
+   if(!unchanged)state=await send(action,{...params,strict:true});
    result=summary(state,slot);
   } else if(name==='added set')result=summary(await send('setAddedMinutes',{minutes:values.minutes}),slot);
   else if(name==='added adjust')result=summary(await send('adjustAddedMinutes',{delta:values.by}),slot);

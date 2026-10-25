@@ -42,6 +42,39 @@ final class CannedProtocol: URLProtocol {
         // Let the initial pre-match poll enter its sleep before controlling the slot.
         try await Task.sleep(for: .milliseconds(100))
         model.settings.liveSourceEnabled["FotMob"] = false
+        func refused(_ request: CommandRequest, id: String? = nil) throws {
+            do {
+                _ = try model.commandResponse(request, slot: 1, requestId: id)
+                fatalError("expected strict refusal")
+            } catch EngineError.notApplied { checks += 1 }
+        }
+        try model.applyRequest(CommandRequest(command: "startPeriod", period: "secondHalf"), slot: 1)
+        let start = CommandRequest(command: "startShootout", strict: true)
+        let started = try model.commandResponse(start, slot: 1, requestId: "strict-start")
+        try model.applyRequest(CommandRequest(command: "recordKick", result: "scored", strict: true), slot: 1)
+        let withKick = model.match(1)
+        try refused(start)
+        check(model.match(1) == withKick, "strict repeated shootout start preserves kicks")
+        let unchanged = CommandRequest(command: "setKick", side: "home", result: "scored", index: 0, strict: true)
+        let savedState = try Data(contentsOf: root.appendingPathComponent("state.json"))
+        try refused(unchanged, id: "strict-edit")
+        check(model.match(1) == withKick && (try? Data(contentsOf: root.appendingPathComponent("state.json"))) == savedState, "strict no-op preserves match and persisted state")
+        try model.applyRequest(CommandRequest(command: "setKick", side: "home", result: "missed", index: 0), slot: 1)
+        _ = try model.commandResponse(unchanged, slot: 1, requestId: "strict-edit")
+        check(model.match(1).shootout?.kicks.first?.result == .scored, "strict refusal is not cached")
+        try model.applyRequest(CommandRequest(command: "reset"), slot: 1)
+        let resetMatch = model.match(1)
+        let replay = try model.commandResponse(start, slot: 1, requestId: "strict-start")
+        check(replay.data == started.data && model.match(1) == resetMatch, "request id replays cached success after state changed")
+        try refused(CommandRequest(command: "recordKick", result: "scored", strict: true))
+        check(model.match(1) == resetMatch, "strict kick without shootout preserves match")
+        try model.applyRequest(CommandRequest(command: "recordKick", result: "scored"), slot: 1)
+        check(model.match(1) == resetMatch, "non-strict ignored kick still succeeds")
+        try model.applyRequest(CommandRequest(command: "startPeriod", period: "secondHalf"), slot: 1)
+        try model.applyRequest(start, slot: 1)
+        try model.applyRequest(CommandRequest(command: "recordKick", result: "scored"), slot: 1)
+        try model.applyRequest(CommandRequest(command: "startShootout"), slot: 1)
+        check(model.match(1).shootout?.kicks.isEmpty == true, "non-strict shootout start still resets kicks")
         var linked = Match(slot: 1, competitionId: "champions-league", home: TeamEntry(name: "Original Home", code: "HOM", squad: ["Home Squad"]), away: TeamEntry(name: "Original Away", code: "AWY", squad: ["Away Squad"]))
         linked = MatchEngine.apply(.startPeriod(.firstHalf), to: linked, now: Date())
         linked.espnEventId = "12345"; linked.espnLeague = "uefa.champions"; linked.liveDataDelayMinutes = 0

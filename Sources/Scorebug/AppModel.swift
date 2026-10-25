@@ -211,8 +211,21 @@ final class AppModel: ObservableObject {
             guard state.matches[idx].phase != .shootout else { throw EngineError.badRequest("goals cannot be removed during a shootout") }
             guard state.matches[idx].goals.contains(where: { $0.side == side }) else { throw EngineError.badRequest("no goal exists for that side") }
         }
-        profiled(command) {
+        if request.strict == true, case .startShootout = command, state.matches[idx].shootout != nil {
+            throw EngineError.notApplied("A shootout is already under way; use shootout undo/edit/remove")
+        }
+        try profiled(command) {
+            let before = state.matches[idx]
             mutate(command, at: idx)
+            if request.strict == true {
+                var after = state.matches[idx]
+                // A revision bump alone is not a match change.
+                after.revision = before.revision
+                if after == before {
+                    state.matches[idx] = before
+                    throw EngineError.notApplied("The command did not change the match")
+                }
+            }
             if persistAndBroadcast(deferUIUpdate: true), case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
     }
@@ -221,10 +234,10 @@ final class AppModel: ObservableObject {
     /// run-loop turn's layer tree has committed (`CATransaction`'s completion block), which approximates
     /// command-to-painted-frame.
     private static let profileEnabled = ProcessInfo.processInfo.environment["SCOREBUG_PROFILE"] != nil
-    private func profiled(_ command: Command, _ body: () -> Void) {
-        guard AppModel.profileEnabled else { body(); return }
+    private func profiled(_ command: Command, _ body: () throws -> Void) rethrows {
+        guard AppModel.profileEnabled else { try body(); return }
         let start = CFAbsoluteTimeGetCurrent()
-        body()
+        try body()
         let label = String(describing: command).prefix { $0 != "(" }
         CATransaction.setCompletionBlock {
             FileHandle.standardError.write(Data(String(format: "profile %@ %.1f\n", "\(label)", (CFAbsoluteTimeGetCurrent() - start) * 1000).utf8))

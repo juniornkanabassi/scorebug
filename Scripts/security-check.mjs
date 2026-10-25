@@ -20,6 +20,18 @@ await request('/api/state', 200, { headers: { origin: `http://localhost:${port}`
 await request('/api/state', 200);
 await request('/api/match/1/command', 413, { method: 'POST', headers: { 'content-type': 'application/json' }, body: ' '.repeat(65537) });
 await post({ command: 'reset' });
+await post({ command: 'recordKick', result: 'scored', strict: true }, 409);
+await post({ command: 'startPeriod', period: 'secondHalf' });
+const shootout = await post({ command: 'startShootout', strict: true, requestId: 'security-shootout' });
+await post({ command: 'recordKick', result: 'scored', strict: true });
+await post({ command: 'startShootout', strict: true }, 409);
+const kept = await (await request('/api/state', 200)).json(); assert.equal(kept.matches[0].shootout.kicks.length, 1); checks++;
+await post({ command: 'setKick', side: 'home', index: 0, result: 'scored', strict: true, requestId: 'security-edit' }, 409);
+await post({ command: 'setKick', side: 'home', index: 0, result: 'missed' });
+const edited = await post({ command: 'setKick', side: 'home', index: 0, result: 'scored', strict: true, requestId: 'security-edit' });
+assert.equal(edited.matches[0].shootout.kicks[0].result, 'scored'); checks++;
+await post({ command: 'reset' });
+assert.deepEqual(await post({ command: 'startShootout', strict: true, requestId: 'security-shootout' }), shootout); checks++;
 const once = await post({ command: 'goal', side: 'home', requestId: 'security-goal' });
 const twice = await post({ command: 'goal', side: 'home', requestId: 'security-goal' });
 assert.deepEqual(twice, once); assert.equal(twice.matches[0].homeScore, 1); checks++;
