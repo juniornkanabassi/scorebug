@@ -12,7 +12,7 @@ SCOREBUG_NOTARISE="${SCOREBUG_NOTARISE:-0}" SCOREBUG_OUTPUT_ROOT="$STAGE/out" zs
 /usr/bin/ditto -x -k "$STAGE/out/Scorebug $(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist).zip" "$STAGE"
 APP="$STAGE/Scorebug.app"
 
-/usr/bin/codesign --verify --strict "$APP"
+/usr/bin/codesign --verify --deep --strict "$APP"
 # Refuse before replacing either a production or disposable app that is running.
 if pgrep -f "$DEST/Contents/MacOS/Scorebug" >/dev/null; then
   print -u2 "Scorebug is running at $DEST; quit it first. Nothing replaced."
@@ -21,7 +21,7 @@ fi
 mkdir -p "$INSTALL_ROOT"
 NEW_DEST=$(mktemp -d "$INSTALL_ROOT/.Scorebug-new.XXXXXX")
 /usr/bin/ditto "$APP" "$NEW_DEST/Scorebug.app"
-/usr/bin/codesign --verify --strict "$NEW_DEST/Scorebug.app"
+/usr/bin/codesign --verify --deep --strict "$NEW_DEST/Scorebug.app"
 BACKUP="$NEW_DEST/previous.app"
 [[ ! -e "$DEST" ]] || mv "$DEST" "$BACKUP"
 if ! mv "$NEW_DEST/Scorebug.app" "$DEST"; then

@@ -46,8 +46,14 @@ struct ScorebugApp: App {
     private let launchOptions: LaunchOptions
 
     init() {
-        Self.adoptLegacyPreferences()
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        // A running pre-rename Scorebug owns the same store and port: hand over to it rather than open a second writer.
+        if options.dataDirectory == nil,
+           let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
+            if !options.background { legacy.activate() }
+            exit(0)
+        }
+        Self.adoptLegacyPreferences()
         launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
