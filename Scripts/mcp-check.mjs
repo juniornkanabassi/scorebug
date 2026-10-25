@@ -14,13 +14,17 @@ const call=(method,params)=>new Promise(r=>{const id=++seq;pending.set(id,r);chi
 try {
  const init=await call('initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'check',version:'1'}});assert.equal(init.result.protocolVersion,'2025-06-18');checks++;
  child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');
- const list=await call('tools/list');assert.equal(list.result.tools.length,14);checks++;
+ const list=await call('tools/list');assert.equal(list.result.tools.length,32);checks++;
  const tool=(name,args={})=>call('tools/call',{name,arguments:args});
  const status=await tool('status');assert(JSON.parse(status.result.content[0].text).result.running);checks++;
  await tool('reset',{yes:true});
  for(let i=0;i<2;i++){
   const goal=await tool('goal_add',{side:'home',scorer:'Test',minute:23,requestId:'mcp-g1'});assert.equal(JSON.parse(goal.result.content[0].text).result.score[0],1);checks++;
  }
+ const goalId=JSON.parse((await tool('status')).result.content[0].text).result.matches[0].goals[0].id;
+ for(let i=0;i<2;i++){const edit=await tool('goal_edit',{goalId,scorer:'Edited',requestId:'mcp-e1'});assert.equal(JSON.parse(edit.result.content[0].text).result.goals[0].scorer,'Edited');checks++;}
+ const noShootout=await tool('shootout_kick',{result:'scored'});assert(noShootout.result.isError&&noShootout.result.content[0].text.includes('not_applied'));checks++;
+ assert.equal(JSON.parse((await tool('added_set',{minutes:3})).result.content[0].text).result.addedMinutes,3);checks++;
  const missing=await tool('reset');assert.equal(missing.result.isError,true);checks++;
  assert.equal((await tool('unknown')).error.code,-32602);checks++;
  assert.equal((await tool('goal_add',{side:'home',port:8600})).error.code,-32602);checks++;
