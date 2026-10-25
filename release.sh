@@ -57,7 +57,8 @@ while (( $# )); do case $1 in
 src() { /usr/libexec/PlistBuddy -c "Print $1" "$ROOT/Resources/Info.plist"; }
 SRC_VERSION=$(src CFBundleShortVersionString)
 HEAD=$(git -C "$ROOT" rev-parse HEAD)
-CLEAN=$([[ -z $(git -C "$ROOT" status --porcelain) ]] && print 1 || print 0)
+STATUS=$(git -C "$ROOT" status --porcelain) || die "git status failed"
+CLEAN=$([[ -z $STATUS ]] && print 1 || print 0)
 step() { print "\n== $*"; }
 
 # Sparkle compares build numbers and the feed serves only full releases, so prereleases are never published here.
@@ -83,7 +84,11 @@ if gh auth status --hostname github.com >/dev/null 2>&1; then
   # The release is made from the pushed tag, so a tag already on origin must be this HEAD (peeled, for annotated tags).
   RTAG=$(git -C "$ROOT" ls-remote origin "refs/tags/v$SRC_VERSION" "refs/tags/v$SRC_VERSION^{}" | sort -k2 | tail -1 | cut -f1)
   [[ -z $RTAG || $RTAG == $HEAD ]] || preflight+=("tag v$SRC_VERSION on origin points at another commit ($RTAG)")
-  if [[ $RTAG == $HEAD ]] && (( RESUME && ! TAGGED && ! DRY )); then
+  ROBJ=$(git -C "$ROOT" ls-remote origin "refs/tags/v$SRC_VERSION" | cut -f1)
+  LOBJ=$(git -C "$ROOT" rev-parse -q --verify "refs/tags/v$SRC_VERSION" || true)
+  [[ -z $ROBJ || -z $LOBJ || $ROBJ == $LOBJ ]] || preflight+=("the local tag v$SRC_VERSION is not the tag on origin; delete the local one")
+  # A tag already on origin at HEAD is adopted as it is: a new annotated tag object could never replace it.
+  if [[ $RTAG == $HEAD && -z $LOBJ ]] && (( ! DRY )); then
     git -C "$ROOT" fetch -q origin "refs/tags/v$SRC_VERSION:refs/tags/v$SRC_VERSION" || die "could not fetch tag v$SRC_VERSION"
     TAGGED=1
   fi
@@ -117,24 +122,25 @@ step "1. Build"
 if [[ -z $ZIP ]]; then
   (( ! DRY )) || export SCOREBUG_OUTPUT_ROOT="$OUT/Outputs"
   # Its own scratch folder: a build elsewhere sharing the cache could replace the executable before it is packaged.
-  BUILD_ROOT="$WORK/build"
-  export SCOREBUG_BUILD_ROOT="$BUILD_ROOT"
-  SIGN_UPDATE="$BUILD_ROOT/artifacts/sparkle/Sparkle/bin/sign_update"
-  zsh "$ROOT/build.sh" || die "build.sh failed (if its zip already exists, pass that zip with --zip)"
+  SCOREBUG_BUILD_ROOT="$WORK/build" zsh "$ROOT/build.sh" || die "build.sh failed (if its zip already exists, pass that zip with --zip)"
   OUTPUTS=${SCOREBUG_OUTPUT_ROOT:-../Outputs}
   [[ $OUTPUTS == /* ]] || OUTPUTS="$ROOT/$OUTPUTS"   # build.sh resolves it from its own folder
   ZIP="$OUTPUTS/Scorebug $SRC_VERSION.zip"
 fi
 [[ -f $ZIP ]] || die "no zip at $ZIP"
-# After the build, which resolves Sparkle into the cache; a --zip run needs a cache that has been built once.
-[[ -x $SIGN_UPDATE ]] || die "no sign_update at $SIGN_UPDATE (run build.sh once with this SCOREBUG_BUILD_ROOT)"
+# The pinned Sparkle's tools, resolved (not built) into the persistent cache when missing.
+[[ -x $SIGN_UPDATE ]] || swift package resolve --package-path "$ROOT" --scratch-path "$BUILD_ROOT" >/dev/null || die "could not resolve Sparkle into $BUILD_ROOT"
+[[ -x $SIGN_UPDATE ]] || die "no sign_update at $SIGN_UPDATE"
 # Everything from here reads private copies, so a build that replaces the zip or disk image mid-run cannot change
 # what is checked, signed and published.
 SRC_ZIP=$ZIP ZIP="$WORK/input.zip"
 /bin/cp "$SRC_ZIP" "$ZIP" || die "could not copy $SRC_ZIP"
 # Sparkle installs the first matching bundle it finds in the zip, so the zip must hold this one app and nothing else.
 # (ditto's __MACOSX entries carry that app's own extended attributes)
-/usr/bin/zipinfo -1 "$ZIP" | grep -qvE '^(__MACOSX/)?Scorebug.app/' && die "$SRC_ZIP holds more than Scorebug.app"
+LISTING=("${(@f)$(/usr/bin/zipinfo -1 "$ZIP")}") || die "could not list $SRC_ZIP"
+OTHERS=(${LISTING:#(__MACOSX/|)Scorebug.app/*})
+(( ${#OTHERS} == 0 )) || die "$SRC_ZIP holds more than Scorebug.app: ${OTHERS[1]}"
+[[ ${(j:\n:)LISTING} != *(/..|../)* ]] || die "$SRC_ZIP has a .. path"
 /usr/bin/ditto -x -k "$ZIP" "$WORK/app" || die "could not unpack $SRC_ZIP"
 [[ -d $WORK/app/Scorebug.app && ! -L $WORK/app/Scorebug.app ]] || die "$SRC_ZIP does not hold Scorebug.app as a folder"
 APP="$WORK/app/Scorebug.app"
@@ -247,6 +253,8 @@ def one(item, name):
 
 def items(text):
     """Every item's build and version; anything this script cannot read for certain stops it."""
+    if any(uri != SP[1:-1] for uri in re.findall(r'xmlns:sparkle\s*=\s*["\']([^"\']*)', text)):
+        sys.exit("the appcast binds the sparkle prefix to another namespace, which Sparkle would still read: refusing to guess")
     root = ET.fromstring(text.encode("utf-8"))
     channels = root.findall("channel")
     if root.tag != "rss" or len(channels) != 1 or len(root.findall(".//item")) != len(channels[0].findall("item")):
@@ -331,9 +339,21 @@ if (( DRY )); then
   print "dry run, not run: gh release create v$VERSION --verify-tag ${(q)NAMES} --repo $GHREPO --title 'Scorebug $VERSION (build $BUILD)' --notes-file '$NOTES'"
   print "asset Scorebug_$VERSION.zip: $BYTES bytes, sha256 $SHA (Sparkle appcast enclosure)"
   print "asset Scorebug_$VERSION.dmg: $DMG_BYTES bytes, sha256 $DMG_SHA (website download)"
+  if (( EXISTS )); then
+    [[ $(gh release view "v$VERSION" --repo $GHREPO --json isPrerelease --jq .isPrerelease) == false ]] \
+      || print "dry run: a real run would refuse: v$VERSION on $REPO is a prerelease"
+    HAVE=$(gh release view "v$VERSION" --repo $GHREPO --json assets --jq '.assets[].name')
+    for name in $NAMES; do
+      print -r -- "$HAVE" | grep -qx "$name" || { print "dry run: $name would be uploaded"; continue; }
+      gh release download "v$VERSION" --repo $GHREPO --pattern "$name" --dir "$WORK/existing" || die "could not download the existing $name"
+      [[ $(shasum -a 256 "$WORK/existing/$name" | cut -d' ' -f1) == $WANT[$name] ]] \
+        || print "dry run: a real run would refuse: v$VERSION on $REPO already holds a different $name"
+    done
+  fi
 else
   # The tag goes on the commit checked in step 1; refuse if the checkout moved or changed since.
-  [[ $(git -C "$ROOT" rev-parse HEAD) == $HEAD && -z $(git -C "$ROOT" status --porcelain) ]] \
+  STATUS=$(git -C "$ROOT" status --porcelain) || die "git status failed"
+  [[ $(git -C "$ROOT" rev-parse HEAD) == $HEAD && -z $STATUS ]] \
     || die "the checkout changed since step 1 (HEAD was $HEAD); nothing uploaded"
   # The release is made from the tag: make it on the checked commit if needed, push it, and read it back from origin
   # before anything is uploaded or published.

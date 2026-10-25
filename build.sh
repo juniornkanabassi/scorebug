@@ -5,7 +5,8 @@ cd "${0:A:h}"
 # The commit this builds, taken before compiling ("-dirty" with uncommitted changes); release.sh publishes only a
 # clean HEAD's build.
 SOURCE_COMMIT=$(git rev-parse HEAD)
-[[ -z $(git status --porcelain) ]] || SOURCE_COMMIT+="-dirty"
+STATUS=$(git status --porcelain) || { print -u2 "git status failed"; exit 1; }
+[[ -z $STATUS ]] || SOURCE_COMMIT+="-dirty"
 BUILD_ROOT="${SCOREBUG_BUILD_ROOT:-/private/tmp/scorebug-build}"
 OUTPUT_ROOT="${SCOREBUG_OUTPUT_ROOT:-../Outputs}"
 APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist)
@@ -34,7 +35,8 @@ cp mcp/scorebug-mcp.mjs "$APP_PATH/Contents/Resources/mcp/"
 [[ -f Resources/squads.json ]] && cp Resources/squads.json "$APP_PATH/Contents/Resources/squads.json"
 
 # Stamped once the bundle is assembled: a checkout that moved or changed meanwhile marks it dirty.
-[[ $(git rev-parse HEAD) == ${SOURCE_COMMIT%-dirty} && -z $(git status --porcelain) ]] || SOURCE_COMMIT="${SOURCE_COMMIT%-dirty}-dirty"
+STATUS=$(git status --porcelain) || { print -u2 "git status failed"; exit 1; }
+[[ $(git rev-parse HEAD) == ${SOURCE_COMMIT%-dirty} && -z $STATUS ]] || SOURCE_COMMIT="${SOURCE_COMMIT%-dirty}-dirty"
 /usr/libexec/PlistBuddy -c "Add :ScorebugSourceCommit string $SOURCE_COMMIT" "$APP_PATH/Contents/Info.plist"
 if /usr/bin/xattr -p com.apple.FinderInfo "$APP_PATH" >/dev/null 2>&1; then /usr/bin/xattr -d com.apple.FinderInfo "$APP_PATH"; fi
 # Releases are Developer ID signed with the hardened runtime, notarised and stapled, so they open on any Mac
