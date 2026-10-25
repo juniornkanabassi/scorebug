@@ -11,13 +11,14 @@ const str = (description, extra={}) => ({type:'string',description,...extra});
 const num = (description, extra={}) => ({type:'integer',description,...extra});
 const bool = description => ({type:'boolean',description});
 const side = str('Scoring side',{enum:['home','away']});
+const requestId = str('Retry id, at most 121 characters',{minLength:1,maxLength:121});
 export const commands = [
  ['status','Report app version and both matches without launching.',{},[], 'scorebug status --json',false],
  ['match set','Resolve clubs and set up a match; resets score unless --keep-score.',{home:str('Home club name'),away:str('Away club name'),competition:str('Competition name or id'),firstLeg:str('First-leg score H-A'),keepScore:bool('Keep score and phase'),force:bool('Accept weak club matches or replace a live match'),dryRun:bool('Resolve without changing anything')},[], 'scorebug match set --home "Real Madrid" --away Inter --competition ucl',true],
  ['show','Put this slot on air.',{},[], 'scorebug show',true],
  ['hide','Take this slot off air.',{},[], 'scorebug hide',true],
  ['reset','Reset the match, retaining teams, competition and first leg.',{yes:bool('Required confirmation')},['yes'],'scorebug reset --yes',true],
- ['goal add','Add one goal, then attach its scorer and minute.',{side,minute:num('Goal minute',{minimum:1,maximum:130}),plus:num('Added minutes',{minimum:0,maximum:30}),scorer:str('Scorer name'),ownGoal:bool('Own goal'),penalty:bool('Penalty'),requestId:str('Retry id, at most 121 characters',{minLength:1,maxLength:121})},['side'],'scorebug goal add --side home --minute 23 --scorer "Test" --request-id g1',true],
+ ['goal add','Add one goal, then attach its scorer and minute.',{side,minute:num('Goal minute',{minimum:1,maximum:130}),plus:num('Added minutes',{minimum:0,maximum:30}),scorer:str('Scorer name'),ownGoal:bool('Own goal'),penalty:bool('Penalty'),requestId},['side'],'scorebug goal add --side home --minute 23 --scorer "Test" --request-id g1',true],
  ['goal remove','Remove a goal by id or the latest on a side.',{goalId:str('Goal UUID'),side},[],'scorebug goal remove --side home',true],
  ['clock start','Start a period or resume the current live period.',{period:str('Period to start',{enum:['firstHalf','secondHalf','extraFirst','extraSecond']})},[],'scorebug clock start --period firstHalf',true],
  ['clock stop','Pause the master clock.',{},[],'scorebug clock stop',true],
@@ -26,24 +27,24 @@ export const commands = [
  ['fixture load','Load a numbered fixture; refuses a live slot unless --force.',{date:str('today or YYYY-MM-DD'),competition:str('Competition name or id'),pick:num('1-based fixture number',{minimum:1}),force:bool('Replace a live match')},['pick'],'scorebug fixture load --date today --competition ucl --pick 1',true],
  ['theme list','List available themes and each slot’s effective theme.',{},[],'scorebug theme list',false],
  ['theme set','Set a theme override; default uses the competition’s theme.',{id:str('Theme id or default')},['id'],'scorebug theme set --id nations-league',true],
- ['goal edit','Correct an existing goal’s scorer, minute, own goal or penalty flag.',{goalId:str('Goal UUID from status'),minute:num('Goal minute',{minimum:1,maximum:130}),plus:num('Added minutes',{minimum:0,maximum:30}),scorer:str('Scorer name; empty clears it'),ownGoal:bool('Mark as an own goal'),noOwnGoal:bool('Clear the own goal mark'),penalty:bool('Mark as a penalty'),noPenalty:bool('Clear the penalty mark')},['goalId'],'scorebug goal edit --goal-id <UUID> --minute 45 --plus 2 --scorer "Mbappé"',true],
- ['period end','End the live period: half time, full time or the extra-time breaks.',{},[],'scorebug period end',true],
- ['added set','Show the added time board; 0 hides it. A new period clears it.',{minutes:num('Added minutes',{minimum:0,maximum:30})},['minutes'],'scorebug added set --minutes 4',true],
- ['added adjust','Raise or lower the added time board by whole minutes.',{by:num('Signed minutes',{minimum:-30,maximum:30})},['by'],'scorebug added adjust --by 1',true],
- ['teams swap','Swap home and away, with their scores, goals, shootout kicks and first leg.',{},[],'scorebug teams swap',true],
- ['scorers show','Show goal scorers under the score bug.',{},[],'scorebug scorers show',true],
- ['scorers hide','Hide goal scorers under the score bug.',{},[],'scorebug scorers hide',true],
- ['aggregate set','Set the first-leg score so the overlay shows the aggregate.',{firstLeg:str('First-leg score H-A, from this match’s home side')},['firstLeg'],'scorebug aggregate set --first-leg 2-1',true],
- ['aggregate clear','Remove the first-leg score and aggregate.',{},[],'scorebug aggregate clear',true],
- ['shootout start','Freeze the clock and start a penalty shootout.',{first:str('Side taking the first kick (default home)',{enum:['home','away']})},[],'scorebug shootout start --first away',true],
- ['shootout kick','Record the next kick; the side defaults to whoever is due.',{result:str('Kick result',{enum:['scored','missed']}),side:str('Kicking side',{enum:['home','away']})},['result'],'scorebug shootout kick --result scored',true],
- ['shootout undo','Remove the last recorded kick.',{},[],'scorebug shootout undo',true],
- ['shootout edit','Change one side’s numbered kick to scored or missed.',{side:str('Kicking side',{enum:['home','away']}),kick:num('That side’s kick number, from 1',{minimum:1,maximum:50}),result:str('Kick result',{enum:['scored','missed']})},['side','kick','result'],'scorebug shootout edit --side home --kick 2 --result missed',true],
- ['shootout remove','Delete one side’s numbered kick.',{side:str('Kicking side',{enum:['home','away']}),kick:num('That side’s kick number, from 1',{minimum:1,maximum:50})},['side','kick'],'scorebug shootout remove --side away --kick 3',true],
- ['live link','Link the slot to an ESPN event for live goals and scorers.',{eventId:str('ESPN event id, 1 to 12 digits'),league:str('ESPN league slug, for example uefa.champions')},['eventId','league'],'scorebug live link --event-id 704512 --league uefa.champions',true],
- ['live unlink','Stop following the linked ESPN event.',{},[],'scorebug live unlink',true],
- ['live auto','Turn automatic goal and scorer updates from the linked event on or off.',{state:str('on or off',{enum:['on','off']})},['state'],'scorebug live auto --state on',true],
- ['live delay','Delay live updates to match your stream delay.',{minutes:num('Delay in minutes',{minimum:0,maximum:10})},['minutes'],'scorebug live delay --minutes 1',true],
+ ['goal edit','Correct an existing goal’s scorer, minute, own goal or penalty flag.',{goalId:str('Goal UUID from status'),minute:num('Goal minute',{minimum:1,maximum:130}),plus:num('Added minutes',{minimum:0,maximum:30}),scorer:str('Scorer name; empty clears it'),ownGoal:bool('Mark as an own goal'),noOwnGoal:bool('Clear the own goal mark'),penalty:bool('Mark as a penalty'),noPenalty:bool('Clear the penalty mark'),requestId},['goalId'],'scorebug goal edit --goal-id <UUID> --minute 45 --plus 2 --scorer "Mbappé"',true],
+ ['period end','End the live period: half time, full time or the extra-time breaks.',{requestId},[],'scorebug period end',true],
+ ['added set','Show the added time board; 0 hides it. A new period clears it.',{minutes:num('Added minutes',{minimum:0,maximum:30}),requestId},['minutes'],'scorebug added set --minutes 4',true],
+ ['added adjust','Raise or lower the added time board by whole minutes.',{by:num('Signed minutes',{minimum:-30,maximum:30}),requestId},['by'],'scorebug added adjust --by 1',true],
+ ['teams swap','Swap home and away, with their scores, goals, shootout kicks and first leg.',{requestId},[],'scorebug teams swap',true],
+ ['scorers show','Show goal scorers under the score bug.',{requestId},[],'scorebug scorers show',true],
+ ['scorers hide','Hide goal scorers under the score bug.',{requestId},[],'scorebug scorers hide',true],
+ ['aggregate set','Set the first-leg score so the overlay shows the aggregate.',{firstLeg:str('First-leg score H-A, from this match’s home side'),requestId},['firstLeg'],'scorebug aggregate set --first-leg 2-1',true],
+ ['aggregate clear','Remove the first-leg score and aggregate.',{requestId},[],'scorebug aggregate clear',true],
+ ['shootout start','Freeze the clock and start a penalty shootout.',{first:str('Side taking the first kick (default home)',{enum:['home','away']}),requestId},[],'scorebug shootout start --first away',true],
+ ['shootout kick','Record the next kick; the side defaults to whoever is due.',{result:str('Kick result',{enum:['scored','missed']}),side:str('Kicking side',{enum:['home','away']}),requestId},['result'],'scorebug shootout kick --result scored',true],
+ ['shootout undo','Remove the last recorded kick.',{requestId},[],'scorebug shootout undo',true],
+ ['shootout edit','Change one side’s numbered kick to scored or missed.',{side:str('Kicking side',{enum:['home','away']}),kick:num('That side’s kick number, from 1',{minimum:1,maximum:50}),result:str('Kick result',{enum:['scored','missed']}),requestId},['side','kick','result'],'scorebug shootout edit --side home --kick 2 --result missed',true],
+ ['shootout remove','Delete one side’s numbered kick.',{side:str('Kicking side',{enum:['home','away']}),kick:num('That side’s kick number, from 1',{minimum:1,maximum:50}),requestId},['side','kick'],'scorebug shootout remove --side away --kick 3',true],
+ ['live link','Link the slot to an ESPN event for live goals and scorers.',{eventId:str('ESPN event id, 1 to 12 digits'),league:str('ESPN league slug, for example uefa.champions'),requestId},['eventId','league'],'scorebug live link --event-id 704512 --league uefa.champions',true],
+ ['live unlink','Stop following the linked ESPN event.',{requestId},[],'scorebug live unlink',true],
+ ['live auto','Turn automatic goal and scorer updates from the linked event on or off.',{state:str('on or off',{enum:['on','off']}),requestId},['state'],'scorebug live auto --state on',true],
+ ['live delay','Delay live updates to match your stream delay.',{minutes:num('Delay in minutes',{minimum:0,maximum:10}),requestId},['minutes'],'scorebug live delay --minutes 1',true],
 ].map(([command,description,properties,required,example,slot])=>({command,name:command.replaceAll(' ','_'),description,properties,required,example,slot}));
 const flag = key => key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());
 export function manifest() {
@@ -137,7 +138,7 @@ export async function main(args=process.argv.slice(2)) {
    if(r.headers.get('x-scorebug-save-failed')==='true')throw new Failure('save_failed','Change was applied but could not be saved; check Scorebug before retrying');
    return r.json();
   }
-  const send=(action,params={})=>api(`/api/match/${slot}/command`,{command:action,...params});
+  const send=(action,params={})=>api(`/api/match/${slot}/command`,{command:action,...(values['request-id']?{requestId:values['request-id']}:{}),...params});
   let result;
   if(name==='status') {
    try {const state=await api('/api/state');let status;try{status=await api('/api/status');}catch(e){if(e.code!=='http_404')throw e;status={version:'unknown',port};}result={running:true,...status,matches:summary(state)};}
@@ -199,19 +200,27 @@ export async function main(args=process.argv.slice(2)) {
    const goalId=values['goal-id'];let state;
    if(values.scorer!==undefined||['own-goal','no-own-goal','penalty','no-penalty'].some(k=>values[k])) {
     const flag=(on,off)=>values[on]?true:values[off]?false:undefined;
-    state=await send('setScorer',{goalId,scorer:values.scorer??m.goals.find(g=>g.id.toLowerCase()===goalId.toLowerCase()).scorer??undefined,ownGoal:flag('own-goal','no-own-goal'),penalty:flag('penalty','no-penalty')});
+    state=await send('setScorer',{goalId,scorer:values.scorer??m.goals.find(g=>g.id.toLowerCase()===goalId.toLowerCase()).scorer??undefined,ownGoal:flag('own-goal','no-own-goal'),penalty:flag('penalty','no-penalty'),...(values['request-id']?{requestId:values['request-id']+':scorer'}:{})});
    }
-   if(values.minute!==undefined)state=await send('setGoalMinute',{goalId,minute:values.minute,plus:values.plus});
+   if(values.minute!==undefined)state=await send('setGoalMinute',{goalId,minute:values.minute,plus:values.plus,...(values['request-id']?{requestId:values['request-id']+':minute'}:{})});
    result=summary(state,slot);
   } else if(['period end','shootout start','shootout kick','shootout undo','shootout edit','shootout remove'].includes(name)) {
    const m=(await api('/api/state')).matches.find(m=>m.slot===slot);
    if(name==='period end'&&!['firstHalf','secondHalf','extraFirst','extraSecond'].includes(m.phase))throw new Failure('not_applied','No live period to end');
+   if(name==='shootout start'&&m.shootout)throw new Failure('not_applied','A shootout is already under way; use shootout undo/edit/remove');
    if(name==='shootout start'&&m.phase==='preMatch')throw new Failure('not_applied','A shootout needs the match to have kicked off');
    if(name!=='period end'&&name!=='shootout start'&&!m.shootout)throw new Failure('not_applied','No shootout in this slot; use shootout start');
    if(name==='shootout undo'&&!m.shootout.kicks.length)throw new Failure('not_applied','No kicks to undo');
    if((name==='shootout edit'||name==='shootout remove')&&m.shootout.kicks.filter(k=>k.side===values.side).length<values.kick)throw new Failure('not_applied',`The ${values.side} side has not taken kick ${values.kick}`);
    const [action,params]={'period end':['endPeriod',{}],'shootout start':['startShootout',{side:values.first??'home'}],'shootout kick':['recordKick',{result:values.result,...(values.side?{side:values.side}:{})}],'shootout undo':['undoKick',{}],'shootout edit':['setKick',{side:values.side,index:values.kick-1,result:values.result}],'shootout remove':['removeKick',{side:values.side,index:values.kick-1}]}[name];
-   result=summary(await send(action,params),slot);
+   const state=await send(action,params),after=state.matches.find(m=>m.slot===slot);
+   if(!values['request-id']) {
+    if(name==='period end'&&after.phase===m.phase)throw new Failure('not_applied','The live period did not end');
+    if(name==='shootout start'&&!after.shootout)throw new Failure('not_applied','No shootout was started');
+    if(['shootout kick','shootout undo','shootout remove'].includes(name)&&(after.shootout?.kicks.length??0)===m.shootout.kicks.length)throw new Failure('not_applied','The shootout kick count did not change');
+    if(name==='shootout edit'&&m.shootout.kicks.filter(k=>k.side===values.side)[values.kick-1].result!==values.result&&after.shootout?.kicks.filter(k=>k.side===values.side)[values.kick-1]?.result===m.shootout.kicks.filter(k=>k.side===values.side)[values.kick-1].result)throw new Failure('not_applied','The shootout kick result did not change');
+   }
+   result=summary(state,slot);
   } else if(name==='added set')result=summary(await send('setAddedMinutes',{minutes:values.minutes}),slot);
   else if(name==='added adjust')result=summary(await send('adjustAddedMinutes',{delta:values.by}),slot);
   else if(name==='teams swap')result=summary(await send('swapTeams'),slot);

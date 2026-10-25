@@ -4,7 +4,7 @@ import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 const library = JSON.parse(readFileSync(new URL('../Resources/seed-library.json', import.meta.url)));
-let posts = [], fail = false;
+let posts = [], fail = false, ignore = false;
 const match = {slot:1, home:{name:'Home',code:'HOM'},away:{name:'Away',code:'AWY'},homeScore:0,awayScore:0,phase:'preMatch',clock:{periodBaseSeconds:0,accumulated:0,running:false},visible:true,goals:[],competitionId:'champions-league'};
 const state = {matches:[match,{...match,slot:2}],serverTime:Date.now(),competitions:library.competitions};
 const fixture = {home:{name:'Real Madrid',shortName:'Real',code:'RMA'},away:{name:'Inter',shortName:'Inter',code:'INT'},kickoff:'2026-09-30T19:00:00Z',competitionCode:'uefa.champions'};
@@ -14,6 +14,8 @@ const server = http.createServer(async(req,res)=>{
  if(req.method==='POST') {
   const p=JSON.parse(body); posts.push(p);
   if(fail) {res.writeHead(400);res.end('fake refusal');return;}
+  if(ignore) {res.end(JSON.stringify(state));return;}
+  if(p.command==='endPeriod')match.phase={firstHalf:'halfTime',secondHalf:'fullTime',extraFirst:'extraHalfTime',extraSecond:'fullTime'}[match.phase]??match.phase;
   if(p.command==='startPeriod'){match.phase=p.period;match.clock.running=true;}
   if(p.command==='pause')match.clock.running=false;
   if(p.command==='setAggregate')match.aggregate={firstLegHome:p.home,firstLegAway:p.away};
@@ -22,6 +24,8 @@ const server = http.createServer(async(req,res)=>{
   if(p.command==='startShootout')match.shootout={firstKicker:p.side,kicks:[]};
   if(p.command==='recordKick')match.shootout.kicks.push({side:p.side??'home',result:p.result});
   if(p.command==='undoKick')match.shootout.kicks.pop();
+  if(p.command==='setKick')match.shootout.kicks.filter(k=>k.side===p.side)[p.index].result=p.result;
+  if(p.command==='removeKick')match.shootout.kicks.splice(match.shootout.kicks.findIndex(k=>k===match.shootout.kicks.filter(k=>k.side===p.side)[p.index]),1);
   res.end(JSON.stringify(state)); return;
  }
  const path=req.url.split('?')[0];
@@ -43,6 +47,7 @@ function ok(value,label){assert(value,label);checks++;}
 async function cli(args,expected=0,override=port){const r=await run('Scripts/scorebug.mjs',[...args,'--json'],override);assert.equal(r.code,expected,r.stderr+r.stdout);checks++;return JSON.parse(r.stdout);}
 try {
  const manifest=await cli(['mcp-manifest']);ok(manifest.tools.length===32 && manifest.tools.every(t=>t.inputSchema.type==='object'),'manifest');
+ for(const t of manifest.tools.slice(14))assert.deepEqual(t.inputSchema.properties.requestId,manifest.tools.find(t=>t.name==='goal_add').inputSchema.properties.requestId);checks++;
  for(const t of manifest.tools) {const r=await run('Scripts/scorebug.mjs',[...t.name.split('_'),'--help']);ok(r.code===0 && r.stdout.includes('Example:'),`help ${t.name}`);}
  await cli(['goal','add'],2);await cli(['reset'],2);
  posts=[];await cli(['goal','add','--side','home','--minute','23','--scorer','X','--own-goal','--request-id','r1']);
@@ -92,13 +97,46 @@ try {
  await sent(['shootout','start','--first','away'],{command:'startShootout',side:'away'});
  await sent(['shootout','kick','--result','scored'],{command:'recordKick',result:'scored'});
  await sent(['shootout','kick','--result','missed','--side','away'],{command:'recordKick',result:'missed',side:'away'});
+ posts=[];const already=await cli(['shootout','start'],1);
+ ok(already.error.code==='not_applied'&&already.error.message==='A shootout is already under way; use shootout undo/edit/remove'&&posts.length===0&&match.shootout.kicks.length===2,'starting an existing shootout is refused without a POST');
  const shoot=await cli(['status']);ok(shoot.result.matches[0].shootout.score[0]===1&&shoot.result.matches[0].shootout.kicks.length===2,'status reports the shootout');
  await sent(['shootout','edit','--side','home','--kick','1','--result','missed'],{command:'setKick',side:'home',index:0,result:'missed'});
  ok((await cli(['shootout','remove','--side','home','--kick','2'],1)).error.code==='not_applied','remove a kick not taken');
  await sent(['shootout','remove','--side','away','--kick','1'],{command:'removeKick',side:'away',index:0});
+ await sent(['shootout','kick','--result','scored','--side','home'],{command:'recordKick',result:'scored',side:'home'});
  await sent(['shootout','undo'],{command:'undoKick'});
  await sent(['shootout','undo'],{command:'undoKick'});
  ok((await cli(['shootout','undo'],1)).error.code==='not_applied','undo with no kicks');
+ // Ignored POSTs expose races; request ids allow a cached response with no new effect.
+ const races=[['period','end'],['shootout','start'],['shootout','kick','--result','scored'],['shootout','undo'],['shootout','edit','--side','home','--kick','1','--result','missed'],['shootout','remove','--side','home','--kick','1']];
+ const prepare=args=>{
+  match.phase='secondHalf';
+  match.shootout={firstKicker:'home',kicks:[{side:'home',result:'scored'},{side:'away',result:'missed'}]};
+  if(args[1]==='start')delete match.shootout;
+ };
+ ignore=true;
+ for(const args of races) {
+  prepare(args);posts=[];
+  ok((await cli(args,1)).error.code==='not_applied'&&posts.length===1,`ignored ${args.join(' ')} is not applied`);
+  prepare(args);await cli([...args,'--request-id','cached']);
+  ok(posts.at(-1).requestId==='cached',`${args.join(' ')} accepts a cached response`);
+ }
+ prepare(['shootout','edit']);await cli(['shootout','edit','--side','home','--kick','1','--result','scored']);checks++;
+ const retryCommands=[
+  ['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','Y','--minute','46'],
+  ...races,
+  ['added','set','--minutes','4'],['added','adjust','--by','1'],['teams','swap'],
+  ['scorers','show'],['scorers','hide'],['aggregate','set','--first-leg','2-1'],['aggregate','clear'],
+  ['live','link','--event-id','704512','--league','uefa.champions'],['live','unlink'],['live','auto','--state','on'],['live','delay','--minutes','1']
+ ];
+ match.goals=[{id:'00000000-0000-0000-0000-000000000001',side:'home',scorer:'X'}];
+ for(const args of retryCommands) {
+  prepare(args);posts=[];
+  await cli([...args,'--request-id','r'.repeat(121)]);
+  assert.deepEqual(posts.map(p=>p.requestId),args[0]==='goal'?['r'.repeat(121)+':scorer','r'.repeat(121)+':minute']:['r'.repeat(121)]);checks++;
+  posts=[];await cli([...args,'--request-id','r'.repeat(122)],2);ok(posts.length===0,'overlong retry id rejected before POST');
+ }
+ ignore=false;
  delete match.shootout;match.phase='preMatch';match.clock.running=false;
  fail=true;const bad=await cli(['show'],1);ok(bad.error.code==='bad_request'&&bad.error.message==='fake refusal','400 error');fail=false;
  const reference=JSON.parse(readFileSync(new URL('./setup-match-reference.json',import.meta.url)));
