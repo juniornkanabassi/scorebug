@@ -138,7 +138,7 @@ SRC_ZIP=$ZIP ZIP="$WORK/input.zip"
 # Sparkle installs the first matching bundle it finds in the zip, so the zip must hold this one app and nothing else.
 # (ditto's __MACOSX entries carry that app's own extended attributes)
 LISTING=("${(@f)$(/usr/bin/zipinfo -1 "$ZIP")}") || die "could not list $SRC_ZIP"
-OTHERS=(${LISTING:#(__MACOSX/|)Scorebug.app/*})
+OTHERS=(${${LISTING:#(__MACOSX/|)Scorebug.app/*}:#__MACOSX/})
 (( ${#OTHERS} == 0 )) || die "$SRC_ZIP holds more than Scorebug.app: ${OTHERS[1]}"
 [[ ${(j:\n:)LISTING} != *(/..|../)* ]] || die "$SRC_ZIP has a .. path"
 /usr/bin/ditto -x -k "$ZIP" "$WORK/app" || die "could not unpack $SRC_ZIP"
