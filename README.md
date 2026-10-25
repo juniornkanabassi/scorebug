@@ -51,7 +51,7 @@ Scorebug's server listens only on 127.0.0.1, so nothing on your network can reac
 
 ## Command line and AI assistants
 
-The `scorebug` command and its MCP server drive the main match actions: the teams, the score, the clock, fixtures, themes and showing or hiding the overlay. Changes show in the running app and on the overlay straight away.
+The `scorebug` command and its MCP server cover every match control the window and the Stream Deck have, from the score and the clock to added time, the shootout, the first leg and live-data linking. Editing the club library and the app's settings stays in the window. Changes show in the running app and on the overlay straight away.
 
 ```sh
 SCOREBUG="/Applications/Scorebug.app/Contents/Resources/Scripts/scorebug.mjs"
