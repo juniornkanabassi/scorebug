@@ -52,6 +52,7 @@ struct ScorebugApp: App {
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
         model.startServer()
+        Updates.shared.start()
     }
 
     /// Scorebug was local.scorebug.mac until its public release. Copy that domain's preferences (text size, last
@@ -81,6 +82,7 @@ struct ScorebugApp: App {
                 Divider()
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
+            UpdateCommands()
         }
         MenuBarExtra("Scorebug", systemImage: "sportscourt") {
             MenuBarCommands()
