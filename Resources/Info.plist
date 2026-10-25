@@ -33,7 +33,7 @@
 	<key>SUFeedURL</key>
 	<string>https://juniornkanabassi.com/apps/scorebug/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>REPLACE_WITH_SCOREBUG_PUBLIC_KEY</string>
+	<string>4B45bbzSVSjy1/iwcrO+sv3/PUpzTLWVWJErrzOSRIU=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 </dict>
