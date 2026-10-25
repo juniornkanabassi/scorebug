@@ -46,11 +46,22 @@ struct ScorebugApp: App {
     private let launchOptions: LaunchOptions
 
     init() {
+        Self.adoptLegacyPreferences()
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
         launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
         model.startServer()
+    }
+
+    /// Scorebug was local.scorebug.mac until its public release. Copy that domain's preferences (text size, last
+    /// used values) across once, before AppModel reads them. The old domain is left untouched.
+    private static func adoptLegacyPreferences() {
+        let defaults = UserDefaults.standard, marker = "adoptedLegacyPreferences"
+        guard !defaults.bool(forKey: marker), let legacy = defaults.persistentDomain(forName: "local.scorebug.mac") else { return }
+        let current = defaults.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "com.juniornkanabassi.Scorebug") ?? [:]
+        for (key, value) in legacy where current[key] == nil { defaults.set(value, forKey: key) }
+        defaults.set(true, forKey: marker)
     }
 
     var body: some Scene {

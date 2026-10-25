@@ -7,11 +7,13 @@ Build and check:
 ```sh
 swift build --scratch-path /private/tmp/scorebug-build
 swift run --scratch-path /private/tmp/scorebug-build CoreChecks
-zsh install.sh    # builds, ad hoc signs and installs at "/Applications/JuniorOS Apps/Scorebug.app", then opens it
+zsh install.sh    # builds, signs (Developer ID when available, otherwise ad hoc) and installs at "/Applications/JuniorOS Apps/Scorebug.app", then opens it
 zsh build.sh      # writes ../Outputs/Scorebug <version>.zip, for handing the app to someone else
 ```
 
-`install.sh` is the everyday path: it refuses a running app, preserves the previous copy until staging succeeds, then replaces `/Applications/JuniorOS Apps/Scorebug.app` and opens the fresh build, no zip step, no application data touched. `build.sh` writes `../Outputs/Scorebug <version>.zip` and refuses to overwrite; it does not install anything. Version in `Resources/Info.plist`, tagged `v<version>` here.
+`install.sh` is the everyday path: it refuses a running app, preserves the previous copy until staging succeeds, then replaces `/Applications/JuniorOS Apps/Scorebug.app` and opens the fresh build, no zip step, no application data touched. `build.sh` writes `../Outputs/Scorebug <version>.zip` and refuses to overwrite; it does not install anything. When the Developer ID certificate (SHA-1 `C297CD17…9400`) is in the keychain it signs with the hardened runtime, notarises with the `JuniorOS` notarytool profile, staples the app and also writes a notarised `../Outputs/Scorebug <version>.dmg` for the website; `SCOREBUG_NOTARISE=0` skips notarisation. Version in `Resources/Info.plist`, tagged `v<version>` here. `CFBundleVersion` is a whole build number that goes up with every release (4 for 1.0.3), as Sparkle requires.
+
+The bundle identifier is `com.juniornkanabassi.Scorebug`, chosen before the first public release. Earlier builds were `local.scorebug.mac`: the first launch of the renamed app copies that domain's preferences across once, and the keychain item for the football-data key keeps the old service name so it is not lost.
 
 Run without installing, on a disposable data folder:
 
