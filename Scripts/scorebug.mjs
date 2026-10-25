@@ -3,7 +3,7 @@
 import { parseArgs } from 'node:util';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { pickClub, pickCompetition, teamEntry } from './match-lib.mjs';
 const exec = promisify(execFile);
@@ -48,6 +48,8 @@ function summary(state,slot) {
  });
  return slot?matches[0]:matches;
 }
+// The installed production copy (install.sh's folder, then a DMG install); a disposable copy shares the bundle id.
+const installedApp=()=>{const app=['/Applications/JuniorOS Apps/Scorebug.app','/Applications/Scorebug.app'].find(existsSync);return app?['-a',app]:['-b','com.juniornkanabassi.Scorebug'];};
 export async function main(args=process.argv.slice(2)) {
  let json=args.includes('--json');
  try {
@@ -94,7 +96,7 @@ export async function main(args=process.argv.slice(2)) {
     if(e.name==='TimeoutError'||e.name==='AbortError')throw new Failure('timeout','Request timed out; it was not retried');
     if(e.cause?.code==='ECONNREFUSED') {
      if(name!=='status'&&port===8600&&!values['no-launch']&&!launched){
-      launched=true;await exec('/usr/bin/open',['-g','-b','com.juniornkanabassi.Scorebug','--args','--background']);
+      launched=true;await exec('/usr/bin/open',['-g',...installedApp(),'--args','--background']);
       const deadline=Date.now()+10000;
       while(Date.now()<deadline){try {await api('/api/state');return await api(path,body);}catch(error){if(error.code!=='not_running')throw error;}await sleep(250);}
       throw new Failure('timeout','Scorebug did not start within 10 seconds');
@@ -164,7 +166,7 @@ export async function main(args=process.argv.slice(2)) {
    const themes=await api('/api/themes'),state=await api('/api/state');result={themes,matches:state.matches.map(m=>({slot:m.slot,themeId:m.themeId??state.competitions.find(c=>c.id===m.competitionId)?.themeId}))};
   } else if(name==='theme set')result=summary(await send('setTheme',{themeId:values.id==='default'?'':values.id}),slot);
   else result=summary(await send(name==='reset'?'reset':'setVisible',name==='reset'?{}:{visible:name==='show'}),slot);
-  if(values.show)await exec('/usr/bin/open',['-b','com.juniornkanabassi.Scorebug']);
+  if(values.show)await exec('/usr/bin/open',installedApp());
   const offline = result.running === false;
   const output = offline ? `Scorebug is not running on port ${result.port}`
    : name === 'status' ? result.matches.map(m=>`Slot ${m.slot}: ${m.home.name} ${m.score[0]}–${m.score[1]} ${m.away.name} · ${m.phase} ${m.clock}`).join('\n')

@@ -1,6 +1,9 @@
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 
-// By bundle identifier, so a DMG install in /Applications launches as well as /Applications/JuniorOS Apps.
+// The installed production copy: install.sh's folder, then a DMG install. A disposable copy shares the bundle id, so
+// the id is only the last resort.
+const INSTALLS = ["/Applications/JuniorOS Apps/Scorebug.app", "/Applications/Scorebug.app"];
 const BUNDLE_ID = "com.juniornkanabassi.Scorebug";
 const COOLDOWN_MS = 15_000;
 const TIMEOUT_MS = 10_000;
@@ -9,7 +12,9 @@ let lastLaunch = Number.NEGATIVE_INFINITY;
 
 function launchApp(): Promise<void> {
 	return new Promise((resolve, reject) => {
-		execFile("/usr/bin/open", ["-g", "-b", BUNDLE_ID, "--args", "--background"], (error) => {
+		const app = INSTALLS.find((path) => existsSync(path));
+		const target = app ? ["-a", app] : ["-b", BUNDLE_ID];
+		execFile("/usr/bin/open", ["-g", ...target, "--args", "--background"], (error) => {
 			if (error) reject(error);
 			else resolve();
 		});
