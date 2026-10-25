@@ -17,6 +17,10 @@ APP_PATH="$BUILD_STAGE/Scorebug.app"
 mkdir -p "$APP_PATH/Contents/MacOS" "$APP_PATH/Contents/Resources"
 cp "$BIN_PATH/Scorebug" "$APP_PATH/Contents/MacOS/Scorebug"
 cp Resources/Info.plist "$APP_PATH/Contents/Info.plist"
+# The commit this builds ("-dirty" with uncommitted changes); release.sh publishes only a clean HEAD's build.
+SOURCE_COMMIT=$(git rev-parse HEAD)
+[[ -z $(git status --porcelain) ]] || SOURCE_COMMIT+="-dirty"
+/usr/libexec/PlistBuddy -c "Add :ScorebugSourceCommit string $SOURCE_COMMIT" "$APP_PATH/Contents/Info.plist"
 # Sparkle, found through the app's rpath @executable_path/../Frameworks; ditto keeps its symlinks.
 [[ -d "$BIN_PATH/Sparkle.framework" ]] || { print -u2 "No Sparkle.framework in $BIN_PATH"; exit 1; }
 mkdir -p "$APP_PATH/Contents/Frameworks"
