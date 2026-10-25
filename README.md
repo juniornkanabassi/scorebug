@@ -35,6 +35,8 @@ The 1.0.1 candidate refreshes replaced crests and competition logos without relo
 
 1.0.3 never shows an overlay a change that was not saved. If writing `state.json` fails (a full disk, say), the command is undone, nothing is broadcast, the window shows "Could not save state" and API responses carry `X-Scorebug-Save-Failed: true`; retry once the disk is fixed. Overlay snapshots read settings and competitions as last saved, so an unsaved setting or competition edit stays in the window until a save succeeds.
 
+1.0.4 re-measures the LaLiga bug against the broadcast: the clock sits inside its cell under the league mark (it used to slide under the away club and clip KO), the colour tab sits on the right of the club cell, and the goal plates fit both orientations.
+
 If ESPN omits a goal ID or supplies ambiguous details, matching falls back to the minute. A previously removed goal can then reappear. Keep automatic updates off when this happens and use the manual controls. Unrecognised team names keep the saved orientation.
 
 ## AI control
