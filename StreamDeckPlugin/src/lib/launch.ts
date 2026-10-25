@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 
-const APP = "/Applications/JuniorOS Apps/Scorebug.app";
+// By bundle identifier, so a DMG install in /Applications launches as well as /Applications/JuniorOS Apps.
+const BUNDLE_ID = "com.juniornkanabassi.Scorebug";
 const COOLDOWN_MS = 15_000;
 const TIMEOUT_MS = 10_000;
 const POLL_MS = 250;
@@ -8,7 +9,7 @@ let lastLaunch = Number.NEGATIVE_INFINITY;
 
 function launchApp(): Promise<void> {
 	return new Promise((resolve, reject) => {
-		execFile("/usr/bin/open", ["-g", "-a", APP, "--args", "--background"], (error) => {
+		execFile("/usr/bin/open", ["-g", "-b", BUNDLE_ID, "--args", "--background"], (error) => {
 			if (error) reject(error);
 			else resolve();
 		});

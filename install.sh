@@ -8,7 +8,10 @@ DEST="$INSTALL_ROOT/Scorebug.app"
 STAGE=$(mktemp -d /private/tmp/scorebug-install.XXXXXX)
 # build.sh's own bundle: Sparkle embedded and signed inside-out, updates off unless Developer ID with a real key.
 # Not notarised by default (SCOREBUG_NOTARISE=1 to notarise); the archive goes to this stage, never Outputs.
-SCOREBUG_NOTARISE="${SCOREBUG_NOTARISE:-0}" SCOREBUG_OUTPUT_ROOT="$STAGE/out" zsh ./build.sh
+# A disposable install (SCOREBUG_INSTALL_ROOT) is signed ad hoc, so build.sh strips its feed and it can never update.
+LOCAL_SIGNING="${SCOREBUG_LOCAL_SIGNING:-}"
+[[ -z "${SCOREBUG_INSTALL_ROOT+x}" ]] || LOCAL_SIGNING=1
+SCOREBUG_LOCAL_SIGNING="$LOCAL_SIGNING" SCOREBUG_NOTARISE="${SCOREBUG_NOTARISE:-0}" SCOREBUG_OUTPUT_ROOT="$STAGE/out" zsh ./build.sh
 /usr/bin/ditto -x -k "$STAGE/out/Scorebug $(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist).zip" "$STAGE"
 APP="$STAGE/Scorebug.app"
 
