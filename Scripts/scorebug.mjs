@@ -125,7 +125,7 @@ export async function main(args=process.argv.slice(2)) {
     if(e.name==='TimeoutError'||e.name==='AbortError')throw new Failure('timeout','Request timed out; it was not retried');
     if(e.cause?.code==='ECONNREFUSED') {
      if(name!=='status'&&port===8600&&!values['no-launch']&&!launched){
-      launched=true;await exec('/usr/bin/open',['-g','-b','local.scorebug.mac','--args','--background']);
+      launched=true;await exec('/usr/bin/open',['-g','-b','com.juniornkanabassi.Scorebug','--args','--background']);
       const deadline=Date.now()+10000;
       while(Date.now()<deadline){try {await api('/api/state');return await api(path,body);}catch(error){if(error.code!=='not_running')throw error;}await sleep(250);}
       throw new Failure('timeout','Scorebug did not start within 10 seconds');
@@ -232,7 +232,7 @@ export async function main(args=process.argv.slice(2)) {
   else if(name==='live auto')result=summary(await send('setAutoUpdateLiveData',{showScorers:values.state==='on'}),slot);
   else if(name==='live delay')result=summary(await send('setLiveDataDelay',{minutes:values.minutes}),slot);
   else result=summary(await send(name==='reset'?'reset':'setVisible',name==='reset'?{}:{visible:name==='show'}),slot);
-  if(values.show)await exec('/usr/bin/open',['-b','local.scorebug.mac']);
+  if(values.show)await exec('/usr/bin/open',['-b','com.juniornkanabassi.Scorebug']);
   const offline = result.running === false;
   const output = offline ? `Scorebug is not running on port ${result.port}`
    : name === 'status' ? result.matches.map(m=>`Slot ${m.slot}: ${m.home.name} ${m.score[0]}–${m.score[1]} ${m.away.name} · ${m.phase} ${m.clock}`).join('\n')

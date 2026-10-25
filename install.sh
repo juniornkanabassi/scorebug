@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds Scorebug and installs it as "/Applications/JuniorOS Apps/Scorebug.app" (SCOREBUG_INSTALL_ROOT overrides the folder for disposable tests), replacing the previous copy, then opens it.
+# Builds Scorebug, signs it (Developer ID when available, otherwise ad hoc) and installs it as "/Applications/JuniorOS Apps/Scorebug.app" (SCOREBUG_INSTALL_ROOT overrides the folder for disposable tests), replacing the previous copy, then opens it.
 # Like Content Template: no zip to unpack, just the app in Applications.
 set -euo pipefail
 cd "${0:A:h}"
@@ -21,7 +21,12 @@ cp Scripts/scorebug.mjs Scripts/match-lib.mjs "$APP/Contents/Resources/Scripts/"
 cp mcp/scorebug-mcp.mjs "$APP/Contents/Resources/mcp/"
 
 [[ -f Resources/squads.json ]] && cp Resources/squads.json "$APP/Contents/Resources/squads.json"
-/usr/bin/codesign --force --sign - "$APP"
+# The Developer ID identity, when present, keeps one stable signature across rebuilds, so the keychain item holding
+# the football-data key stops asking for access after every install. Ad hoc otherwise. No notarisation here.
+DEV_ID_SHA="C297CD17464A0EF6C93704A59BC2E1D4D1759400"
+SIGN_ID="-"
+if /usr/bin/security find-identity -v -p codesigning 2>/dev/null | grep -q "$DEV_ID_SHA"; then SIGN_ID="$DEV_ID_SHA"; fi
+/usr/bin/codesign --force --options runtime --sign "$SIGN_ID" "$APP"
 
 /usr/bin/codesign --verify --strict "$APP"
 # Refuse before replacing either a production or disposable app that is running.
