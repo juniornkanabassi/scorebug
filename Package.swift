@@ -23,8 +23,9 @@ let package = Package(
                            .product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/Scorebug",
             swiftSettings: [.swiftLanguageMode(.v5)],
-            // build.sh embeds Sparkle.framework in Contents/Frameworks.
-            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
+            // build.sh embeds Sparkle.framework in Contents/Frameworks; a bare SwiftPM binary finds it beside itself.
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
+                                                                    "-Xlinker", "-rpath", "-Xlinker", "@executable_path"])]
         ),
         .executableTarget(name: "CoreChecks", dependencies: ["ScorebugCore"], path: "Sources/CoreChecks",
                           swiftSettings: [.swiftLanguageMode(.v5)]),

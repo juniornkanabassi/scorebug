@@ -3,30 +3,14 @@
 # Like Content Template: no zip to unpack, just the app in Applications.
 set -euo pipefail
 cd "${0:A:h}"
-BUILD_ROOT="${SCOREBUG_BUILD_ROOT:-/private/tmp/scorebug-build}"
 INSTALL_ROOT="${SCOREBUG_INSTALL_ROOT:-/Applications/JuniorOS Apps}"
 DEST="$INSTALL_ROOT/Scorebug.app"
-swift build --scratch-path "$BUILD_ROOT" -c release --product Scorebug
-BIN_PATH=$(swift build --scratch-path "$BUILD_ROOT" -c release --show-bin-path)
 STAGE=$(mktemp -d /private/tmp/scorebug-install.XXXXXX)
+# build.sh's own bundle: Sparkle embedded and signed inside-out, updates off unless Developer ID with a real key.
+# Not notarised by default (SCOREBUG_NOTARISE=1 to notarise); the archive goes to this stage, never Outputs.
+SCOREBUG_NOTARISE="${SCOREBUG_NOTARISE:-0}" SCOREBUG_OUTPUT_ROOT="$STAGE/out" zsh ./build.sh
+/usr/bin/ditto -x -k "$STAGE/out/Scorebug $(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist).zip" "$STAGE"
 APP="$STAGE/Scorebug.app"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_PATH/Scorebug" "$APP/Contents/MacOS/Scorebug"
-cp Resources/Info.plist "$APP/Contents/Info.plist"
-cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-cp -R Resources/Overlays "$APP/Contents/Resources/Overlays"
-cp Resources/seed-library.json "$APP/Contents/Resources/seed-library.json"
-mkdir -p "$APP/Contents/Resources/Scripts" "$APP/Contents/Resources/mcp"
-cp Scripts/scorebug.mjs Scripts/match-lib.mjs "$APP/Contents/Resources/Scripts/"
-cp mcp/scorebug-mcp.mjs "$APP/Contents/Resources/mcp/"
-
-[[ -f Resources/squads.json ]] && cp Resources/squads.json "$APP/Contents/Resources/squads.json"
-# The Developer ID identity, when present, keeps one stable signature across rebuilds, so the keychain item holding
-# the football-data key stops asking for access after every install. Ad hoc otherwise. No notarisation here.
-DEV_ID_SHA="C297CD17464A0EF6C93704A59BC2E1D4D1759400"
-SIGN_ID="-"
-if /usr/bin/security find-identity -v -p codesigning 2>/dev/null | grep -q "$DEV_ID_SHA"; then SIGN_ID="$DEV_ID_SHA"; fi
-/usr/bin/codesign --force --options runtime --sign "$SIGN_ID" "$APP"
 
 /usr/bin/codesign --verify --strict "$APP"
 # Refuse before replacing either a production or disposable app that is running.
