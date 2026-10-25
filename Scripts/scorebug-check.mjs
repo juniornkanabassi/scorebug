@@ -94,6 +94,9 @@ try {
  await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--no-own-goal'],{command:'setScorer',goalId:'00000000-0000-0000-0000-000000000001',scorer:'X',ownGoal:false});
  await sent(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--minute','30'],{command:'setGoalMinute',goalId:'00000000-0000-0000-0000-000000000001',minute:30});
  ok((await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000009','--minute','3'],1)).error.code==='no_such_goal','goal edit unknown id');
+ match.goals=[{id:'00000000-0000-0000-0000-000000000001',side:'home',scorer:'X',minuteLabel:"23'"}];posts=[];
+ await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','X','--minute','24','--request-id','same-scorer']);
+ ok(posts.length===2&&posts.every(p=>!p.strict)&&match.goals[0].minuteLabel==="24'",'unchanged scorer does not block the minute edit');
  posts=[];const gone=await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000009','--minute','3','--request-id','gone'],1);
  ok(gone.error.code==='not_applied'&&posts.length===1&&posts[0].strict===true&&posts[0].requestId==='gone:minute','goal edit with a retry id lets the app decide (strict)');
  await cli(['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001'],2);
@@ -141,6 +144,9 @@ try {
  prepare(['shootout','edit']);posts=[];
  await cli(['shootout','edit','--side','home','--kick','1','--result','scored']);
  ok(posts.length===0,'unchanged kick edit succeeds without a POST');
+ prepare(['shootout','edit']);posts=[];
+ await cli(['shootout','edit','--side','home','--kick','1','--result','scored','--request-id','same-kick']);
+ ok(posts.length===0,'unchanged kick edit with a retry id succeeds without a POST');
  const retryCommands=[
   ['goal','edit','--goal-id','00000000-0000-0000-0000-000000000001','--scorer','Y','--minute','46'],
   ...races,
