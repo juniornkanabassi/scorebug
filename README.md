@@ -92,4 +92,8 @@ zsh build.sh
 
 ## Licence
 
-The licence for Scorebug's own code is in [LICENSE](LICENSE). The name and icon are not covered by it. The overlay fonts (Archivo, Barlow, Inter, Montserrat and Oswald) are under the SIL Open Font License.
+Copyright (C) 2026 Junior Nkanabassi. Licensed under the GNU General Public License v3.0 or later (GPL-3.0-or-later); see [LICENSE](LICENSE). The Scorebug name and icon are not covered by the licence.
+
+In plain terms, you can use, change and share this code, but anything you distribute that is built on it has to stay open source under the same licence.
+
+The overlay fonts (Archivo, Barlow, Inter, Montserrat and Oswald) are under the SIL Open Font License, and FlyingFox, the web server inside the app, is under the MIT licence.
