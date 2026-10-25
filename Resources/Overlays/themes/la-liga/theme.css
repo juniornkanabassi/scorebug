@@ -5,9 +5,11 @@
 /* AR reel steady frame `laliga-laliga-ar-reel_00-18_steady`: measured red competition square and black club cells. */
 body[data-theme="la-liga"] .bug { --h: 52px; --ll-black: #090614; --ll-white: #F4F4F4; --ll-red: #FF4B44; --ll-comp-red: #F44D4C; --kick-pending: #555; --kick-scored: #2BD576; --kick-missed: #FF4B44;
   font-family: "Barlow Condensed", "Helvetica Neue", Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4)); }
-/* The AR reel steady frame `laliga-laliga-ar-reel_00-18_steady` measures a 50px mark,
-   107px black club cells, 53px white score cells and an 83px clock at 53px row height. */
-body[data-theme="la-liga"] .main { grid-template-areas: "comp home hs" "clock away as" "added added added"; grid-template-columns: calc(var(--h) * 0.96) calc(var(--h) * 2.06) var(--h); grid-template-rows: var(--h) var(--h) auto; }
+/* Re-measured 25 Oct 2026 from the AR reel steady frame at 0:18 (Barcelona 1-0 Villarreal, 45:08), 57px rows:
+   the mark and the clock share one 85px column (1.48h), the black club column is 59px (1.04h) with the colour tab
+   on its right edge, against the score cells, and the score column is 61px (1.07h). The old 0.96h mark, 2.06h club
+   and 1.57h by 1.21h clock let the clock spill under the away cell, clipping KO and the running time. */
+body[data-theme="la-liga"] .main { grid-template-areas: "comp home hs" "clock away as" "added added added"; grid-template-columns: calc(var(--h) * 1.48) calc(var(--h) * 1.04) calc(var(--h) * 1.07); grid-template-rows: var(--h) var(--h) auto; }
 body[data-theme="la-liga"] .sep, body[data-theme="la-liga"] .team .name, body[data-theme="la-liga"] .comp .label { display: none; }
 body[data-theme="la-liga"] .comp { background: var(--ll-comp-red); }
 body[data-theme="la-liga"] .comp .mark { width: calc(var(--h) * 0.72); height: calc(var(--h) * 0.72); background-color: #fff; clip-path: polygon(0 0, 30% 0, 30% 45%, 55% 45%, 55% 0, 100% 0, 100% 100%, 0 100%, 0 70%, 70% 70%, 70% 100%, 0 100%); transform: skewX(-18deg); }
@@ -17,17 +19,20 @@ body[data-theme="la-liga"] .team .code { position: absolute; animation: ll-swap 
 body[data-theme="la-liga"] .team .crest.monogram { animation: none; opacity: 0; }
 body[data-theme="la-liga"] .team .crest.monogram + .code { animation: none; opacity: 1; }
 @keyframes ll-swap { 0%, 45% { opacity: 1; } 50%, 95% { opacity: 0; } 100% { opacity: 1; } }
-body[data-theme="la-liga"] .team.home::before, body[data-theme="la-liga"] .team.away::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
-body[data-theme="la-liga"] .team.home::before { background: var(--home-primary); }
-body[data-theme="la-liga"] .team.away::before { background: var(--away-primary); }
+/* Colour tab on the right edge, the club's two colours stacked (the reel's Barcelona tab is blue over garnet). */
+body[data-theme="la-liga"] .team.home::before, body[data-theme="la-liga"] .team.away::before { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: calc(var(--h) * 0.09); }
+body[data-theme="la-liga"] .team.home::before { background: linear-gradient(var(--home-primary) 50%, var(--home-secondary) 50%); }
+body[data-theme="la-liga"] .team.away::before { background: linear-gradient(var(--away-primary) 50%, var(--away-secondary) 50%); }
 body[data-theme="la-liga"] .team.away { border-top: 1px solid #2a2a2a; }
 body[data-theme="la-liga"] .score { width: 100%; background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-weight: 800; font-size: calc(var(--h) * 0.62); }
-body[data-theme="la-liga"] .score.away { border-top: 2px solid #111; }
+body[data-theme="la-liga"] .score.away { border-top: 1px solid #9a9a9a; }
 /* Fonts, 5 September 2026 (round 6): the real LaLiga plate sets its clock digits in the same wide, bold face as the
    score cell, not the condensed face the club rows use (see Research/Theme fonts.md, g-laliga.png crop) -- this
    theme's .clock previously had no font-family override so it inherited "Barlow Condensed" 700 from .bug above.
    Match .score's family and weight instead. */
-body[data-theme="la-liga"] .clock { width: calc(var(--h) * 1.57); height: calc(var(--h) * 1.21); justify-self: start; background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-size: calc(var(--h) * 0.52); font-weight: 800; font-variant-numeric: tabular-nums; }
+/* 25 Oct 2026: the clock fills its grid cell under the mark, and its digits are lighter than the score's (the reel's
+   45:08 spans 1.12h at a 0.37h cap height), so 600 at 0.5h fits 00:00 to 120:00 inside the 1.48h column. */
+body[data-theme="la-liga"] .clock { background: var(--ll-white); color: #111; font-family: "Barlow", "Barlow Condensed", sans-serif; font-size: calc(var(--h) * 0.5); font-weight: 600; font-variant-numeric: tabular-nums; }
 body[data-theme="la-liga"] .clock.stopped { color: #c00; }
 body[data-theme="la-liga"] .added { height: calc(var(--h) * 0.7); justify-content: flex-start; padding: 0 12px; background: var(--ll-black); color: #fff; gap: 8px; font-size: calc(var(--h) * 0.44); }
 body[data-theme="la-liga"] .added .counter { color: #bbb; font-size: calc(var(--h) * 0.36); }
@@ -64,9 +69,9 @@ body[data-orientation="v"][data-theme="la-liga"] .shootout, body[data-orientatio
 body[data-orientation="v"][data-theme="la-liga"] .added { margin-top: 4px; }
 
 /* Portrait: the goal plate drops under the block instead of running off the right edge, with the same 8px visual gap.
-   Text at 1.75h clears the crest (0.3h position, auto 80% of 1.15h = 0.92h tall, so up to ~1.4h wide) the same way
-   the landscape padding bump above does. */
-body[data-orientation="v"][data-theme="la-liga"] .main::after { left: 0; top: calc(100% + 4px); width: 100%; height: calc(var(--h) * 1.15); padding-left: calc(var(--h) * 1.75); font-size: calc(var(--h) * 0.9); background-position: calc(var(--h) * 0.3) center; background-size: auto 80%; clip-path: inset(0 0 100% 0); }
+   The block is 3.59h wide since the 25 Oct re-measure, so the crest sits at 0.2h at 72% of 1.15h (0.83h tall, a wide
+   shield up to ~1.0h) and GOOOOL! starts at 1.3h at 0.66h, ending near 3.4h inside the plate instead of clipping. */
+body[data-orientation="v"][data-theme="la-liga"] .main::after { left: 0; top: calc(100% + 4px); width: 100%; height: calc(var(--h) * 1.15); padding-left: calc(var(--h) * 1.3); font-size: calc(var(--h) * 0.66); background-position: calc(var(--h) * 0.2) center; background-size: auto 72%; clip-path: inset(0 0 100% 0); }
 body[data-orientation="v"][data-theme="la-liga"] .bug.goal .main::after { animation: ll-plate-v 3.2s cubic-bezier(.3,.8,.2,1) forwards; will-change: clip-path; transform: translateZ(0); }
 @keyframes ll-plate-v { 0% { clip-path: inset(0 0 100% 0); } 18% { clip-path: inset(0 0 0 0); } 80% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(100% 0 0 0); } }
 
