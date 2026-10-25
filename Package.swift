@@ -11,15 +11,21 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swhitty/FlyingFox.git", from: "0.20.0"),
+        // Self-updating, the same Sparkle release as Talk & Read and Video Prompter.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
     ],
     targets: [
         .target(name: "ScorebugCore", path: "Sources/ScorebugCore",
                 swiftSettings: [.swiftLanguageMode(.v5)]),
         .executableTarget(
             name: "Scorebug",
-            dependencies: ["ScorebugCore", .product(name: "FlyingFox", package: "FlyingFox")],
+            dependencies: ["ScorebugCore", .product(name: "FlyingFox", package: "FlyingFox"),
+                           .product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/Scorebug",
-            swiftSettings: [.swiftLanguageMode(.v5)]
+            swiftSettings: [.swiftLanguageMode(.v5)],
+            // build.sh embeds Sparkle.framework in Contents/Frameworks; a bare SwiftPM binary finds it beside itself.
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
+                                                                    "-Xlinker", "-rpath", "-Xlinker", "@executable_path"])]
         ),
         .executableTarget(name: "CoreChecks", dependencies: ["ScorebugCore"], path: "Sources/CoreChecks",
                           swiftSettings: [.swiftLanguageMode(.v5)]),

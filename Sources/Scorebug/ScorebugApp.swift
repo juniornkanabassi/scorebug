@@ -46,12 +46,20 @@ struct ScorebugApp: App {
     private let launchOptions: LaunchOptions
 
     init() {
-        Self.adoptLegacyPreferences()
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        // A running pre-rename Scorebug owns the same store and port: hand over to it rather than open a second writer.
+        let production = options.dataDirectory == Store.defaultDirectory()
+        if production, let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
+            if !options.background { legacy.activate() }
+            exit(0)
+        }
+        // Only the production launch migrates: a disposable run shares this defaults domain and must not set the marker.
+        if production { Self.adoptLegacyPreferences() }
         launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
         model.startServer()
+        Updates.shared.start()
     }
 
     /// Scorebug was local.scorebug.mac until its public release. Copy that domain's preferences (text size, last
@@ -81,6 +89,7 @@ struct ScorebugApp: App {
                 Divider()
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
+            UpdateCommands()
         }
         MenuBarExtra("Scorebug", systemImage: "sportscourt") {
             MenuBarCommands()
