@@ -14,7 +14,7 @@ const call=(method,params)=>new Promise(r=>{const id=++seq;pending.set(id,r);chi
 try {
  const init=await call('initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'check',version:'1'}});assert.equal(init.result.protocolVersion,'2025-06-18');checks++;
  child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');
- const list=await call('tools/list');assert.equal(list.result.tools.length,14);checks++;
+ const list=await call('tools/list');assert.equal(list.result.tools.length,32);checks++;
  const tool=(name,args={})=>call('tools/call',{name,arguments:args});
  const status=await tool('status');assert(JSON.parse(status.result.content[0].text).result.running);checks++;
  await tool('reset',{yes:true});
