@@ -6,6 +6,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenObserver: Any?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        // As early as AppKit allows, so a background launch never flashes a Dock tile.
+        if LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).background { NSApp.setActivationPolicy(.accessory) }
         // SCOREBUG_APPEARANCE=light|dark pins this launch to Aqua or Dark Aqua for visual checks.
         switch ProcessInfo.processInfo.environment["SCOREBUG_APPEARANCE"] {
         case "light": NSApp.appearance = NSAppearance(named: .aqua)
