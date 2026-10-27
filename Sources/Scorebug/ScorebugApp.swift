@@ -82,8 +82,13 @@ struct ScorebugApp: App {
                     NSApp.setActivationPolicy(.regular)
                     WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 })
                 }
-                // A background launch goes back to the menu bar alone when its window closes; the overlays keep running.
-                .onDisappear { if launchOptions.background { NSApp.setActivationPolicy(.accessory) } }
+                // A background launch goes back to the menu bar alone when its last window closes; the overlays keep running.
+                .onDisappear {
+                    guard launchOptions.background else { return }
+                    DispatchQueue.main.async {
+                        if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { NSApp.setActivationPolicy(.accessory) }
+                    }
+                }
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
