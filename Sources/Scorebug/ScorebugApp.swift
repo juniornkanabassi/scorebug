@@ -15,8 +15,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        // `--background` (the CLI and MCP launches): the overlay server and the menu bar item, with no Dock
+        // tile until the main window opens.
+        NSApp.setActivationPolicy(options.background ? .accessory : .regular)
         if !options.background, options.screenName == nil { NSApp.activate(ignoringOtherApps: true) }
         guard let wanted = options.screenName else { return }
         // `--screen`: every window this process opens goes to the named display, and the app never takes focus,
@@ -76,7 +78,12 @@ struct ScorebugApp: App {
         WindowGroup("Scorebug", id: "main") {
             ContentView().environmentObject(model).frame(minWidth: 1180, minHeight: 720)
                 .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
-                .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
+                .onAppear {
+                    NSApp.setActivationPolicy(.regular)
+                    WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 })
+                }
+                // A background launch goes back to the menu bar alone when its window closes; the overlays keep running.
+                .onDisappear { if launchOptions.background { NSApp.setActivationPolicy(.accessory) } }
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
