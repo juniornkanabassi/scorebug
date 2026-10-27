@@ -132,7 +132,7 @@ export async function main(args=process.argv.slice(2)) {
      if(name!=='status'&&port===8600&&!values['no-launch']&&!launched){
       launched=true;await exec('/usr/bin/open',['-g',...installedApp(),'--args','--background']);
       const deadline=Date.now()+10000;
-      while(Date.now()<deadline){try {await api('/api/state');return await api(path,body);}catch(error){if(error.code!=='not_running')throw error;}await sleep(250);}
+      while(Date.now()<deadline){try {await api('/api/state');return await api(path,body);}catch(error){if(error.code!=='not_running')throw error;}await sleep(50);}
       throw new Failure('timeout','Scorebug did not start within 10 seconds');
      }
      throw new Failure('not_running',`Scorebug is not answering on port ${port}`);
