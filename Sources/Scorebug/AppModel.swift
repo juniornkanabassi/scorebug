@@ -211,8 +211,41 @@ final class AppModel: ObservableObject {
             guard state.matches[idx].phase != .shootout else { throw EngineError.badRequest("goals cannot be removed during a shootout") }
             guard state.matches[idx].goals.contains(where: { $0.side == side }) else { throw EngineError.badRequest("no goal exists for that side") }
         }
-        profiled(command) {
+        if request.strict == true {
+            let match = state.matches[idx]
+            switch command {
+            case .startShootout:
+                guard match.shootout == nil else { throw EngineError.notApplied("A shootout is already under way; use shootout undo/edit/remove") }
+                guard match.phase != .preMatch else { throw EngineError.notApplied("A shootout needs the match to have kicked off") }
+            case .recordKick, .undoKick, .setKick, .removeKick:
+                guard let shootout = match.shootout else { throw EngineError.notApplied("No shootout in this slot") }
+                switch command {
+                case .undoKick:
+                    guard !shootout.kicks.isEmpty else { throw EngineError.notApplied("No kicks to undo") }
+                case .setKick(let side, let index, _), .removeKick(let side, let index):
+                    guard MatchEngine.kickIndex(shootout, side, index) != nil else {
+                        let kick = index == Int.max ? "at index \(index)" : "\(index + 1)"
+                        throw EngineError.notApplied("The \(side.rawValue) side has not taken kick \(kick)")
+                    }
+                default: break
+                }
+            case .setScorer(let id, _, _, _), .setGoalMinute(let id, _, _):
+                guard match.goals.contains(where: { $0.id == id }) else { throw EngineError.notApplied("No goal with that id in this slot") }
+            default: break
+            }
+        }
+        try profiled(command) {
+            let before = state.matches[idx]
             mutate(command, at: idx)
+            if request.strict == true, case .endPeriod = command {
+                var after = state.matches[idx]
+                // A revision bump alone is not a match change.
+                after.revision = before.revision
+                if after == before {
+                    state.matches[idx] = before
+                    throw EngineError.notApplied("The command did not change the match")
+                }
+            }
             if persistAndBroadcast(deferUIUpdate: true), case .setTeam = command { Task { await self.linkESPN(slot: slot) } }
         }
     }
@@ -221,10 +254,10 @@ final class AppModel: ObservableObject {
     /// run-loop turn's layer tree has committed (`CATransaction`'s completion block), which approximates
     /// command-to-painted-frame.
     private static let profileEnabled = ProcessInfo.processInfo.environment["SCOREBUG_PROFILE"] != nil
-    private func profiled(_ command: Command, _ body: () -> Void) {
-        guard AppModel.profileEnabled else { body(); return }
+    private func profiled(_ command: Command, _ body: () throws -> Void) rethrows {
+        guard AppModel.profileEnabled else { try body(); return }
         let start = CFAbsoluteTimeGetCurrent()
-        body()
+        try body()
         let label = String(describing: command).prefix { $0 != "(" }
         CATransaction.setCompletionBlock {
             FileHandle.standardError.write(Data(String(format: "profile %@ %.1f\n", "\(label)", (CFAbsoluteTimeGetCurrent() - start) * 1000).utf8))

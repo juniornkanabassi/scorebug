@@ -5,15 +5,15 @@
   "verified": true,
   "geometry": {
     "h": {
-      "left": 48,
-      "top": 40,
-      "scale": 1.5
+      "left": 133,
+      "top": 69,
+      "scale": 1.83
     },
     "v": {
       "top": 260,
       "maxWidth": 800,
-      "scale": 2.0,
-      "top2": 492
+      "scale": 2.2,
+      "top2": 513
     }
   }
 }

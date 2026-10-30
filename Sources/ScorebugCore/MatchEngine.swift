@@ -76,6 +76,7 @@ public enum Command: Sendable, Equatable {
 /// current period's base.
 public struct CommandRequest: Codable, Sendable {
     public var command: String
+    public var strict: Bool?
     public var side: String?
     public var delta: Int?
     public var minutes: Int?
@@ -103,7 +104,8 @@ public struct CommandRequest: Codable, Sendable {
     public var index: Int?
     public var eventId: String?
 
-    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil, index: Int? = nil, eventId: String? = nil) {
+    public init(command: String, side: String? = nil, delta: Int? = nil, minutes: Int? = nil, period: String? = nil, result: String? = nil, visible: Bool? = nil, goalId: String? = nil, scorer: String? = nil, ownGoal: Bool? = nil, penalty: Bool? = nil, competitionId: String? = nil, team: TeamEntry? = nil, themeId: String? = nil, seconds: Int? = nil, deltaSeconds: Int? = nil, home: Int? = nil, away: Int? = nil, showScorers: Bool? = nil, minute: Int? = nil, plus: Int? = nil, index: Int? = nil, eventId: String? = nil, strict: Bool? = nil) {
+        self.strict = strict
         self.command = command; self.side = side; self.delta = delta; self.minutes = minutes; self.period = period
         self.result = result; self.visible = visible; self.goalId = goalId; self.scorer = scorer; self.ownGoal = ownGoal; self.penalty = penalty
         self.competitionId = competitionId; self.team = team; self.themeId = themeId
@@ -182,7 +184,8 @@ public struct CommandRequest: Codable, Sendable {
 
 public enum EngineError: Error, Equatable, CustomStringConvertible {
     case badRequest(String)
-    public var description: String { switch self { case .badRequest(let m): return m } }
+    case notApplied(String)
+    public var description: String { switch self { case .badRequest(let m), .notApplied(let m): return m } }
 }
 
 public enum MatchEngine {
@@ -361,7 +364,7 @@ public enum MatchEngine {
     }
 
     /// The global index into `shootout.kicks` for the `index`-th kick (0-based) that side has taken, or nil if out of range.
-    private static func kickIndex(_ s: Shootout, _ side: Side, _ index: Int) -> Int? {
+    public static func kickIndex(_ s: Shootout, _ side: Side, _ index: Int) -> Int? {
         let matching = s.kicks.indices.filter { s.kicks[$0].side == side }
         guard index >= 0, index < matching.count else { return nil }
         return matching[index]

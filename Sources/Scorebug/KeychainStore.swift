@@ -2,6 +2,7 @@ import Foundation
 import Security
 
 enum KeychainStore {
+    // The service keeps the pre-release bundle identifier so the saved football-data key survives the rename.
     private static let service = "local.scorebug.mac"
     private static let account = "football-data"
 

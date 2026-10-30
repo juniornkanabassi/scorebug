@@ -226,7 +226,9 @@ final class OverlayServer: @unchecked Sendable {
                 var headers: [HTTPHeader: String] = [.contentType: "application/json; charset=utf-8"]
                 if saved.saveFailed { headers[HTTPHeader("X-Scorebug-Save-Failed")] = "true" }
                 return HTTPResponse(statusCode: .ok, headers: headers, body: saved.data)
-            case .failure(let error): return HTTPResponse(statusCode: .badRequest, body: Data("\(error)".utf8))
+            case .failure(let error):
+                let status: HTTPStatusCode = if case EngineError.notApplied = error { .conflict } else { .badRequest }
+                return HTTPResponse(statusCode: status, body: Data("\(error)".utf8))
             }
         })
 
