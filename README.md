@@ -47,7 +47,7 @@ npx streamdeck link com.juniornkanabassi.scorebug.sdPlugin
 
 ## Privacy
 
-Scorebug's server listens only on 127.0.0.1, so nothing on your network can reach it, and it checks each request's Host and Origin so web pages cannot drive it. It contacts football-data.org and ESPN to load fixtures, live scores and crests, and FotMob too if you turn on its goal check. Your football-data.org key is stored in the macOS keychain. Your clubs, settings and match state are kept in `~/Library/Application Support/Scorebug/`.
+Scorebug's server listens only on 127.0.0.1, so nothing on your network can reach it, and it checks each request's Host and Origin so web pages cannot drive it. It contacts football-data.org and ESPN to load fixtures, live scores and crests, and FotMob too if you turn on its goal check. It also checks juniornkanabassi.com for updates. Your football-data.org key is stored in the macOS keychain. Your clubs, settings and match state are kept in `~/Library/Application Support/Scorebug/`.
 
 ## Command line and AI assistants
 
@@ -80,7 +80,7 @@ Every command, its options and the error codes are in [docs/DEVELOPMENT.md](docs
 
 ## Building from source
 
-You need an Apple silicon Mac with Xcode or the Swift 6 command-line tools. The only Swift dependency is FlyingFox, which SwiftPM fetches.
+You need an Apple silicon Mac with Xcode or the Swift 6 command-line tools. The Swift dependencies are FlyingFox and Sparkle, which SwiftPM fetches.
 
 ```sh
 swift build --scratch-path /private/tmp/scorebug-build
@@ -96,4 +96,4 @@ Copyright (C) 2026 Junior Nkanabassi. Licensed under the GNU General Public Lice
 
 In plain terms, you can use, change and share this code, but anything you distribute that is built on it has to stay open source under the same licence.
 
-The overlay fonts (Archivo, Barlow, Inter, Montserrat and Oswald) are under the SIL Open Font License, and FlyingFox, the web server inside the app, is under the MIT licence.
+The overlay fonts (Archivo, Barlow, Inter, Montserrat and Oswald) are under the SIL Open Font License, FlyingFox, the web server inside the app, is under the MIT licence, and Sparkle, which installs updates, is under the MIT licence too.

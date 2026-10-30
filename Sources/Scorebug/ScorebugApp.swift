@@ -6,6 +6,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenObserver: Any?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        // As early as AppKit allows, so a background launch never flashes a Dock tile.
+        if LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).background { NSApp.setActivationPolicy(.accessory) }
         // SCOREBUG_APPEARANCE=light|dark pins this launch to Aqua or Dark Aqua for visual checks.
         switch ProcessInfo.processInfo.environment["SCOREBUG_APPEARANCE"] {
         case "light": NSApp.appearance = NSAppearance(named: .aqua)
@@ -15,8 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        // `--background` (the CLI and MCP launches): the overlay server and the menu bar item, with no Dock
+        // tile until the main window opens.
+        NSApp.setActivationPolicy(options.background ? .accessory : .regular)
         if !options.background, options.screenName == nil { NSApp.activate(ignoringOtherApps: true) }
         guard let wanted = options.screenName else { return }
         // `--screen`: every window this process opens goes to the named display, and the app never takes focus,
@@ -47,17 +51,46 @@ struct ScorebugApp: App {
 
     init() {
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        // A running pre-rename Scorebug owns the same store and port: hand over to it rather than open a second writer.
+        let production = options.dataDirectory == Store.defaultDirectory()
+        if production, let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
+            if !options.background { legacy.activate() }
+            exit(0)
+        }
+        // Only the production launch migrates: a disposable run shares this defaults domain and must not set the marker.
+        if production { Self.adoptLegacyPreferences() }
         launchOptions = options
         let model = AppModel(options: options)
         _model = StateObject(wrappedValue: model)
         model.startServer()
+        Updates.shared.start()
+    }
+
+    /// Scorebug was local.scorebug.mac until its public release. Copy that domain's preferences (text size, last
+    /// used values) across once, before AppModel reads them. The old domain is left untouched.
+    private static func adoptLegacyPreferences() {
+        let defaults = UserDefaults.standard, marker = "adoptedLegacyPreferences"
+        guard !defaults.bool(forKey: marker), let legacy = defaults.persistentDomain(forName: "local.scorebug.mac") else { return }
+        let current = defaults.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "com.juniornkanabassi.Scorebug") ?? [:]
+        for (key, value) in legacy where current[key] == nil { defaults.set(value, forKey: key) }
+        defaults.set(true, forKey: marker)
     }
 
     var body: some Scene {
         WindowGroup("Scorebug", id: "main") {
             ContentView().environmentObject(model).frame(minWidth: 1180, minHeight: 720)
                 .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
-                .onAppear { WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 }) }
+                .onAppear {
+                    NSApp.setActivationPolicy(.regular)
+                    WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 })
+                }
+                // A background launch goes back to the menu bar alone when its last window closes; the overlays keep running.
+                .onDisappear {
+                    guard launchOptions.background else { return }
+                    DispatchQueue.main.async {
+                        if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { NSApp.setActivationPolicy(.accessory) }
+                    }
+                }
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
@@ -70,6 +103,7 @@ struct ScorebugApp: App {
                 Divider()
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
+            UpdateCommands()
         }
         MenuBarExtra("Scorebug", systemImage: "sportscourt") {
             MenuBarCommands()
