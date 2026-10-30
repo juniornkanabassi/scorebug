@@ -106,3 +106,9 @@ The adapter uses only Node built-ins and forwards tools to the CLI; this small s
 Disposable checks: `node Scripts/scorebug-check.mjs`, `SCOREBUG_PORT=8680 node Scripts/security-check.mjs`, `SCOREBUG_PORT=8680 node Scripts/mcp-check.mjs`, and `node Scripts/plugin-check.mjs` after building the plugin. `SCOREBUG_INSTALL_ROOT` makes installation inert: no launch, registration, production quit or CLI symlink.
 
 Review regressions: `sh Scripts/model-check.sh` compiles the actual model and server with canned provider responses and disposable data; `node Scripts/overlay-check.mjs` and `node Scripts/plugin-command-check.mjs` exercise the actual overlay and shared plugin client without a browser or Stream Deck. The model check needs Python 3 and can reuse a scratch build via `SCOREBUG_BUILD_ROOT`; all its default paths are under `/private/tmp/fix-scorebug-*`.
+
+## Local verification [2026-10-01]
+
+Fix round 2 on `release-2026-09-30`: debug/release builds and ad hoc signing pass; 206 CoreChecks, 53 CLI, 27 security runtime, 11 bundled MCP, 20 bundled CLI and 14 plugin checks pass (331 total). Plugin build and Elgato validation pass. The header decoder observation reports the accepted limitation above.
+
+`git log -p --all` was scanned for API/token key prefixes, long hex strings and private-key markers: no secrets detected. The only two long-hex candidates are SwiftPM `originHash` and FlyingFox revision fields in `Package.resolved`. Ignore rules cover local media, data/library/crest stores, logs, `.env` and zip archives. The signed test archive is under `/private/tmp/scorebug-fix2`, not Outputs. Runtime checks use a disposable data directory and isolated `CFFIXED_USER_HOME`; test PID was stopped. Native UI/hardware acceptance was not rerun in this shell-only round.

@@ -47,7 +47,7 @@ npx streamdeck link com.juniornkanabassi.scorebug.sdPlugin
 
 ## Privacy
 
-Scorebug's server listens only on 127.0.0.1, so nothing on your network can reach it, and it checks each request's Host and Origin so web pages cannot drive it. It contacts football-data.org and ESPN to load fixtures, live scores and crests, and FotMob too if you turn on its goal check. It also checks juniornkanabassi.com for updates. Your football-data.org key is stored in the macOS keychain. Your clubs, settings and match state are kept in `~/Library/Application Support/Scorebug/`.
+Scorebug's server listens only on 127.0.0.1, so nothing on your network can reach it, and it checks each request's Host and Origin so web pages cannot drive it. It contacts football-data.org and ESPN to load fixtures, live scores and crests, and FotMob too if you turn on its goal check. It also checks juniornkanabassi.com for updates and downloads them from GitHub. Your football-data.org key is stored in the macOS keychain. Your clubs, settings and match state are kept in `~/Library/Application Support/Scorebug/`.
 
 ## Command line and AI assistants
 
@@ -88,7 +88,7 @@ swift run --scratch-path /private/tmp/scorebug-build CoreChecks
 zsh build.sh
 ```
 
-`CoreChecks` is the test suite. `build.sh` writes the app in a zip to `../Outputs`, outside the clone, and `install.sh` builds and installs it on your own Mac. To try it without touching your real data, run the built app with `--data-directory` pointing at an empty temporary folder and `--port` set to something other than 8600. The launch flags, the local API and the check scripts are covered in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+`CoreChecks` is the test suite. `build.sh` writes the app in a zip to `../Outputs`, outside the clone, and `install.sh` builds and installs it on your own Mac. To try it without touching your real data, run the built app with `--data-directory` pointing at an empty temporary folder and `--port` set to something other than 8600. `install.sh` installs at `/Applications/JuniorOS Apps/Scorebug.app`, so use that path in the commands above if you installed it that way. The launch flags, the local API and the check scripts are covered in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Licence
 
