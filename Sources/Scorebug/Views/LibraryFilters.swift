@@ -32,13 +32,13 @@ struct FilterChip: View {
     let label: String
     let onRemove: () -> Void
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Space.xs) {
             Text(label).scaledFont(.caption)
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill").scaledFont(.caption)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).help("Remove \(label) filter").accessibilityLabel("Remove \(label) filter")
         }
-        .padding(.horizontal, 8).padding(.vertical, 3)
+        .padding(.horizontal, Space.sm).padding(.vertical, Space.xs)
         .background(Capsule().fill(Color.accentColor.opacity(0.15)))
         .foregroundStyle(Color.accentColor)
     }

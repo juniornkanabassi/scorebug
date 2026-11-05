@@ -6,6 +6,22 @@ import UniformTypeIdentifiers
 import ImageIO
 import AppKit
 
+struct LibraryCommandContext {
+    let isGrid: Bool
+    let setMode: (LibraryViewMode) -> Void
+}
+
+private struct LibraryCommandsKey: FocusedValueKey {
+    typealias Value = LibraryCommandContext
+}
+
+extension FocusedValues {
+    var libraryCommands: LibraryCommandContext? {
+        get { self[LibraryCommandsKey.self] }
+        set { self[LibraryCommandsKey.self] = newValue }
+    }
+}
+
 struct LibraryView: View {
     @EnvironmentObject var model: AppModel
     @State private var selected: UUID?
@@ -19,16 +35,25 @@ struct LibraryView: View {
     @State private var confirmDelete: Club?
     @AppStorage("libraryViewMode") private var viewMode: LibraryViewMode = .list
 
+    init(snapshotClubID: UUID? = nil, snapshotCompetitionID: String? = nil) {
+        _selected = State(initialValue: snapshotClubID)
+        _selectedCompetition = State(initialValue: snapshotCompetitionID)
+        _mode = State(initialValue: snapshotCompetitionID == nil ? 0 : 1)
+    }
+
     var body: some View {
         Group { if mode == 1 { competitions } else { clubsSplit } }
             .navigationTitle("Team Library")
+            .focusedSceneValue(\.libraryCommands, mode == 0
+                ? LibraryCommandContext(isGrid: viewMode == .icons, setMode: { viewMode = $0 })
+                : nil)
     }
 
     /// The Clubs/Competitions switch, now in the list column's own header (was a full-width bar above the
     /// split view, wasting the width the detail pane could otherwise use at a wide window).
     private var modePicker: some View {
         Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }
-            .scaledFont(.body).pickerStyle(.segmented).labelsHidden().padding(10)
+            .scaledFont(.body).pickerStyle(.segmented).labelsHidden().accessibilityLabel("Library category").padding(Space.md)
     }
 
     // MARK: Competitions tab
@@ -48,20 +73,21 @@ struct LibraryView: View {
             HSplitView {
                 VStack(spacing: 0) {
                     modePicker
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.sm) {
                         Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                         TextField("Search competitions", text: $competitionSearch).scaledFont(.body).textFieldStyle(.plain)
                         if !competitionSearch.isEmpty {
                             Button { competitionSearch = "" } label: { Image(systemName: "xmark.circle.fill") }
                                 .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
+                    .help("Clear search").accessibilityLabel("Clear search")
                         }
                     }
-                    .padding(6)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
-                    .padding(10)
+                    .padding(Space.sm)
+                    .background(RoundedRectangle(cornerRadius: Radius.medium).fill(Surface.fill))
+                    .padding(Space.md)
                     Divider()
                     List(filteredCompetitions, selection: $selectedCompetition) { c in
-                        HStack { CachedCompetitionMark(competition: c, size: 22); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
+                        HStack { CachedCompetitionMark(competition: c, size: 24); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
                             .scaledFont(.body)
                             .tag(c.id)
                     }
@@ -140,7 +166,6 @@ struct LibraryView: View {
                 // This pane's own root view must carry maxHeight: .infinity, or NSSplitView sizes the pane
                 // to the VStack's ideal height and the list renders at zero height instead of filling it.
                 .frame(minWidth: 320, idealWidth: 360, maxWidth: 440, maxHeight: .infinity, alignment: .top)
-                .background(shortcutButtons)
                 Group {
                     if let id = selected, let club = model.library.clubs.first(where: { $0.id == id }) {
                         ClubEditor(club: club).id(id)
@@ -158,22 +183,22 @@ struct LibraryView: View {
     /// Search, then one row: the Competitions menu, the Clubs/National teams/All choice and the
     /// List/Icons toggle. Chips only appear while a filter is active.
     private var toolbarRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.sm) {
             searchField
-            HStack(spacing: 10) {
+            HStack(spacing: Space.md) {
                 competitionsMenu
                 Picker("", selection: $clubsNationsFilter) {
                     ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
-                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden()
+                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().accessibilityLabel("Club type")
                 Spacer()
                 Picker("", selection: $viewMode) {
-                    Image(systemName: "list.bullet").tag(LibraryViewMode.list)
-                    Image(systemName: "square.grid.2x2").tag(LibraryViewMode.icons)
-                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().frame(width: 76)
+                    Label("List", systemImage: "list.bullet").tag(LibraryViewMode.list)
+                    Label("Icons", systemImage: "square.grid.2x2").tag(LibraryViewMode.icons)
+                }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().labelStyle(.iconOnly).accessibilityLabel("Library view").frame(width: 76)
             }
             if hasActiveFilters { chipsRow }
         }
-        .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 6)
+        .padding(.horizontal, Space.md).padding(.top, Space.md).padding(.bottom, Space.sm)
     }
 
     private var competitionsMenu: some View {
@@ -192,50 +217,51 @@ struct LibraryView: View {
         }
     }
 
-    /// A uniform 18 pt circular mark for the Competitions menu. A plain `Image` there ignores `.frame`
+    /// A uniform 16 pt circular mark for the Competitions menu. A plain `Image` there ignores `.frame`
     /// and draws at the source's native pixel size, so this uses a pre-sized menu icon, not a resized one.
     private func competitionMenuMark(_ comp: Competition) -> some View {
         Group {
             if let f = comp.logoFile, let img = CrestImage.menuIcon(file: f) {
                 Image(nsImage: img).clipShape(Circle())
             } else {
-                Circle().fill(CompetitionColours.colour(for: comp.id)).frame(width: 18, height: 18)
-                    .overlay(Text(comp.shortName.prefix(2)).font(.system(size: 7, weight: .heavy)).foregroundStyle(.white))
+                Circle().fill(CompetitionColours.colour(for: comp.id)).frame(width: 16, height: 16)
+                    .help(comp.name).accessibilityLabel(comp.name)
             }
         }
     }
 
     private var searchField: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Space.sm) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
             TextField("Search clubs and nations", text: $search).scaledFont(.body).textFieldStyle(.plain)
             if !search.isEmpty {
                 Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }
                     .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
+                    .help("Clear search").accessibilityLabel("Clear search")
             }
         }
-        .padding(6)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .controlBackgroundColor)))
+        .padding(Space.sm)
+        .background(RoundedRectangle(cornerRadius: Radius.medium).fill(Surface.fill))
     }
 
     private var chipsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.sm) {
                 ForEach(model.library.competitions.filter { selectedCompetitions.contains($0.id) }) { comp in
                     FilterChip(label: comp.shortName) { selectedCompetitions.remove(comp.id) }
                 }
                 if clubsNationsFilter != .all {
                     FilterChip(label: clubsNationsFilter.title) { clubsNationsFilter = .all }
                 }
-            }.padding(.horizontal, 10)
+            }.padding(.horizontal, Space.md)
         }
-        .padding(.top, 6)
+        .padding(.top, Space.sm)
     }
 
     private func countsRow(_ filtered: [Club]) -> some View {
         Text("\(model.library.clubs.count) clubs and nations, \(model.library.clubs.filter { $0.crestFile != nil }.count) with crests, \(filtered.count) shown")
             .scaledFont(.caption).foregroundStyle(.secondary)
-            .padding(.horizontal, 10).padding(.vertical, 6)
+            .padding(.horizontal, Space.md).padding(.vertical, Space.sm)
     }
 
     /// Competitions this club plays in, in the library's own order, up to 4. `byId` is built once per row
@@ -249,43 +275,49 @@ struct LibraryView: View {
         // must not trap the app, so the first competition with that id wins.
         let byId = Dictionary(model.library.competitions.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         return List(filtered, selection: $selected) { club in
-            HStack(spacing: 10) {
-                CachedCrestThumb(club: club, size: 22)
+            HStack(spacing: Space.md) {
+                CachedCrestThumb(club: club, size: 24)
                 Text(club.name)
                 Spacer()
                 Text(club.defaultCode).foregroundStyle(.secondary).monospaced()
-                HStack(spacing: 2) { ForEach(clubCompetitions(club, byId: byId)) { comp in CachedCompetitionMark(competition: comp, size: 14) } }
+                HStack(spacing: Space.xxs) { ForEach(clubCompetitions(club, byId: byId)) { comp in CachedCompetitionMark(competition: comp, size: 16) } }
             }
             .scaledFont(.body)
             .tag(club.id)
-            .padding(.vertical, 2)
+            .padding(.vertical, Space.xxs)
         }
     }
 
     private func clubGrid(_ filtered: [Club]) -> some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 104), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 104), spacing: Space.md)], spacing: Space.md) {
                 ForEach(filtered) { club in clubTile(club) }
-            }.padding(10)
+            }.gridProbe("club tiles", area: "library grid", edge: nil)
+                .padding(Space.md).gridArea("library grid", inset: Space.md)
         }
     }
 
     private func clubTile(_ club: Club) -> some View {
         let isSelected = selected == club.id
-        return VStack(spacing: 6) {
-            ZStack {
-                Circle().fill(.quaternary).frame(width: 56, height: 56)
-                CachedCrestThumb(club: club, size: 44)
+        return Button { selected = club.id } label: {
+            VStack(spacing: Space.sm) {
+                ZStack {
+                    Circle().fill(.quaternary).frame(width: 56, height: 56)
+                    CachedCrestThumb(club: club, size: 44)
+                }
+                Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+                Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.secondary).monospaced()
             }
-            Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
-            Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.secondary).monospaced()
+            .padding(Space.sm)
+            .frame(width: 104, height: 104)
+            .background(RoundedRectangle(cornerRadius: Radius.large).fill(isSelected ? Surface.selectedFill : Color.clear))
+            .overlay(RoundedRectangle(cornerRadius: Radius.large).stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2))
+            .contentShape(Rectangle())
         }
-        .padding(8)
-        .frame(width: 104, height: 104)
-        .background(RoundedRectangle(cornerRadius: 10).fill(isSelected ? Color.accentColor.opacity(0.18) : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1.5))
-        .contentShape(Rectangle())
-        .onTapGesture { selected = club.id }
+        .buttonStyle(.plain)
+        .help(club.name)
+        .accessibilityLabel("\(club.name), \(club.defaultCode)")
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     private var addRemoveRow: some View {
@@ -295,14 +327,14 @@ struct LibraryView: View {
                 let c = Club(name: "New club", shortName: "New", defaultCode: "NEW", primaryColour: "#333333", competitionIds: ids)
                 model.upsertClub(c); selected = c.id
             } label: { Image(systemName: "plus") }
-                .scaledFont(.body)
+                .scaledFont(.body).help("Add club").accessibilityLabel("Add club")
             Button {
                 if let id = selected { confirmDelete = model.library.clubs.first(where: { $0.id == id }) }
             } label: { Image(systemName: "minus") }
-                .scaledFont(.body).disabled(selected == nil)
+                .scaledFont(.body).help("Delete selected club").accessibilityLabel("Delete selected club").disabled(selected == nil)
             Spacer()
         }
-        .padding(8)
+        .padding(Space.sm)
         .confirmationDialog(
             "Delete \(confirmDelete?.name ?? "this club")?",
             isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } }),
@@ -315,45 +347,41 @@ struct LibraryView: View {
             }
         }
     }
-
-    /// Invisible buttons so Cmd-1 and Cmd-2 switch view mode, matching the segmented control.
-    private var shortcutButtons: some View {
-        Group {
-            Button("") { viewMode = .list }.keyboardShortcut("1", modifiers: .command)
-            Button("") { viewMode = .icons }.keyboardShortcut("2", modifiers: .command)
-        }
-        .opacity(0)
-        .frame(width: 0, height: 0)
-    }
 }
 
 /// A competition's mark at a given size, backed by the thumbnail cache (never a full-size decode in a row).
 private struct CachedCompetitionMark: View {
     let competition: Competition
-    var size: CGFloat = 22
+    var size: CGFloat = 24
     var body: some View {
         Group {
             if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
                 Image(nsImage: img)
             } else {
-                RoundedRectangle(cornerRadius: size * 0.22).fill(CompetitionColours.colour(for: competition.id))
-                    .overlay(Text(competition.shortName.prefix(4)).font(.system(size: size * 0.34, weight: .heavy)).foregroundStyle(.white).minimumScaleFactor(0.5).padding(2))
+                RoundedRectangle(cornerRadius: Radius.small).fill(CompetitionColours.colour(for: competition.id))
+                    .overlay {
+                        if size >= 28 {
+                            Text(competition.shortName.prefix(size >= 40 ? 4 : 2))
+                                .font(.system(size: max(10, size * 0.34), weight: .heavy))
+                                .foregroundStyle(Surface.text(on: CompetitionColours.colour(for: competition.id)))
+                        }
+                    }
             }
-        }.frame(width: size, height: size)
+        }.frame(width: size, height: size).help(competition.name).accessibilityLabel(competition.name)
     }
 }
 
 /// A club's crest at a given size, backed by the thumbnail cache (never a full-size decode in a row).
 private struct CachedCrestThumb: View {
     let club: Club
-    var size: CGFloat = 22
+    var size: CGFloat = 24
     var body: some View {
         Group {
             if let f = club.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
                 Image(nsImage: img)
             } else {
                 Circle().fill(Color(hex: club.primaryColour))
-                    .overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: size * 0.32, weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
+                    .overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: max(10, size * 0.32), weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
             }
         }.frame(width: size, height: size)
     }
@@ -373,9 +401,9 @@ struct CompetitionEditor: View {
                 }.scaledFont(.body)
             }
             Section("Official mark") {
-                HStack(spacing: 14) {
+                HStack(spacing: Space.lg) {
                     CompetitionMark(competition: competition, size: 56)
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Space.xs) {
                         Button("Import Image…") { importing = true }.scaledFont(.body)
                         Text("A PNG or SVG with transparency. Shown in the app and on the bug in place of the drawn mark, for example the lion roundel or the starball.").scaledFont(.caption).foregroundStyle(.secondary)
                     }
@@ -409,12 +437,12 @@ struct ClubEditor: View {
     var body: some View {
         Form {
             Section {
-                VStack(spacing: 8) {
+                VStack(spacing: Space.sm) {
                     Group {
                         if let f = club.crestFile, let img = CrestImage.thumbnail(file: f, size: 160) {
                             Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
                         } else {
-                            Circle().fill(Color(hex: club.primaryColour)).overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: 44, weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
+                            Circle().fill(Color(hex: club.primaryColour)).overlay(Text(String(club.defaultCode.prefix(2))).scaledFont(size: 44, weight: .bold).foregroundStyle(Color(hex: club.textColour)))
                         }
                     }.frame(width: 160, height: 160)
                     Text(club.name).scaledFont(.title2, weight: .semibold)
@@ -423,7 +451,7 @@ struct ClubEditor: View {
                     Button("Import image") { importing = true }.scaledFont(.body)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .padding(.vertical, Space.sm)
             }
             Section("Club") {
                 TextField("Full name", text: $club.name).scaledFont(.body)
@@ -461,9 +489,9 @@ struct ClubEditor: View {
                 }
             }
             Section("Squad") {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Space.xs) {
                     Text("One player per line, formatted \"K. Mbappé\". Used for the scorer picker.").scaledFont(.caption).foregroundStyle(.secondary)
-                    TextEditor(text: $squadText).scaledFont(.body).frame(minHeight: 140).overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(nsColor: .separatorColor)))
+                    TextEditor(text: $squadText).accessibilityLabel("Squad, one player per line").scaledFont(.body).frame(minHeight: 140).overlay(RoundedRectangle(cornerRadius: Radius.medium).stroke(Surface.separator))
                 }
             }
         }

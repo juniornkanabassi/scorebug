@@ -60,13 +60,13 @@ enum CrestImage {
         guard let dir = directory, let source = CGImageSourceCreateWithURL(dir.appendingPathComponent(file) as CFURL, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceThumbnailMaxPixelSize: 36,
+            kCGImageSourceThumbnailMaxPixelSize: 32,
             kCGImageSourceCreateThumbnailWithTransform: true,
         ]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
         let side = min(cg.width, cg.height)
         let cropped = cg.cropping(to: CGRect(x: (cg.width - side) / 2, y: (cg.height - side) / 2, width: side, height: side)) ?? cg
-        let size = NSSize(width: 18, height: 18)
+        let size = NSSize(width: 16, height: 16)
         let circular = NSImage(size: size)
         circular.lockFocus()
         NSBezierPath(ovalIn: NSRect(origin: .zero, size: size)).setClip()
@@ -149,23 +149,6 @@ extension View {
     }
 }
 
-enum CompetitionColours {
-    static func colour(for id: String) -> Color {
-        switch id {
-        case "premier-league": return Color(hex: "#37003C")
-        case "champions-league": return Color(hex: "#0C1E96")
-        case "europa-league": return Color(hex: "#F26A21")
-        case "conference-league": return Color(hex: "#00A86B")
-        case "nations-league": return Color(hex: "#3D5566")
-        case "ligue1": return Color(hex: "#0A5CFF")
-        case "la-liga": return Color(hex: "#FF4B44")
-        case "serie-a": return Color(hex: "#024494")
-        case "bundesliga": return Color(hex: "#D3010C")
-        case "club-world-cup": return Color(hex: "#B08D57")
-        default: return Color(hex: "#3A3F4B")
-        }
-    }
-}
 
 /// The competition's official mark when imported, otherwise a coloured tile with its short name.
 /// `plate`, when true, sets the mark on a small light backing plate so a dark broadcast mark (the
@@ -179,13 +162,19 @@ struct CompetitionMark: View {
             if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
                 Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
             } else {
-                RoundedRectangle(cornerRadius: size * 0.22).fill(CompetitionColours.colour(for: competition.id))
-                    .overlay(Text(competition.shortName.prefix(4)).font(.system(size: size * 0.34, weight: .heavy)).foregroundStyle(.white).minimumScaleFactor(0.5).padding(2))
+                RoundedRectangle(cornerRadius: Radius.small).fill(CompetitionColours.colour(for: competition.id))
+                    .overlay {
+                        if size >= 28 {
+                            Text(competition.shortName.prefix(size >= 40 ? 4 : 2))
+                                .font(.system(size: max(10, size * 0.34), weight: .heavy))
+                                .foregroundStyle(Surface.text(on: CompetitionColours.colour(for: competition.id)))
+                        }
+                    }
             }
-        }.frame(width: size, height: size)
+        }.frame(width: size, height: size).help(competition.name).accessibilityLabel(competition.name)
         if plate {
-            mark.padding(size * 0.16)
-                .background(RoundedRectangle(cornerRadius: size * 0.22).fill(Color.white))
+            mark.padding(Space.xs)
+                .background(RoundedRectangle(cornerRadius: Radius.medium).fill(Surface.markPlate))
         } else {
             mark
         }
@@ -208,7 +197,7 @@ struct CrestView: View {
                     Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
                 }
             } else {
-                Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: size * 0.36, weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
+                Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: max(10, size * 0.36), weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
             }
         }.frame(width: size, height: size)
     }

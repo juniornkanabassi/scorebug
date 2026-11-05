@@ -47,7 +47,7 @@ struct GoalPrompt: View {
                 .scaledFont(.body)
                 .textFieldStyle(.roundedBorder)
                 .focused($searchFocused)
-                .padding(8)
+                .padding(Space.sm)
             Divider()
             ScrollViewReader { proxy in
                 ScrollView {
@@ -56,7 +56,7 @@ struct GoalPrompt: View {
                         group("Own goal", filteredOther, ownGoal: true, startIndex: filteredScoring.count)
                         if flatResults.isEmpty {
                             Text(query.isEmpty ? "No squad for this team. Type a name, then press Return." : "No match. Press Return to use \"\(query)\".")
-                                .scaledFont(.caption).foregroundStyle(.secondary).padding(8)
+                                .scaledFont(.caption).foregroundStyle(.secondary).padding(Space.sm)
                         }
                     }
                 }.frame(maxHeight: 220)
@@ -64,11 +64,11 @@ struct GoalPrompt: View {
                     .onChange(of: highlighted) { _, new in proxy.scrollTo(new, anchor: .center) }
             }
             Divider()
-            HStack(spacing: 20) {
+            HStack(spacing: Space.xl) {
                 Toggle("Own goal", isOn: ownGoalBinding)
                 Toggle("Penalty", isOn: penaltyBinding)
             }
-            .scaledFont(.body).toggleStyle(.checkbox).padding(8)
+            .scaledFont(.body).toggleStyle(.checkbox).padding(Space.sm)
         }
         .frame(width: 260)
         .onAppear { searchFocused = true; highlighted = initialHighlight() }
@@ -80,7 +80,7 @@ struct GoalPrompt: View {
     private func group(_ title: String, _ names: [String], ownGoal og: Bool, startIndex: Int) -> some View {
         if !names.isEmpty {
             Text(title).scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary)
-                .padding(.horizontal, 8).padding(.top, 6).padding(.bottom, 2)
+                .padding(.horizontal, Space.sm).padding(.top, Space.sm).padding(.bottom, Space.xxs)
             ForEach(Array(names.enumerated()), id: \.element) { i, name in
                 let index = startIndex + i
                 // `Button(String)` ignores an outer `.scaledFont`, so the name is a Text inside the label
@@ -89,7 +89,7 @@ struct GoalPrompt: View {
                     pick(name, ownGoal: og)
                 } label: {
                     Text(name).scaledFont(.body)
-                        .padding(.vertical, 4).padding(.horizontal, 8)
+                        .padding(.vertical, Space.xs).padding(.horizontal, Space.sm)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                 }
