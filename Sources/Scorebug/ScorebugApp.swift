@@ -51,6 +51,7 @@ struct ScorebugApp: App {
 
     init() {
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        if NativeSnapshots.isRequested { NativeSnapshots.run(options: options) }
         // A running pre-rename Scorebug owns the same store and port: hand over to it rather than open a second writer.
         let production = options.dataDirectory == Store.defaultDirectory()
         if production, let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
@@ -94,7 +95,7 @@ struct ScorebugApp: App {
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
-        .restorationBehavior(.disabled)
+        .restorationBehavior(launchOptions.background ? .disabled : .automatic)
         .commands {
             CommandGroup(after: .toolbar) {
                 Button("Bigger Text") { model.zoom(1) }.keyboardShortcut("=", modifiers: .command)
@@ -103,8 +104,17 @@ struct ScorebugApp: App {
                 Divider()
                 Button("Reload Previews") { NotificationCenter.default.post(name: OverlayWebView.reloadRequested, object: nil) }.keyboardShortcut("r", modifiers: .command)
             }
+            SidebarCommands()
+            ToolbarCommands()
+            MatchCommands()
+            LibraryCommands()
             UpdateCommands()
         }
+        Settings {
+            SettingsView().environmentObject(model)
+                .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
+        }
+        .windowResizability(.contentSize)
         MenuBarExtra("Scorebug", systemImage: "sportscourt") {
             MenuBarCommands()
         }
@@ -143,8 +153,6 @@ enum WindowSetup {
     }
 }
 
-enum SidebarSection: Hashable { case slot(Int), library, settings }
-
 /// One sidebar row for a match slot. Equatable on the tiny summary it draws (codes, scores, visible), not
 /// the whole `Match` (which drags in both squads via `TeamEntry`), so a command that leaves this slot's
 /// summary untouched skips the row entirely.
@@ -155,11 +163,11 @@ struct SidebarMatchRow: View, Equatable {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
+                HStack(spacing: Space.sm) {
                     Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
                     if summary.visible {
-                        Circle().fill(.green).frame(width: 8, height: 8).help("On air: this bug is shown in OBS")
-                        Text("LIVE").scaledFont(.caption2, weight: .bold).foregroundStyle(.green)
+                        Circle().fill(Surface.statusSuccess).frame(width: 8, height: 8).help("On air: this bug is shown in OBS")
+                        Text("LIVE").scaledFont(.caption2, weight: .bold).foregroundStyle(Surface.statusSuccess)
                     }
                 }
                 Text("\(summary.homeCode) \(summary.homeScore) – \(summary.awayScore) \(summary.awayCode)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
@@ -170,11 +178,17 @@ struct SidebarMatchRow: View, Equatable {
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
-    @State private var section: SidebarSection? = .slot(1)
+    @SceneStorage("selectedSection") private var selectionID = "primary"
+    private let initialSection: SidebarSection?
+    init(initialSection: SidebarSection? = nil) { self.initialSection = initialSection }
+    private var selection: Binding<SidebarSection?> {
+        Binding(get: { initialSection ?? SidebarSection(storageID: selectionID) },
+                set: { if let section = $0 { selectionID = section.storageID } })
+    }
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $section) {
+            List(selection: selection) {
                 Section("Matches") {
                     ForEach([1, 2], id: \.self) { slot in
                         SidebarMatchRow(slot: slot, summary: model.slotSummaries[slot] ?? SlotSummary()).equatable().tag(SidebarSection.slot(slot))
@@ -185,32 +199,25 @@ struct ContentView: View {
                         Image(systemName: "books.vertical")
                         Text("Team Library").lineLimit(1)
                     }.scaledFont(.body).accessibilityElement(children: .combine).tag(SidebarSection.library)
-                    HStack(spacing: 8) {
-                        Image(systemName: "gearshape")
-                        Text("Settings").lineLimit(1)
-                    }.scaledFont(.body).accessibilityElement(children: .combine).tag(SidebarSection.settings)
                 }
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 260)
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Circle().fill(model.serverRunning ? Color.green : Color.red).frame(width: 7, height: 7)
+                    HStack(spacing: Space.sm) {
+                        Circle().fill(model.serverRunning ? Surface.statusSuccess : Surface.statusDanger).frame(width: 8, height: 8).accessibilityHidden(true)
                         Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).scaledFont(.caption).foregroundStyle(.secondary).lineLimit(2)
                     }
                     Text("Scorebug \(AppInfo.version)").scaledFont(.caption2).foregroundStyle(.secondary)
-                }.padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(Space.md).frame(maxWidth: .infinity, alignment: .leading)
             }
         } detail: {
-            switch section {
+            switch selection.wrappedValue {
             case .slot(let s): SlotView(slot: s).id(s)
             case .library: LibraryView()
-            case .settings: SettingsView()
             case nil: ContentUnavailableView("Choose a match", systemImage: "sportscourt")
             }
         }
-        .alert("Scorebug", isPresented: Binding(get: { model.lastError != nil }, set: { if !$0 { model.lastError = nil } })) {
-            Button("OK") { model.lastError = nil }
-        } message: { Text(model.lastError ?? "") }
+        .appErrorAlert(model: model)
     }
 }

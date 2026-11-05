@@ -1,13 +1,22 @@
-// Settings window (Cmd-comma): four plain sections a streamer understands, plus Advanced tucked away.
+// Native Settings window, organised by the task each group supports.
 import SwiftUI
 import ScorebugCore
 
+enum SettingsTab: String, CaseIterable { case obs, liveData, advanced }
+
 struct SettingsView: View {
+    @AppStorage("settingsTab") private var savedTab = SettingsTab.obs.rawValue
+    private let initialTab: SettingsTab?
+    init(initialTab: SettingsTab? = nil) { self.initialTab = initialTab }
+    private var selectedTab: Binding<SettingsTab> {
+        Binding(get: { initialTab ?? SettingsTab(rawValue: savedTab) ?? .obs },
+                set: { savedTab = $0.rawValue })
+    }
     @EnvironmentObject var model: AppModel
     @State private var pickingFolder = false
     @State private var pickingBackdrop = false
     @State private var footballDataKey = ""
-    @State private var keyStatus = KeychainStore.get() == nil ? "No key, using ESPN only" : "Saved in Keychain"
+    @State private var keyStatus = NativeSnapshots.isRequested ? "Not checked in snapshots" : (KeychainStore.get() == nil ? "No key, using ESPN only" : "Saved in Keychain")
 
     private enum BackdropMode: Hashable { case none, pitch, streamer, file }
     /// Read straight from settings rather than a separate `@State`, so cancelling the file importer (which
@@ -22,19 +31,44 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        TabView(selection: selectedTab) {
+            obsSettings.tabItem { Label("OBS", systemImage: "tv") }.tag(SettingsTab.obs)
+            liveSettings.tabItem { Label("Live Data", systemImage: "antenna.radiowaves.left.and.right") }.tag(SettingsTab.liveData)
+            advancedSettings.tabItem { Label("Advanced", systemImage: "gearshape.2") }.tag(SettingsTab.advanced)
+        }
+        .frame(width: 640, height: contentHeight)
+        .defaultFocus($initialFocus, false)
+        .appErrorAlert(model: model)
+    }
+
+    // Grouped forms scroll above 640 pt; shorter tabs resize with the reading scale.
+    private var contentHeight: CGFloat {
+        let base: CGFloat
+        switch selectedTab.wrappedValue {
+        case .obs: base = 520
+        case .liveData: base = 320
+        case .advanced: base = 360
+        }
+        return min(640, (base * model.zoomScale / 4).rounded(.up) * 4)
+    }
+
+    @FocusState private var initialFocus: Bool
+
+    private var obsSettings: some View {
         Form {
             Section("OBS") {
                 ForEach(["h/1", "h/2", "v/1", "v/2"], id: \.self) { p in
                     LabeledContent(obsRowLabel(p)) {
-                        HStack {
+                        HStack(spacing: Space.sm) {
                             Text("\(model.baseURL)/overlay/\(p)").scaledFont(.body).monospaced().textSelection(.enabled)
                             Button("Copy") { copy("\(model.baseURL)/overlay/\(p)") }.scaledFont(.body)
+                                .accessibilityLabel("Copy OBS URL for \(obsRowLabel(p))")
                         }
                     }.scaledFont(.body)
                 }
                 LabeledContent("Port") {
                     TextField("Port", value: Binding(get: { model.settings.port }, set: { model.settings.port = min(65535, max(1024, $0)) }), format: .number.grouping(.never))
-                        .scaledFont(.body).monospacedDigit().textFieldStyle(.roundedBorder).frame(width: 90).labelsHidden()
+                        .scaledFont(.body).monospacedDigit().textFieldStyle(.roundedBorder).frame(width: 92).labelsHidden().accessibilityLabel("Server port")
                 }.scaledFont(.body).onChange(of: model.settings.port) { _, _ in model.saveSettings() }
                 Text("A port change takes effect after Scorebug is restarted.").scaledFont(.caption).foregroundStyle(.secondary)
             }
@@ -68,9 +102,17 @@ struct SettingsView: View {
                     model.saveSettings()
                 }
             }
+        }.formStyle(.grouped)
+    }
+
+    private var liveSettings: some View {
+        Form {
             Section("Fixtures") {
-                SecureField("football-data.org key", text: $footballDataKey).scaledFont(.body)
-                HStack {
+                LabeledContent("football-data.org key") {
+                    SecureField("API key", text: $footballDataKey).scaledFont(.body)
+                        .accessibilityLabel("football-data.org API key")
+                }.scaledFont(.body)
+                HStack(spacing: Space.sm) {
                     Button("Save") {
                         do { try KeychainStore.set(footballDataKey); footballDataKey = ""; keyStatus = "Saved in Keychain" }
                         catch { keyStatus = "Could not save key: \(error.localizedDescription)" }
@@ -84,7 +126,7 @@ struct SettingsView: View {
             }
             Section("Live data") {
                 ForEach(["ESPN", "FotMob", "SofaScore"], id: \.self) { source in
-                    HStack {
+                    HStack(spacing: Space.sm) {
                         Toggle(source, isOn: Binding(
                             get: { model.settings.liveSourceEnabled[source] ?? false },
                             set: { model.setLiveSource(source, enabled: $0) }
@@ -97,9 +139,14 @@ struct SettingsView: View {
                 Text("ESPN is primary. FotMob cross-checks goal counts. SofaScore is unavailable from this network.")
                     .scaledFont(.caption).foregroundStyle(.secondary)
             }
+        }.formStyle(.grouped)
+    }
+
+    private var advancedSettings: some View {
+        Form {
             Section("Crests") {
                 LabeledContent("Folder") {
-                    HStack {
+                    HStack(spacing: Space.sm) {
                         Text(model.settings.crestFolder ?? "Not set").scaledFont(.body).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                         Button("Choose…") { pickingFolder = true }.scaledFont(.body)
                         if let folder = model.settings.crestFolder {
@@ -116,7 +163,7 @@ struct SettingsView: View {
                     model.importCrestFolder(url)
                 }
             }
-            DisclosureGroup("Advanced") {
+            Section("Advanced") {
                 LabeledContent("Data folder") { Text(model.store.directory.path).scaledFont(.body).textSelection(.enabled).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
                 Toggle("Use override folder", isOn: $model.settings.themeOverridesEnabled).scaledFont(.body).onChange(of: model.settings.themeOverridesEnabled) { _, _ in model.saveSettings() }
                 Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.directory]) }.scaledFont(.body)
@@ -125,9 +172,7 @@ struct SettingsView: View {
                 LabeledContent("Scorebug", value: AppInfo.version).scaledFont(.body)
                 Text("© 2026 Junior Nkana Bassi.").scaledFont(.caption).foregroundStyle(.secondary)
             }
-        }
-        .formStyle(.grouped)
-        .navigationTitle("Settings")
+        }.formStyle(.grouped)
     }
 
     /// "h/1", "h/2", "v/1", "v/2" labelled by slot and size, so the two landscape (or two portrait) rows

@@ -73,7 +73,7 @@ final class AppModel: ObservableObject {
     var port: Int { options.port ?? settings.port }
     var baseURL: String { "http://127.0.0.1:\(port)" }
 
-    init(options: LaunchOptions) {
+    init(options: LaunchOptions, startsBackgroundTasks: Bool = true) {
         self.options = options
         let store = try! Store(directory: options.dataDirectory)
         self.store = store
@@ -96,8 +96,10 @@ final class AppModel: ObservableObject {
         if loadErrors.isEmpty, options.dataDirectory == Store.defaultDirectory() { importDefaultCrestFolderIfPresent() }
         if !loadErrors.isEmpty { lastError = loadErrors.joined(separator: "\n") }
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
-        Task.detached(priority: .utility) { [store] in store.writeMissingThumbnails() }
-        Task { await livePollLoop() }
+        if startsBackgroundTasks {
+            Task.detached(priority: .utility) { [store] in store.writeMissingThumbnails() }
+            Task { await livePollLoop() }
+        }
     }
 
     /// First run on Junior's Mac: his logo library exists at a known place, so crests are imported without asking.
