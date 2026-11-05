@@ -275,18 +275,54 @@ final class CannedProtocol: URLProtocol {
         let beforeFailure = try stripTime(try await servedState())
         try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
         check(!model.apply(.goal(.home, 1), slot: 1) && model.match(1) == savedMatch && model.stateSaveFailed, "rule 3 failed save rolls the command back")
+        check(model.lastErrorTitle == .saveMatch && model.lastError?.hasPrefix("Could not save state:") == true, "failed state save is titled Save Match")
+        check(!model.errorInSettings, "an error raised with Settings inactive belongs to the main window")
+        model.lastError = nil
+        check(model.lastErrorTitle == .generic, "clearing an error resets its title")
         model.settings.portraitTop = savedTop + 10
         check(model.snapshot().overlay.portraitTop == savedTop, "rule 3 a setting edited but not yet saved stays off the snapshot")
+        model.settingsIsActive = true
         model.saveSettings()
         check(model.snapshot().overlay.portraitTop == savedTop, "rule 3 a failed settings save stays off the snapshot")
+        check(model.lastErrorTitle == .saveSettings && model.errorInSettings, "failed settings save is titled Save Settings and owned by active Settings")
+        model.settingsIsActive = false
+        check(model.errorInSettings, "the alert owner does not hop while the error is open")
+        model.dismissError(inSettings: false)
+        check(model.lastError != nil, "inactive error presenter cannot dismiss another window's alert")
+        model.dismissError(inSettings: true)
+        check(model.lastError == nil, "owning error presenter dismisses its alert")
         var edited = savedCompetition; edited.name += " unsaved"; model.updateCompetition(edited)
         check(model.snapshot().competitions[0] == savedCompetition, "rule 3 a failed competition save stays off the snapshot")
+        check(model.lastErrorTitle == .saveLibrary && !model.errorInSettings, "failed library save is titled Save Team Library, main window")
+        model.lastError = nil
         let afterFailure = try stripTime(try await servedState())
         check(afterFailure == beforeFailure, "rule 3 served state is unchanged after failed saves")
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
         check(model.apply(.goal(.home, 1), slot: 1) && model.match(1).homeScore == savedMatch.homeScore + 1, "rule 3 the next save after recovery applies")
         model.saveSettings(); model.updateCompetition(edited)
         check(model.snapshot().overlay.portraitTop == savedTop + 10 && model.snapshot().competitions[0] == edited, "rule 3 settings and competitions show once saved")
+        // A club whose name contains "crest" must still be titled by the failing task, not by the message text.
+        let crestwood = Club(name: "Crestwood", shortName: "Crestwood", defaultCode: "CRW", primaryColour: "#000000")
+        model.upsertClub(crestwood)
+        model.apply(.setTeam(.home, crestwood.entry(for: model.match(1).competitionId)), slot: 1)
+        _ = await model.linkESPN(slot: 1)
+        check(model.lastError?.hasPrefix("No ESPN fixture matched Crestwood") == true && model.lastErrorTitle == .findFixture, "Crestwood fixture miss is titled Find Fixture")
+        model.lastError = nil
+        // A readable library whose seed merge cannot save reports Save Library; mixed load failures take precedence.
+        let corrupt = FileManager.default.temporaryDirectory.appendingPathComponent("corrupt-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: corrupt) }
+        _ = try Store(directory: corrupt)
+        try JSONCoding.prettyEncoder().encode(Library(competitions: [], clubs: [])).write(to: corrupt.appendingPathComponent("library.json"))
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: corrupt.path)
+        let dirtyLibrary = AppModel(options: LaunchOptions(dataDirectory: corrupt, port: 1), startsBackgroundTasks: false)
+        check(dirtyLibrary.store.libraryDirty && dirtyLibrary.lastErrorTitle == .saveLibrary,
+              "a failed seed merge save without load failures is titled Save Library")
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: corrupt.path)
+        try Data("not json".utf8).write(to: corrupt.appendingPathComponent("state.json"))
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: corrupt.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: corrupt.path) }
+        let relaunched = AppModel(options: LaunchOptions(dataDirectory: corrupt, port: 1), startsBackgroundTasks: false)
+        check(relaunched.store.libraryDirty && relaunched.lastError?.contains("Could not load state") == true && relaunched.lastErrorTitle == .load, "mixed load and seed merge errors are titled Load Saved Data")
         print("\(checks) model checks passed")
     }
 }

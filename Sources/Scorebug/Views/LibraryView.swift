@@ -6,9 +6,11 @@ import UniformTypeIdentifiers
 import ImageIO
 import AppKit
 
-struct LibraryCommandContext {
+/// Equal on `isGrid`: `setMode` only writes this scene's stored view mode.
+struct LibraryCommandContext: Equatable {
     let isGrid: Bool
     let setMode: (LibraryViewMode) -> Void
+    static func == (l: Self, r: Self) -> Bool { l.isGrid == r.isGrid }
 }
 
 private struct LibraryCommandsKey: FocusedValueKey {
@@ -217,15 +219,14 @@ struct LibraryView: View {
         }
     }
 
-    /// A uniform 16 pt circular mark for the Competitions menu. A plain `Image` there ignores `.frame`
-    /// and draws at the source's native pixel size, so this uses a pre-sized menu icon, not a resized one.
+    /// A 16 pt mark for the Competitions menu. A plain `Image` there ignores `.frame` and draws at the source's
+    /// native pixel size, so this uses a pre-sized menu icon, or the short-name badge rendered to an image.
     private func competitionMenuMark(_ comp: Competition) -> some View {
         Group {
             if let f = comp.logoFile, let img = CrestImage.menuIcon(file: f) {
                 Image(nsImage: img).clipShape(Circle())
             } else {
-                Circle().fill(CompetitionColours.colour(for: comp.id)).frame(width: 16, height: 16)
-                    .help(comp.name).accessibilityLabel(comp.name)
+                if let img = CompetitionFallbackMark.menuImage(comp) { Image(nsImage: img).accessibilityLabel(comp.name) }
             }
         }
     }
@@ -356,18 +357,11 @@ private struct CachedCompetitionMark: View {
     var body: some View {
         Group {
             if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
-                Image(nsImage: img)
+                Image(nsImage: img).frame(width: size, height: size)
             } else {
-                RoundedRectangle(cornerRadius: Radius.small).fill(CompetitionColours.colour(for: competition.id))
-                    .overlay {
-                        if size >= 28 {
-                            Text(competition.shortName.prefix(size >= 40 ? 4 : 2))
-                                .font(.system(size: max(10, size * 0.34), weight: .heavy))
-                                .foregroundStyle(Surface.text(on: CompetitionColours.colour(for: competition.id)))
-                        }
-                    }
+                CompetitionFallbackMark(competition: competition, size: size)
             }
-        }.frame(width: size, height: size).help(competition.name).accessibilityLabel(competition.name)
+        }.help(competition.name).accessibilityLabel(competition.name)
     }
 }
 

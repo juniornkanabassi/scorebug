@@ -150,6 +150,35 @@ extension View {
 }
 
 
+/// A competition without an imported logo: its full short name on its colour, never truncated. The badge is
+/// `size` tall and at least `size` wide, widening for long names (UECL), and the text never drops below 10 pt.
+struct CompetitionFallbackMark: View {
+    let competition: Competition
+    let size: CGFloat
+    var body: some View {
+        let fill = CompetitionColours.colour(for: competition.id)
+        Text(competition.shortName)
+            .font(.system(size: max(10, size * 0.34), weight: .heavy))
+            .lineLimit(1).fixedSize()
+            .foregroundStyle(Surface.text(on: fill))
+            .padding(.horizontal, Space.xxs)
+            .frame(minWidth: size, minHeight: size, maxHeight: size)
+            .background(RoundedRectangle(cornerRadius: Radius.small).fill(fill))
+    }
+
+    /// The same badge as a menu image: menus draw only images and text, never shapes.
+    @MainActor static func menuImage(_ competition: Competition) -> NSImage? {
+        let key = "\(competition.id)|\(competition.shortName)"
+        if let cached = menuImages[key] { return cached }
+        let renderer = ImageRenderer(content: CompetitionFallbackMark(competition: competition, size: 16))
+        renderer.scale = 2
+        let image = renderer.nsImage
+        menuImages[key] = image
+        return image
+    }
+    @MainActor private static var menuImages: [String: NSImage] = [:]
+}
+
 /// The competition's official mark when imported, otherwise a coloured tile with its short name.
 /// `plate`, when true, sets the mark on a small light backing plate so a dark broadcast mark (the
 /// Premier League lion, drawn dark-on-transparent) still reads clearly on the app's dark match card.
@@ -160,18 +189,11 @@ struct CompetitionMark: View {
     var body: some View {
         let mark = Group {
             if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
-                Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
+                Image(nsImage: img).resizable().aspectRatio(contentMode: .fit).frame(width: size, height: size)
             } else {
-                RoundedRectangle(cornerRadius: Radius.small).fill(CompetitionColours.colour(for: competition.id))
-                    .overlay {
-                        if size >= 28 {
-                            Text(competition.shortName.prefix(size >= 40 ? 4 : 2))
-                                .font(.system(size: max(10, size * 0.34), weight: .heavy))
-                                .foregroundStyle(Surface.text(on: CompetitionColours.colour(for: competition.id)))
-                        }
-                    }
+                CompetitionFallbackMark(competition: competition, size: size)
             }
-        }.frame(width: size, height: size).help(competition.name).accessibilityLabel(competition.name)
+        }.help(competition.name).accessibilityLabel(competition.name)
         if plate {
             mark.padding(Space.xs)
                 .background(RoundedRectangle(cornerRadius: Radius.medium).fill(Surface.markPlate))
@@ -223,18 +245,6 @@ func nameMatches(_ club: Club, in competitionId: String, query: String) -> Bool 
     return club.code(for: competitionId).folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current).contains(q)
 }
 
-extension Color {
-    init(hex: String) {
-        var s = hex.trimmingCharacters(in: .whitespaces); if s.hasPrefix("#") { s.removeFirst() }
-        var v: UInt64 = 0; Scanner(string: s).scanHexInt64(&v)
-        let r = Double((v >> 16) & 0xFF) / 255, g = Double((v >> 8) & 0xFF) / 255, b = Double(v & 0xFF) / 255
-        self.init(.sRGB, red: r, green: g, blue: b, opacity: 1)
-    }
-    var hexString: String {
-        let c = NSColor(self).usingColorSpace(.sRGB) ?? .black
-        return String(format: "#%02X%02X%02X", Int(round(c.redComponent * 255)), Int(round(c.greenComponent * 255)), Int(round(c.blueComponent * 255)))
-    }
-}
 
 extension View {
     /// A popover whose AppKit host exists only while it is shown. An always-attached `.popover` costs about

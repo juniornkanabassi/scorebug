@@ -13,10 +13,12 @@ struct SettingsView: View {
                 set: { savedTab = $0.rawValue })
     }
     @EnvironmentObject var model: AppModel
+    @Environment(\.appearsActive) private var appearsActive
     @State private var pickingFolder = false
     @State private var pickingBackdrop = false
     @State private var footballDataKey = ""
-    @State private var keyStatus = NativeSnapshots.isRequested ? "Not checked in snapshots" : (KeychainStore.get() == nil ? "No key, using ESPN only" : "Saved in Keychain")
+    /// Nil until the first time Settings is shown; never read in the initialiser, which runs on every App.body pass.
+    @State private var keyStatus: String?
 
     private enum BackdropMode: Hashable { case none, pitch, streamer, file }
     /// Read straight from settings rather than a separate `@State`, so cancelling the file importer (which
@@ -37,8 +39,15 @@ struct SettingsView: View {
             advancedSettings.tabItem { Label("Advanced", systemImage: "gearshape.2") }.tag(SettingsTab.advanced)
         }
         .frame(width: 640, height: contentHeight)
-        .defaultFocus($initialFocus, false)
-        .appErrorAlert(model: model)
+        .appErrorAlert(model: model, inSettings: true)
+        .onChange(of: appearsActive, initial: true) { _, active in model.settingsIsActive = active }
+        .onDisappear {
+            model.settingsIsActive = false
+            // An error Settings owned moves to the main window rather than vanishing with it.
+            model.errorInSettings = false
+        }
+        .overlay { if GridOverlay.enabled { GridOverlay() } }
+        .task { await loadKeyStatus() }
     }
 
     // Grouped forms scroll above 640 pt; shorter tabs resize with the reading scale.
@@ -51,8 +60,6 @@ struct SettingsView: View {
         }
         return min(640, (base * model.zoomScale / 4).rounded(.up) * 4)
     }
-
-    @FocusState private var initialFocus: Bool
 
     private var obsSettings: some View {
         Form {
@@ -121,7 +128,7 @@ struct SettingsView: View {
                         do { try KeychainStore.delete(); keyStatus = "No key, using ESPN only" }
                         catch { keyStatus = "Could not remove key: \(error.localizedDescription)" }
                     }.scaledFont(.body)
-                    Text(keyStatus).scaledFont(.caption).foregroundStyle(.secondary)
+                    Text(keyStatus ?? "Checking Keychain…").scaledFont(.caption).foregroundStyle(.secondary)
                 }
             }
             Section("Live data") {
@@ -173,6 +180,17 @@ struct SettingsView: View {
                 Text("© 2026 Junior Nkana Bassi.").scaledFont(.caption).foregroundStyle(.secondary)
             }
         }.formStyle(.grouped)
+    }
+
+    private func loadKeyStatus() async {
+        guard keyStatus == nil else { return }
+        // Snapshot and other disposable runs must never touch the Keychain.
+        guard !NativeSnapshots.isRequested else { keyStatus = "Not checked in snapshots"; return }
+        guard model.options.dataDirectory == Store.defaultDirectory() else { keyStatus = "Not checked in this test instance"; return }
+        let saved = await Task.detached(priority: .userInitiated) { KeychainStore.get() != nil }.value
+        // Save or Remove may have finished first; their result wins.
+        guard keyStatus == nil else { return }
+        keyStatus = saved ? "Saved in Keychain" : "No key, using ESPN only"
     }
 
     /// "h/1", "h/2", "v/1", "v/2" labelled by slot and size, so the two landscape (or two portrait) rows

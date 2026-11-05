@@ -19,7 +19,7 @@ pathlib.Path(sys.argv[1]).write_text('import ScorebugCore\n@MainActor struct Goa
 PY
 swiftc -swift-version 5 -parse-as-library -module-cache-path "$BUILD_ROOT/swift-cache" -I "$BIN_PATH" \
   "$BIN_PATH/ScorebugCore.o" "$BIN_PATH/FlyingFox.o" "$BIN_PATH/FlyingSocks.o" \
-  Sources/Scorebug/AppModel.swift Sources/Scorebug/OverlayServer.swift Scripts/ModelChecks/Stubs.swift \
+  Sources/Scorebug/AppModel.swift Sources/Scorebug/OverlayServer.swift Sources/Scorebug/UI/ErrorPresentation.swift Scripts/ModelChecks/Stubs.swift \
   "$TASK_ROOT/GoalPromptProbe.swift" Scripts/ModelChecks/main.swift -o "$TASK_ROOT/ModelChecks"
 export SCOREBUG_CHECK_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
 "$TASK_ROOT/ModelChecks"

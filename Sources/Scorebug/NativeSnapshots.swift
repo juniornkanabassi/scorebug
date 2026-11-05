@@ -5,7 +5,7 @@ import ScorebugCore
 
 @MainActor
 enum NativeSnapshots {
-    static var isRequested: Bool { ProcessInfo.processInfo.environment["SCOREBUG_NATIVE_SNAPSHOTS"] != nil }
+    static let isRequested = ProcessInfo.processInfo.environment["SCOREBUG_NATIVE_SNAPSHOTS"] != nil
     private static let scratch = URL(fileURLWithPath: "/private/tmp/bama/build-scorebug", isDirectory: true)
 
     static func run(options: LaunchOptions) -> Never {

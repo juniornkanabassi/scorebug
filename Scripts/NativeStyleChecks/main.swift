@@ -29,16 +29,49 @@ for section in sections {
 }
 precondition(SidebarSection(storageID: "settings") == .slot(1))
 precondition(SidebarSection(storageID: "unknown") == .slot(1))
-let errors = [
-    ("Could not save state: disk full", "Unable to Save Match"),
-    ("Could not save library: denied", "Unable to Save Team Library"),
-    ("Loaded library has unsaved updates; could not save library.", "Unable to Save Team Library"),
-    ("Could not save settings: denied", "Unable to Save Settings"),
-    ("Could not load state: unreadable", "Unable to Load Saved Data"),
-    ("No new crests matched in logos.", "Unable to Import Crests"),
-    ("Could not import the competition logo: denied", "Unable to Import Competition Logo"),
-    ("No ESPN fixture matched Home v Away.", "Unable to Find Fixture"),
-    ("Unexpected operation", "Unable to Complete Action")
-]
-for (message, title) in errors { precondition(ErrorPresentation.title(for: message) == title) }
-print("PASS NativeNavigationChecks: 5 restored selection and 9 error-title checks")
+print("PASS NativeNavigationChecks: 5 restored selection checks")
+
+precondition(Surface.relativeLuminance(of: CompetitionColours.colour(for: "premier-league"))
+             == Surface.relativeLuminance(of: Color(hex: "#37003C")), "competition colours use Color(hex:)")
+
+// Match commands: only the key main window acts, and the menu's play key needs its modifiers.
+_ = NSApplication.shared
+let mainWindow = NSWindow(contentRect: .init(x: 0, y: 0, width: 10, height: 10), styleMask: [.titled], backing: .buffered, defer: true)
+let popover = NSPanel(contentRect: .init(x: 0, y: 0, width: 10, height: 10), styleMask: [.titled], backing: .buffered, defer: true)
+precondition(MatchCommandGate.allows(key: mainWindow, main: mainWindow))
+precondition(!MatchCommandGate.allows(key: popover, main: mainWindow), "popover or sheet key window drives the match")
+precondition(!MatchCommandGate.allows(key: nil, main: mainWindow))
+precondition(!MatchCommandGate.allows(key: mainWindow, main: nil))
+final class Hit: NSObject { var count = 0; @objc func fire(_ sender: Any?) { count += 1 } }
+let hit = Hit()
+let menu = NSMenu()
+let item = NSMenuItem(title: "Play Clock", action: #selector(Hit.fire(_:)), keyEquivalent: String(MatchCommandGate.playPauseKey.character))
+item.target = hit
+var mask: NSEvent.ModifierFlags = []
+if MatchCommandGate.playPauseModifiers.contains(.command) { mask.insert(.command) }
+if MatchCommandGate.playPauseModifiers.contains(.shift) { mask.insert(.shift) }
+if MatchCommandGate.playPauseModifiers.contains(.option) { mask.insert(.option) }
+if MatchCommandGate.playPauseModifiers.contains(.control) { mask.insert(.control) }
+item.keyEquivalentModifierMask = mask
+menu.addItem(item)
+func space(_ flags: NSEvent.ModifierFlags) -> NSEvent {
+    NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: 0, context: nil,
+                     characters: " ", charactersIgnoringModifiers: " ", isARepeat: false, keyCode: 49)!
+}
+precondition(!mask.isEmpty && !menu.performKeyEquivalent(with: space([])) && hit.count == 0, "bare Space reaches the menu")
+precondition(menu.performKeyEquivalent(with: space(mask)) && hit.count == 1, "modified Space misses Play Clock")
+print("PASS NativeCommandChecks: 1 colour, 4 key-window and 2 menu key-equivalent checks")
+
+// Identical menu inputs must not reuse another window's prompt/reset state.
+func context(owner: UUID, slot: Int = 1) -> MatchCommandContext {
+    MatchCommandContext(ownerID: owner, slot: slot, homeName: "Home", awayName: "Away",
+                        clockRunning: false, clockEnabled: true, endPeriodEnabled: true,
+                        goalsEnabled: true, visible: true, previewVisible: true,
+                        goalHome: {}, goalAway: {}, playPause: {}, endPeriod: {},
+                        toggleVisible: {}, togglePreview: {}, reset: {})
+}
+let owner = UUID()
+precondition(context(owner: owner) == context(owner: owner))
+precondition(context(owner: owner) != context(owner: UUID()), "same-slot windows must keep separate actions")
+precondition(context(owner: owner) != context(owner: owner, slot: 2))
+print("PASS NativeContextChecks: 3 window and slot identity checks")

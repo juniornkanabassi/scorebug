@@ -33,6 +33,7 @@ extension Phase {
 struct SlotView: View {
     @EnvironmentObject var model: AppModel
     let slot: Int
+    @State private var commandContextID = UUID()
     @State private var confirmReset = false
     @State private var promptGoalId: UUID?
     @AppStorage("showPreview") private var showPreview = true
@@ -113,13 +114,15 @@ struct SlotView: View {
                 Button(role: .destructive) { confirmReset = true } label: { Label("Reset match", systemImage: "arrow.counterclockwise").scaledFont(.body) }
                     .labelStyle(.iconOnly)
                     .help("Reset match: zero the score, clock and shootout; keep the teams")
-                    .confirmationDialog("Reset this match?", isPresented: $confirmReset) {
-                        Button("Reset match", role: .destructive) { model.apply(.reset, slot: slot) }
-                    } message: { Text("Zeroes the score, clock, goals and shootout. The teams and competition stay.") }
             }
         }
+        // On the persistent root, not the toolbar button: the toolbar can be hidden or overflowed, and the menu's
+        // Reset Match… must still confirm.
+        .confirmationDialog("Reset this match?", isPresented: $confirmReset) {
+            Button("Reset match", role: .destructive) { model.apply(.reset, slot: slot) }
+        } message: { Text("Zeroes the score, clock, goals and shootout. The teams and competition stay.") }
         .focusedSceneValue(\.matchCommands, MatchCommandContext(
-            slot: slot, homeName: m.home.name, awayName: m.away.name,
+            ownerID: commandContextID, slot: slot, homeName: m.home.name, awayName: m.away.name,
             clockRunning: m.clock.running, clockEnabled: m.phase.period != nil,
             endPeriodEnabled: m.phase.period != nil, goalsEnabled: m.phase != .shootout,
             visible: m.visible, previewVisible: showPreview,

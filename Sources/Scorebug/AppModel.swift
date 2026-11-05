@@ -53,7 +53,25 @@ final class AppModel: ObservableObject {
     @Published var settings: ScorebugCore.Settings
     @Published var serverStatus: String = "Starting"
     @Published var serverRunning = false
-    @Published var lastError: String?
+    /// The message shown to the user. Set through `report` so the alert title names the failed task.
+    @Published var lastError: String? {
+        didSet {
+            if lastError == nil { lastErrorTitle = .generic }
+            // Chosen once per error, so exactly one window shows it and it never hops while open.
+            else if oldValue == nil { errorInSettings = settingsIsActive }
+        }
+    }
+    private(set) var lastErrorTitle: ErrorTitle = .generic
+    /// True while the Settings window is the active one; Settings sets it.
+    var settingsIsActive = false
+    /// Which window owns the current alert: Settings when it was active as the error arrived, otherwise the main window.
+    @Published var errorInSettings = false
+
+    func report(_ title: ErrorTitle, _ message: String) { lastErrorTitle = title; lastError = message }
+    func dismissError(inSettings: Bool) {
+        guard errorInSettings == inSettings else { return }
+        lastError = nil
+    }
     private(set) var slotSummaries: [Int: SlotSummary] = [:]
     /// Competitions as last saved; snapshots read these and `store.savedSettings`, never unsaved edits (rule 3).
     private var savedCompetitions: [Competition] = []
@@ -78,8 +96,9 @@ final class AppModel: ObservableObject {
         let store = try! Store(directory: options.dataDirectory)
         self.store = store
         var loadErrors: [String] = []
+        var loadFailed = false
         func load<T>(_ name: String, fallback: T, _ read: () throws -> T) -> T {
-            do { return try read() } catch { loadErrors.append("Could not load \(name): \(error)"); return fallback }
+            do { return try read() } catch { loadFailed = true; loadErrors.append("Could not load \(name): \(error)"); return fallback }
         }
         self.library = load("library", fallback: SeedLibrary.make(), store.loadLibrary)
         if store.libraryDirty { loadErrors.append("Loaded library has unsaved updates; could not save library.") }
@@ -94,7 +113,7 @@ final class AppModel: ObservableObject {
         savedCompetitions = library.competitions
         updateSlotSummaries()
         if loadErrors.isEmpty, options.dataDirectory == Store.defaultDirectory() { importDefaultCrestFolderIfPresent() }
-        if !loadErrors.isEmpty { lastError = loadErrors.joined(separator: "\n") }
+        if !loadErrors.isEmpty { report(loadFailed ? .load : .saveLibrary, loadErrors.joined(separator: "\n")) }
         if let folder = options.importCrests { importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }
         if startsBackgroundTasks {
             Task.detached(priority: .utility) { [store] in store.writeMissingThumbnails() }
@@ -122,7 +141,7 @@ final class AppModel: ObservableObject {
         saveSettings()
         saveLibrary()
         refreshTeamsFromLibrary()
-        if n == 0 { lastError = "No new crests matched in \(url.lastPathComponent)." }
+        if n == 0 { report(.importCrests, "No new crests matched in \(url.lastPathComponent).") }
     }
 
     /// Re-copies crest and colours into live matches whose clubs are in the library.
@@ -347,7 +366,7 @@ final class AppModel: ObservableObject {
         do {
             let source = ESPNLiveSource(league: league)
             guard let event = try await source.findEvent(home: m.home.name, away: m.away.name, date: date) else {
-                lastError = "No ESPN fixture matched \(m.home.name) v \(m.away.name)."; return true
+                report(.findFixture, "No ESPN fixture matched \(m.home.name) v \(m.away.name)."); return true
             }
             guard match(slot).home.name == m.home.name, match(slot).away.name == m.away.name,
                   match(slot).competitionId == m.competitionId else { return true }
@@ -478,7 +497,7 @@ final class AppModel: ObservableObject {
     private func persistAndBroadcast(deferUIUpdate: Bool = false) -> Bool {
         // A failed save puts the last saved state back and broadcasts nothing (rule 3).
         if let error = store.commitState(state, broadcast: broadcast) {
-            state = store.savedState; stateSaveFailed = true; stateSaveFailures += 1; lastError = "Could not save state: \(error.localizedDescription)"
+            state = store.savedState; stateSaveFailed = true; stateSaveFailures += 1; report(.saveMatch, "Could not save state: \(error.localizedDescription)")
         } else { stateSaveFailed = false }
         updateSlotSummaries()
         if deferUIUpdate {
@@ -534,7 +553,7 @@ final class AppModel: ObservableObject {
     // `updateCompetition` and `importCompetitionLogo` broadcast themselves for the part that does.
     @discardableResult
     func saveLibrary() -> Bool {
-        do { try store.saveLibrary(library); savedCompetitions = library.competitions; return true } catch { lastError = "Could not save library: \(error.localizedDescription)"; return false }
+        do { try store.saveLibrary(library); savedCompetitions = library.competitions; return true } catch { report(.saveLibrary, "Could not save library: \(error.localizedDescription)"); return false }
     }
 
     func upsertClub(_ club: Club) {
@@ -566,7 +585,7 @@ final class AppModel: ObservableObject {
                     apply(.setTeam(side, entry), slot: slot)
                 }
             }
-        } catch { lastError = "Could not import crest: \(error.localizedDescription)" }
+        } catch { report(.importCrests, "Could not import crest: \(error.localizedDescription)") }
     }
 
     func importCompetitionLogo(from url: URL, for competitionId: String) {
@@ -579,7 +598,7 @@ final class AppModel: ObservableObject {
                 library.competitions[idx].logoFile = name; library.competitions[idx].logoVersion = (library.competitions[idx].logoVersion ?? 0) + 1
             }
             if saveLibrary() { broadcast() }
-        } catch { lastError = "Could not import the competition logo: \(error.localizedDescription)" }
+        } catch { report(.importLogo, "Could not import the competition logo: \(error.localizedDescription)") }
     }
 
     func updateCompetition(_ comp: Competition) {
@@ -614,7 +633,7 @@ final class AppModel: ObservableObject {
 
     func saveSettings() {
         // Snapshots read saved settings and the resolver chooses served files, so neither moves until the save lands (rule 3).
-        do { try store.saveSettings(settings) } catch { lastError = "Could not save settings: \(error.localizedDescription)"; return }
+        do { try store.saveSettings(settings) } catch { report(.saveSettings, "Could not save settings: \(error.localizedDescription)"); return }
         themeConfigCache.removeAll()
         // "Use override folder" takes effect at once for the window and the server; overlays reload on the
         // snapshot's themeOverrides change (Codex review, 1 Oct).

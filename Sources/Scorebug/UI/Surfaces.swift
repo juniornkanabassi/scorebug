@@ -37,22 +37,18 @@ enum Surface {
 enum CompetitionColours {
     static func colour(for id: String) -> Color {
         switch id {
-        case "premier-league": return colour(0x37003C)
-        case "champions-league": return colour(0x0C1E96)
-        case "europa-league": return colour(0xF26A21)
-        case "conference-league": return colour(0x00A86B)
-        case "nations-league": return colour(0x3D5566)
-        case "ligue1": return colour(0x0A5CFF)
-        case "la-liga": return colour(0xFF4B44)
-        case "serie-a": return colour(0x024494)
-        case "bundesliga": return colour(0xD3010C)
-        case "club-world-cup": return colour(0xB08D57)
-        default: return colour(0x3A3F4B)
+        case "premier-league": return Color(hex: "#37003C")
+        case "champions-league": return Color(hex: "#0C1E96")
+        case "europa-league": return Color(hex: "#F26A21")
+        case "conference-league": return Color(hex: "#00A86B")
+        case "nations-league": return Color(hex: "#3D5566")
+        case "ligue1": return Color(hex: "#0A5CFF")
+        case "la-liga": return Color(hex: "#FF4B44")
+        case "serie-a": return Color(hex: "#024494")
+        case "bundesliga": return Color(hex: "#D3010C")
+        case "club-world-cup": return Color(hex: "#B08D57")
+        default: return Color(hex: "#3A3F4B")
         }
-    }
-    private static func colour(_ rgb: UInt32) -> Color {
-        Color(.sRGB, red: Double((rgb >> 16) & 0xff) / 255,
-              green: Double((rgb >> 8) & 0xff) / 255, blue: Double(rgb & 0xff) / 255, opacity: 1)
     }
 }
 

@@ -41,6 +41,8 @@ struct LiveMatchBar: View, Equatable {
                         .background(clock.running ? Surface.statusSuccess.opacity(0.35) : .clear, in: RoundedRectangle(cornerRadius: Radius.medium))
                 }
                 .buttonStyle(.borderedProminent).controlSize(.extraLarge).tint(clock.running ? Surface.statusSuccess : .accentColor)
+                // Bare Space lives here, in the main window only, as before the menu commands; the menu uses ⇧⌘Space.
+                .keyboardShortcut(.space, modifiers: [])
                 .disabled(phase.period == nil).help("Play or pause the clock (Space)")
                 if phase == .preMatch {
                     Text("Choose 1st to kick off").scaledFont(.caption).foregroundStyle(.secondary)

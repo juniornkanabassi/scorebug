@@ -95,7 +95,8 @@ struct ScorebugApp: App {
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
-        .restorationBehavior(launchOptions.background ? .disabled : .automatic)
+        // Every launch opens one fresh main window, as since f2a21af; the sidebar selection is still SceneStorage.
+        .restorationBehavior(.disabled)
         .commands {
             CommandGroup(after: .toolbar) {
                 Button("Bigger Text") { model.zoom(1) }.keyboardShortcut("=", modifiers: .command)
@@ -219,5 +220,6 @@ struct ContentView: View {
             }
         }
         .appErrorAlert(model: model)
+        .overlay { if GridOverlay.enabled { GridOverlay() } }
     }
 }
