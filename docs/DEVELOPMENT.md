@@ -17,6 +17,8 @@ zsh build.sh      # writes ../Outputs/Scorebug <version>.zip, for handing the ap
 
 The bundle identifier is `com.juniornkanabassi.Scorebug`, chosen before the first public release. Earlier builds were `local.scorebug.mac`: the first launch of the renamed app copies that domain's preferences across once, and the keychain item for the football-data key keeps the old service name so it is not lost.
 
+For an already verified archive when the app must stay closed, extract it outside file-provider folders and verify its deep strict signature. Check OBS is stopped, then stage the extracted `Scorebug.app` in `/Applications/JuniorOS Apps/`, verify the staged copy, move the old bundle to the Bin and rename the staged copy to `Scorebug.app`. Register it with `lsregister -f` and refresh the `~/.local/bin/scorebug` link. Reopen with `open -g` only if Scorebug was running before the update. This installs the exact tested bundle without the installer's automatic launch.
+
 Run without installing, on a disposable data folder:
 
 ```sh
@@ -38,6 +40,8 @@ The 1.0.1 candidate refreshes replaced crests and competition logos without relo
 1.0.3 never shows an overlay a change that was not saved. If writing `state.json` fails (a full disk, say), the command is undone, nothing is broadcast, the window shows "Could not save state" and API responses carry `X-Scorebug-Save-Failed: true`; retry once the disk is fixed. Overlay snapshots read settings and competitions as last saved, so an unsaved setting or competition edit stays in the window until a save succeeds.
 
 1.0.4 re-measures the LaLiga bug against the broadcast: the clock sits inside its cell under the league mark (it used to slide under the away club and clip KO), the colour tab sits on the right of the club cell, and the goal plates fit both orientations. 1.0.5 sizes it to the broadcast in Junior's OBS layout (the 1920 page is scaled 0.8 into a 2560 canvas), so it covers about 11% of the frame width, as on TV.
+
+1.1.0 (5 November 2026) moves Settings to its native window, adds focused Match menu commands, restores main-window navigation, and groups match controls with shared spacing, colour and accessibility rules. Errors stay with their owning window. The full [BAMA implementation report](../../../Outputs/2026-11-05%20BAMA%20audit/Scorebug%20-%20implementation.md) records the review and remaining active-window checks. Overlay and Stream Deck behaviour are unchanged; the independently versioned Stream Deck plugin remains 1.0.0.
 
 If ESPN omits a goal ID or supplies ambiguous details, matching falls back to the minute. A previously removed goal can then reappear. Keep automatic updates off when this happens and use the manual controls. Unrecognised team names keep the saved orientation.
 
