@@ -112,3 +112,16 @@ Review regressions: `sh Scripts/model-check.sh` compiles the actual model and se
 Fix round 2 on `release-2026-09-30`: debug/release builds and ad hoc signing pass; 206 CoreChecks, 53 CLI, 27 security runtime, 11 bundled MCP, 20 bundled CLI and 14 plugin checks pass (331 total). Plugin build and Elgato validation pass. The header decoder observation reports the accepted limitation above.
 
 `git log -p --all` was scanned for API/token key prefixes, long hex strings and private-key markers: no secrets detected. The only two long-hex candidates are SwiftPM `originHash` and FlyingFox revision fields in `Package.resolved`. Ignore rules cover local media, data/library/crest stores, logs, `.env` and zip archives. The signed test archive is under `/private/tmp/scorebug-fix2`, not Outputs. Runtime checks use a disposable data directory and isolated `CFFIXED_USER_HOME`; test PID was stopped. Native UI/hardware acceptance was not rerun in this shell-only round.
+
+## Native UI checks
+
+The native control panel uses the tokens in [the design system](../design/DESIGN-SYSTEM.md). Its Settings scene, menu commands and snapshot support do not change the HTTP API or overlay assets.
+
+```sh
+swift build --scratch-path /private/tmp/bama/build-scorebug/spm
+zsh tools/grid-lint.sh
+zsh Scripts/native-style-check.sh
+zsh Scripts/native-snapshots.sh /private/tmp/bama/build-scorebug/spm/debug/Scorebug
+```
+
+Snapshots use offscreen hosting views and disposable data and preferences. They never order a window on screen, start the server, poll providers, read a fixture key or start updates. The script reports each PNG and its layout JSON. The render is content-only: active titlebars, menu focus, window restoration, VoiceOver navigation and WebKit preview paint still need a live check before release.
