@@ -11,7 +11,11 @@ mkdir -p "$scratch"
 run=$(mktemp -d "$scratch/native-snapshots.XXXXXX")
 mkdir -p "$run/home" "$run/data" "$run/images"
 CFFIXED_USER_HOME="$run/home" SCOREBUG_NATIVE_SNAPSHOTS="$run/images" SCOREBUG_SNAPSHOT=1 \
-    "$binary" --data-directory "$run/data" --background
+    "$binary" --data-directory "$run/data" --background --agent-screen &
+pid=$!
+trap 'if [[ -n ${pid:-} ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi; rm -rf "$run/home" "$run/data"' EXIT
+wait "$pid"
+pid=""
 python3 - "$run/images/report.json" <<'PY'
 import hashlib, json, pathlib, sys
 report = json.loads(pathlib.Path(sys.argv[1]).read_text())

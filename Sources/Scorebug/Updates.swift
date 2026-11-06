@@ -19,7 +19,7 @@ import SwiftUI
     /// signed, and test copies run under other ids.
     func start() {
         let info = Bundle.main.infoDictionary ?? [:]
-        guard controller == nil, Bundle.main.bundleIdentifier == Self.productionID, info["SUFeedURL"] is String,
+        guard !AgentWindows.invisible, controller == nil, Bundle.main.bundleIdentifier == Self.productionID, info["SUFeedURL"] is String,
             let key = info["SUPublicEDKey"] as? String, !key.isEmpty, !key.hasPrefix("REPLACE_WITH_"),
             // A test run (--data-directory) shares the production defaults domain, so it never checks or installs anything.
             !CommandLine.arguments.contains("--data-directory"), Self.isDeveloperIDSigned

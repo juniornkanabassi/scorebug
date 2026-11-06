@@ -1,13 +1,14 @@
 // App entry. Standard macOS structure: sidebar and detail, toolbar, Settings window on Cmd-comma, menu bar item.
 import SwiftUI
 import ScorebugCore
+import AgentOffscreen
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var screenObserver: Any?
-
     func applicationWillFinishLaunching(_ notification: Notification) {
         // As early as AppKit allows, so a background launch never flashes a Dock tile.
-        if LaunchOptions.parse(Array(CommandLine.arguments.dropFirst())).background { NSApp.setActivationPolicy(.accessory) }
+        let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        if AgentWindows.invisible { NSApp.setActivationPolicy(.prohibited) }
+        else if options.background { NSApp.setActivationPolicy(.accessory) }
         // SCOREBUG_APPEARANCE=light|dark pins this launch to Aqua or Dark Aqua for visual checks.
         switch ProcessInfo.processInfo.environment["SCOREBUG_APPEARANCE"] {
         case "light": NSApp.appearance = NSAppearance(named: .aqua)
@@ -20,25 +21,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
         // `--background` (the CLI and MCP launches): the overlay server and the menu bar item, with no Dock
         // tile until the main window opens.
-        NSApp.setActivationPolicy(options.background ? .accessory : .regular)
-        if !options.background, options.screenName == nil { NSApp.activate(ignoringOtherApps: true) }
-        guard let wanted = options.screenName else { return }
-        // `--screen`: every window this process opens goes to the named display, and the app never takes focus,
-        // so agents' test instances stay off Junior's monitors. Falls back to normal behaviour if the screen is absent.
-        let place: (NSWindow) -> Void = { window in
-            guard let screen = NSScreen.screens.first(where: { $0.localizedName == wanted }) else { return }
-            let f = screen.visibleFrame
-            let size = window.frame.size
-            window.setFrameOrigin(NSPoint(x: f.minX + 40, y: f.maxY - size.height - 40))
-        }
-        NSApp.windows.forEach(place)
-        // Placed once more on the first didBecomeKey (the window often has no frame yet at launch), then never
-        // again, so a later drag to another display sticks instead of snapping back.
-        screenObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] note in
-            if let w = note.object as? NSWindow, w.screen?.localizedName != wanted { place(w) }
-            if let observer = self?.screenObserver { NotificationCenter.default.removeObserver(observer) }
-            self?.screenObserver = nil
-        }
+        NSApp.setActivationPolicy(AgentWindows.invisible ? .prohibited : options.background ? .accessory : .regular)
+        if !options.background && !AgentWindows.invisible { NSApp.activate(ignoringOtherApps: true) }
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { true }
 }
@@ -50,12 +34,17 @@ struct ScorebugApp: App {
     private let launchOptions: LaunchOptions
 
     init() {
+        AgentOffscreenInstalled()
         let options = LaunchOptions.parse(Array(CommandLine.arguments.dropFirst()))
+        if AgentWindows.invisible {
+            NSApplication.shared.setActivationPolicy(.prohibited)
+            NSWindow.keepEveryWindowInvisible()
+        }
         if NativeSnapshots.isRequested { NativeSnapshots.run(options: options) }
         // A running pre-rename Scorebug owns the same store and port: hand over to it rather than open a second writer.
         let production = options.dataDirectory == Store.defaultDirectory()
         if production, let legacy = NSRunningApplication.runningApplications(withBundleIdentifier: "local.scorebug.mac").first {
-            if !options.background { legacy.activate() }
+            if !options.background && !AgentWindows.invisible { legacy.activate() }
             exit(0)
         }
         // Only the production launch migrates: a disposable run shares this defaults domain and must not set the marker.
@@ -82,14 +71,14 @@ struct ScorebugApp: App {
             ContentView().environmentObject(model).frame(minWidth: 1180, minHeight: 720)
                 .environment(\.font, .system(size: NSFont.systemFontSize * model.zoomScale))
                 .onAppear {
-                    NSApp.setActivationPolicy(.regular)
+                    NSApp.setActivationPolicy(AgentWindows.invisible ? .prohibited : .regular)
                     WindowSetup.apply(zoom: { model.zoom($0) }, reset: { model.zoomLevel = 0 })
                 }
                 // A background launch goes back to the menu bar alone when its last window closes; the overlays keep running.
                 .onDisappear {
                     guard launchOptions.background else { return }
                     DispatchQueue.main.async {
-                        if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { NSApp.setActivationPolicy(.accessory) }
+                        if !NSApp.windows.contains(where: { $0.isVisible && $0.canBecomeMain }) { NSApp.setActivationPolicy(AgentWindows.invisible ? .prohibited : .accessory) }
                     }
                 }
         }

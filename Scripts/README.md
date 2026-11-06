@@ -37,10 +37,10 @@ Never point either script at the real data folder. Build and run a throwaway ins
 ```sh
 cd Source
 swift build -c release --scratch-path /private/tmp/scorebug-build
-/private/tmp/scorebug-build/release/Scorebug --data-directory <scratchpad>/data --port 8620 --screen "Agent Screen"
+/private/tmp/scorebug-build/release/Scorebug --data-directory <scratchpad>/data --port 8620 --agent-screen
 ```
 
-`--screen "Agent Screen"` may open a window on that virtual display if it exists; that is expected. Set
+`--agent-screen` keeps all windows transparent and click-through, and prevents focus changes. Set
 up a match before capturing:
 
 ```sh

@@ -19,7 +19,7 @@ let package = Package(
                 swiftSettings: [.swiftLanguageMode(.v5)]),
         .executableTarget(
             name: "Scorebug",
-            dependencies: ["ScorebugCore", .product(name: "FlyingFox", package: "FlyingFox"),
+            dependencies: ["ScorebugCore", "AgentOffscreen", .product(name: "FlyingFox", package: "FlyingFox"),
                            .product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/Scorebug",
             swiftSettings: [.swiftLanguageMode(.v5)],
@@ -27,6 +27,9 @@ let package = Package(
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks",
                                                                     "-Xlinker", "-rpath", "-Xlinker", "@executable_path"])]
         ),
+        .target(name: "AgentOffscreen", path: "Sources/AgentOffscreen"),
+        .target(name: "TestOffscreen", path: "Tests/TestOffscreen"),
+        .testTarget(name: "ScorebugTests", dependencies: ["Scorebug", "TestOffscreen"]),
         .executableTarget(name: "CoreChecks", dependencies: ["ScorebugCore"], path: "Sources/CoreChecks",
                           swiftSettings: [.swiftLanguageMode(.v5)]),
     ]

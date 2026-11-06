@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='snapshot-safety.', dir=scratch) as dire
         ('data outside build scratch', environment, ['--data-directory', '/private/tmp/disallowed-scorebug-data']),
     ]
     for name, env, arguments in cases:
-        result = subprocess.run([str(binary), *arguments], env=env, capture_output=True, text=True, timeout=20)
+        result = subprocess.run([str(binary), "--agent-screen", *arguments], env=env, capture_output=True, text=True, timeout=20)
         assert result.returncode == 1, (name, result.returncode, result.stderr)
         assert 'unsafePaths' in result.stderr, (name, result.stderr)
         print(f'PASS: {name} rejected before rendering')

@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds Scorebug, signs it (Developer ID when available, otherwise ad hoc) and installs it as "/Applications/JuniorOS Apps/Scorebug.app" (SCOREBUG_INSTALL_ROOT overrides the folder for disposable tests), replacing the previous copy, then opens it.
+# Builds Scorebug, signs it (Developer ID when available, otherwise ad hoc) and installs it as "/Applications/JuniorOS Apps/Scorebug.app" (SCOREBUG_INSTALL_ROOT overrides the folder for disposable tests), replacing the previous copy, leaving it closed.
 # Like Content Template: no zip to unpack, just the app in Applications.
 set -euo pipefail
 cd "${0:A:h}"
@@ -37,7 +37,6 @@ if [[ -z "${SCOREBUG_INSTALL_ROOT+x}" ]]; then
   /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$DEST"
   mkdir -p "$HOME/.local/bin"
   ln -sfn "$DEST/Contents/Resources/Scripts/scorebug.mjs" "$HOME/.local/bin/scorebug"
-  open -g "$DEST" --args --screen "Prompter XL"
 fi
 NODE_PATH=$(command -v node)
 SHIM_PATH="$DEST/Contents/Resources/mcp/scorebug-mcp.mjs"

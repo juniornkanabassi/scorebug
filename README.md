@@ -84,11 +84,12 @@ You need an Apple silicon Mac with Xcode or the Swift 6 command-line tools. The 
 
 ```sh
 swift build --scratch-path /private/tmp/scorebug-build
+swift test --scratch-path /private/tmp/scorebug-build
 swift run --scratch-path /private/tmp/scorebug-build CoreChecks
 zsh build.sh
 ```
 
-`CoreChecks` is the test suite. `build.sh` writes the app in a zip to `../Outputs`, outside the clone, and `install.sh` builds and installs it on your own Mac. To try it without touching your real data, run the built app with `--data-directory` pointing at an empty temporary folder and `--port` set to something other than 8600. `install.sh` installs at `/Applications/JuniorOS Apps/Scorebug.app`, so use that path in the commands above if you installed it that way. The launch flags, the local API and the check scripts are covered in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+`CoreChecks` exercises the core rules; `swift test` checks the invisible-window guard and launch flags. `build.sh` writes the app in a zip to `../Outputs`, outside the clone, and `install.sh` builds and installs it on your own Mac. To try it without touching your real data, run the built app with `--data-directory` pointing at an empty temporary folder and `--port` set to something other than 8600. Agent checks also pass `--agent-screen` to keep all windows invisible. `install.sh` installs at `/Applications/JuniorOS Apps/Scorebug.app`, so use that path in the commands above if you installed it that way. The launch flags, the local API and the check scripts are covered in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Licence
 

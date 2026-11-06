@@ -8,25 +8,26 @@ Build and check:
 
 ```sh
 swift build --scratch-path /private/tmp/scorebug-build
+swift test --scratch-path /private/tmp/scorebug-build
 swift run --scratch-path /private/tmp/scorebug-build CoreChecks
-zsh install.sh    # builds, signs (Developer ID when available, otherwise ad hoc) and installs at "/Applications/JuniorOS Apps/Scorebug.app", then opens it
+zsh install.sh    # builds, signs (Developer ID when available, otherwise ad hoc) and installs at "/Applications/JuniorOS Apps/Scorebug.app", leaves it closed
 zsh build.sh      # writes ../Outputs/Scorebug <version>.zip, for handing the app to someone else
 ```
 
-`install.sh` is the everyday path: it refuses a running app, preserves the previous copy until staging succeeds, then replaces `/Applications/JuniorOS Apps/Scorebug.app` and opens the fresh build, no zip step, no application data touched. `build.sh` writes `../Outputs/Scorebug <version>.zip` and refuses to overwrite; it does not install anything. When the Developer ID certificate (SHA-1 `C297CD17…9400`) is in the keychain it signs with the hardened runtime, notarises with the `JuniorOS` notarytool profile, staples the app and also writes a notarised `../Outputs/Scorebug <version>.dmg` for the website; `SCOREBUG_NOTARISE=0` skips notarisation. Version in `Resources/Info.plist`, tagged `v<version>` here. `CFBundleVersion` is a whole build number that goes up with every release (4 for 1.0.3), as Sparkle requires.
+`install.sh` is the everyday path: it refuses a running app, preserves the previous copy until staging succeeds, then replaces `/Applications/JuniorOS Apps/Scorebug.app` and leaves the fresh build closed, no zip step, no application data touched. `build.sh` writes `../Outputs/Scorebug <version>.zip` and refuses to overwrite; it does not install anything. When the Developer ID certificate (SHA-1 `C297CD17…9400`) is in the keychain it signs with the hardened runtime, notarises with the `JuniorOS` notarytool profile, staples the app and also writes a notarised `../Outputs/Scorebug <version>.dmg` for the website; `SCOREBUG_NOTARISE=0` skips notarisation. Version in `Resources/Info.plist`, tagged `v<version>` here. `CFBundleVersion` is a whole build number that goes up with every release (4 for 1.0.3), as Sparkle requires.
 
 The bundle identifier is `com.juniornkanabassi.Scorebug`, chosen before the first public release. Earlier builds were `local.scorebug.mac`: the first launch of the renamed app copies that domain's preferences across once, and the keychain item for the football-data key keeps the old service name so it is not lost.
 
-For an already verified archive when the app must stay closed, extract it outside file-provider folders and verify its deep strict signature. Check OBS is stopped, then stage the extracted `Scorebug.app` in `/Applications/JuniorOS Apps/`, verify the staged copy, move the old bundle to the Bin and rename the staged copy to `Scorebug.app`. Register it with `lsregister -f` and refresh the `~/.local/bin/scorebug` link. Reopen with `open -g` only if Scorebug was running before the update. This installs the exact tested bundle without the installer's automatic launch.
+For an already verified archive when the app must stay closed, extract it outside file-provider folders and verify its deep strict signature. Check OBS is stopped, then stage the extracted `Scorebug.app` in `/Applications/JuniorOS Apps/`, verify the staged copy, move the old bundle to the Bin and rename the staged copy to `Scorebug.app`. Register it with `lsregister -f` and refresh the `~/.local/bin/scorebug` link. Leave Scorebug closed after the update, as `install.sh` does. This installs the exact tested bundle without launching it.
 
-Run without installing, on a disposable data folder:
+For an invisible agent check without installing, use a disposable data folder:
 
 ```sh
-/private/tmp/scorebug-build/debug/Scorebug --data-directory /private/tmp/scorebug-data --port 8680 --screen "Prompter XL"
+/private/tmp/scorebug-build/debug/Scorebug --data-directory /private/tmp/scorebug-data --port 8680 --agent-screen
 ```
 
 Launch flags: `--data-directory <folder>` (a disposable copy instead of `~/Library/Application Support/Scorebug/`), `--overlays-directory <folder>` (points at an Overlays folder explicitly; otherwise the app locates the bundled `Resources/Overlays` itself), `--port <n>` (defaults to `8600`), `--import-crests <folder>` (a one-off import of a crest folder at launch, filling in only the crests still missing; the default import only ever runs on a first run).
-- `--screen "<display name>"` opens the window on that display once, at launch, and never takes focus; a later drag to another display sticks. Agents' test instances and `install.sh` pass `--screen "Prompter XL"`.
+- `--agent-screen` keeps every window transparent and click-through, with activation prohibited. All agent launch checks pass it; `install.sh` leaves the app closed. The older `--screen <name>` flag now also means invisible.
 - `SCOREBUG_TEST_KEYS=1` in the environment enables `POST /api/test/key` (`{"keyCode":125,"characters":"","modifiers":[]}`), which posts a key down and up into the key window so tests can drive the arrow-key navigation and zoom without touching the keyboard. Absent the variable the route is a 404.
 
 Then open `http://127.0.0.1:8680/` for the source list, `/overlay/h/1` or `/overlay/v/1` for the pages, and post commands to `/api/match/1/command` as JSON (`{"command":"goal","side":"home"}`).

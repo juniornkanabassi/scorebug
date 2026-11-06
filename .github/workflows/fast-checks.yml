@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24   # plugin-command-check needs node:module stripTypeScriptTypes
+      - name: Invisible test windows and launch flags
+        run: swift test
       - name: Core engine assertions (CoreChecks)
         run: swift run CoreChecks
       - name: Real AppModel and OverlayServer, canned providers, temporary home and free port

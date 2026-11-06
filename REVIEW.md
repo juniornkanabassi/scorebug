@@ -38,3 +38,5 @@ Last results on 1 Nov 2026, revision `7924329`. `.github/workflows/fast-checks.y
 ## Known gaps
 
 OBS and Stream Deck hardware checks need Junior's setup and are owed.
+
+Tests and launch checks must never show windows or take focus: the TestOffscreen guard is a dependency of every test target, and real-app checks pass the invisible flag. Never use open, computer use or a visible Simulator in tests (6 Nov 2026).

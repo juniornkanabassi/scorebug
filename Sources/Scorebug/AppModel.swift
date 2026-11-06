@@ -23,9 +23,8 @@ struct LaunchOptions {
     var importCrests: String?
     /// `--background`: keep the server and menu bar item alive without presenting the main window.
     var background = false
-    /// `--screen <name>`: open the window on that display (by its name in System Settings) and do not steal focus.
-    /// Agents' test instances use `--screen "Agent Screen"` so nothing lands on Junior's monitors.
-    var screenName: String?
+    /// Agent checks keep every window transparent and cannot activate the app.
+    var invisible = false
 
     static func parse(_ args: [String]) -> LaunchOptions {
         var opts = LaunchOptions(dataDirectory: Store.defaultDirectory(), overlaysDirectory: nil, port: nil)
@@ -37,7 +36,9 @@ struct LaunchOptions {
             case "--overlays-directory" where i + 1 < args.count: opts.overlaysDirectory = args[i + 1]; i += 1
             case "--port" where i + 1 < args.count: opts.port = Int(args[i + 1]); i += 1
             case "--import-crests" where i + 1 < args.count: opts.importCrests = args[i + 1]; i += 1
-            case "--screen" where i + 1 < args.count: opts.screenName = args[i + 1]; i += 1
+            case "--agent-screen": opts.invisible = true
+            // Older check commands also become invisible; never move windows to a display.
+            case "--screen" where i + 1 < args.count: opts.invisible = true; i += 1
             default: break
             }
             i += 1

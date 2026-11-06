@@ -4,6 +4,8 @@ set -eu
 cd "$(dirname "$0")/.."
 TASK_ROOT="${SCOREBUG_CHECK_ROOT:-$(mktemp -d /private/tmp/fix-scorebug-model.XXXXXX)}"
 BUILD_ROOT="${SCOREBUG_BUILD_ROOT:-$TASK_ROOT/build}"
+cleanup() { if [ -z "${SCOREBUG_CHECK_ROOT+x}" ]; then rm -rf "$TASK_ROOT"; fi; }
+trap cleanup EXIT
 mkdir -p "$TASK_ROOT/home" "$TASK_ROOT/tmp"
 export TMPDIR="$TASK_ROOT/tmp" CFFIXED_USER_HOME="$TASK_ROOT/home"
 export CLANG_MODULE_CACHE_PATH="$BUILD_ROOT/clang-cache" SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_ROOT/swift-cache"
@@ -17,9 +19,10 @@ properties = re.findall(r'^    private var (?:match|linkedLineup|scoringSquad|ot
 assert len(properties) >= 3
 pathlib.Path(sys.argv[1]).write_text('import ScorebugCore\n@MainActor struct GoalPromptProbe { let model: AppModel; let goal: Goal; let slot: Int\n' + '\n'.join(x.replace('private var', 'var', 1) for x in properties) + '\n}\n')
 PY
+clang -c Tests/TestOffscreen/TestOffscreen.m -I Tests/TestOffscreen/include -o "$TASK_ROOT/TestOffscreen.o"
 swiftc -swift-version 5 -parse-as-library -module-cache-path "$BUILD_ROOT/swift-cache" -I "$BIN_PATH" \
   "$BIN_PATH/ScorebugCore.o" "$BIN_PATH/FlyingFox.o" "$BIN_PATH/FlyingSocks.o" \
   Sources/Scorebug/AppModel.swift Sources/Scorebug/OverlayServer.swift Sources/Scorebug/UI/ErrorPresentation.swift Scripts/ModelChecks/Stubs.swift \
-  "$TASK_ROOT/GoalPromptProbe.swift" Scripts/ModelChecks/main.swift -o "$TASK_ROOT/ModelChecks"
+  "$TASK_ROOT/TestOffscreen.o" "$TASK_ROOT/GoalPromptProbe.swift" Scripts/ModelChecks/main.swift -o "$TASK_ROOT/ModelChecks"
 export SCOREBUG_CHECK_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
 "$TASK_ROOT/ModelChecks"
