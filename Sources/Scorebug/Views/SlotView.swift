@@ -47,7 +47,8 @@ struct SlotView: View {
         let m = match
         VSplitView {
             if showPreview {
-                PreviewStage(slot: slot, baseURL: model.baseURL, visible: m.visible).frame(minHeight: 112, idealHeight: 160)
+                PreviewStage(slot: slot, baseURL: model.baseURL, visible: m.visible, serverProblem: previewServerProblem)
+                    .frame(minHeight: 112, idealHeight: 160)
             }
             // Live bar and controls share the lower pane, so the live bar is never a draggable split pane of its own,
             // and its zero ideal width keeps it out of the detail column's minimum (rule 22).
@@ -58,6 +59,7 @@ struct SlotView: View {
                          promptGoalId: promptGoalId, addGoal: addGoal,
                          dismissGoal: { dismissedId in if promptGoalId == dismissedId { promptGoalId = nil } }).equatable()
                 .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity)
+            statusStrip(m)
             GeometryReader { geo in ScrollView {
                 VStack(spacing: Space.lg) {
                     // `.equatable()` is what actually makes SwiftUI skip a block's diff when its inputs compare
@@ -72,7 +74,8 @@ struct SlotView: View {
                                           zoomGeneration: zoomGeneration).equatable()
                     }
                     ClockSection(phase: m.phase, clock: m.clock,
-                                  hasKnockouts: hasKnockouts, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
+                                  hasKnockouts: hasKnockouts, slot: slot, model: model, zoomGeneration: zoomGeneration,
+                                  addedMinutes: m.addedMinutes).equatable()
                     StoppageSection(addedMinutes: m.addedMinutes, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
                     GoalsSection(match: m, goals: m.goals, homeCode: m.home.code, awayCode: m.away.code, showScorers: m.showScorers,
                                   homeColour: m.home.primaryColour, awayColour: m.away.primaryColour, slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
@@ -93,7 +96,9 @@ struct SlotView: View {
             } }
             // The reader keeps this pane's ideal width tiny: a split view pane's ideal width becomes the
             // detail column's minimum, which pushed the sidebar off the window at 1180 pt.
-            .frame(minHeight: 200)
+            // A tall ideal asks the split view to give spare height to the controls, not the preview, which keeps
+            // its own 160 pt ideal and can still be dragged taller or hidden.
+            .frame(minHeight: 200, idealHeight: 900)
             .overlay(alignment: .top) { Divider() }
             }
         }
@@ -104,7 +109,7 @@ struct SlotView: View {
                 Button { model.apply(.setVisible(!m.visible), slot: slot) } label: {
                     Label(m.visible ? "On air" : "Off air", systemImage: m.visible ? "dot.radiowaves.left.and.right" : "eye.slash")
                         .symbolVariant(.fill).symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(m.visible ? Surface.statusSuccess : .secondary).scaledFont(.body)
+                        .foregroundStyle(.primary).scaledFont(.body)
                 }.labelStyle(.titleAndIcon).accessibilityLabel(m.visible ? "On air" : "Off air")
                     .help("Show or hide the bug in OBS")
                 Toggle("Preview", systemImage: "rectangle.on.rectangle", isOn: $showPreview)
@@ -132,6 +137,42 @@ struct SlotView: View {
             toggleVisible: { model.apply(.setVisible(!model.match(slot).visible), slot: slot) },
             togglePreview: { showPreview.toggle() }, reset: { confirmReset = true }
         ))
+    }
+
+    /// Nil while the overlay server is serving; otherwise what the preview says instead of an empty page.
+    private var previewServerProblem: String? {
+        if model.serverRunning { return nil }
+        if model.serverStatus.hasPrefix("Starting") { return "Starting the overlay server…" }
+        return "No preview: the overlay server is not running.\n\(model.serverStatus)"
+    }
+
+    /// Standing notices under the live bar: a failed save stays visible until a save works again, and the last
+    /// goal removed here can be put back until anything newer changes this match.
+    @ViewBuilder
+    private func statusStrip(_ m: Match) -> some View {
+        if model.stateSaveFailed {
+            Label("Changes are not being saved. OBS still shows the last saved match.", systemImage: "exclamationmark.triangle.fill")
+                .scaledFont(.callout, weight: .semibold).foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Space.lg).padding(.vertical, Space.sm)
+                .background(.bar).overlay(alignment: .top) { Divider() }
+        }
+        if let removal = model.undoableGoalRemoval(slot: slot) {
+            let g = removal.goal
+            let marks = (g.ownGoal ? " (og)" : "") + (g.penalty ? " (pen)" : "")
+            HStack(spacing: Space.md) {
+                Text("Removed \(g.side == .home ? m.home.code : m.away.code) goal, \(g.minuteLabel)\(g.scorer.map { ", \($0)" } ?? "")\(marks)")
+                    .scaledFont(.callout).lineLimit(1)
+                Spacer(minLength: Space.md)
+                Button { model.undoGoalRemoval(slot: slot) } label: { Text("Undo").scaledFont(.body, weight: .semibold).scaledControl() }
+                    // Keep Command-Z with the field editor; this action must never consume text undo.
+                    .help("Put this goal back with its scorer and minute")
+                Button { model.dismissGoalUndo(slot: slot) } label: { Image(systemName: "xmark").scaledFont(.callout).scaledControl(square: true) }
+                    .buttonStyle(.borderless).help("Keep the goal removed").accessibilityLabel("Dismiss undo")
+            }
+            .padding(.horizontal, Space.lg)
+            .background(.bar).overlay(alignment: .top) { Divider() }
+        }
     }
 
     private func addGoal(_ side: Side) {

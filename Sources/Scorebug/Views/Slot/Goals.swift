@@ -14,6 +14,7 @@ struct GoalsSection: View, Equatable {
     let slot: Int
     let model: AppModel
     let zoomGeneration: Int
+    @State private var linking = false
 
     static func == (l: Self, r: Self) -> Bool {
         l.match.espnEventId == r.match.espnEventId && l.match.home.shortName == r.match.home.shortName && l.match.away.shortName == r.match.away.shortName
@@ -37,7 +38,15 @@ struct GoalsSection: View, Equatable {
                         Button("Unlink") { model.apply(.setLiveLink(eventId: nil, league: nil), slot: slot) }.scaledFont(.caption)
                     } else {
                         Text("Not linked to live data").scaledFont(.caption).foregroundStyle(.secondary)
-                        Button("Link") { Task { await model.linkESPN(slot: slot) } }.scaledFont(.caption)
+                        if linking {
+                            ProgressView().controlSize(.small).accessibilityLabel("Looking for the ESPN fixture")
+                            Text("Looking for the ESPN fixture…").scaledFont(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Button("Link") {
+                                linking = true
+                                Task { await model.linkESPN(slot: slot); linking = false }
+                            }.scaledFont(.caption).help("Find this match on ESPN; press again to retry")
+                        }
                     }
                     Spacer()
                     Toggle("Auto-update from live data", isOn: Binding(get: { match.autoUpdateLiveData }, set: { model.apply(.setAutoUpdateLiveData($0), slot: slot) }))
@@ -47,7 +56,7 @@ struct GoalsSection: View, Equatable {
                     Text("Spoiler delay").scaledFont(.caption).foregroundStyle(.secondary)
                     Picker("Spoiler delay", selection: Binding(get: { match.liveDataDelayMinutes }, set: { model.apply(.setLiveDataDelay($0), slot: slot) })) {
                         ForEach(0...10, id: \.self) { Text("\($0) min").tag($0) }
-                    }.labelsHidden().frame(width: 96)
+                    }.labelsHidden().frame(width: 96 * ScaledFonts.scale)
                     Spacer()
                 }
                 if let notice = match.liveDataNotice {
@@ -59,17 +68,17 @@ struct GoalsSection: View, Equatable {
                 ForEach(goals) { goal in
                     HStack(spacing: Space.md) {
                         Circle().fill(Color(hex: goal.side == .home ? homeColour : awayColour)).frame(width: 8, height: 8)
-                        Text(goal.side == .home ? homeCode : awayCode).scaledFont(.body).lineLimit(1).frame(width: 56, alignment: .leading)
+                        Text(goal.side == .home ? homeCode : awayCode).scaledFont(.body).lineLimit(1).frame(width: 56 * ScaledFonts.scale, alignment: .leading)
                         GoalMinuteField(goal: goal, slot: slot)
                         if goal.autoAdded { Text("Auto").scaledFont(.caption, weight: .semibold).padding(.horizontal, Space.sm).padding(.vertical, Space.xs).background(.secondary.opacity(0.16), in: Capsule()) }
                         GoalRow(goal: goal, slot: slot).frame(maxWidth: .infinity)
-                        Button { model.apply(.removeGoal(goal.id), slot: slot) } label: {
+                        Button { model.removeGoalFromWindow(.removeGoal(goal.id), slot: slot) } label: {
                             // scaledControl(32, square: true) used to differ from the default here; now that
                             // the modifier floors at 44 regardless of a smaller base, the two are the same.
                             Image(systemName: "minus").scaledFont(.callout, weight: .semibold).frame(width: 32, height: 32).scaledControl(square: true)
                         }
                         .buttonStyle(.bordered)
-                        .help("Remove this goal").accessibilityLabel("Remove \(goal.side == .home ? homeCode : awayCode) goal at \(goal.minuteLabel)")
+                        .help("Remove this goal; Undo puts it back").accessibilityLabel("Remove \(goal.side == .home ? homeCode : awayCode) goal at \(goal.minuteLabel)")
                     }
                     .frame(minHeight: 44 * ScaledFonts.scale)
                 }
@@ -91,7 +100,12 @@ struct GoalMinuteField: View {
         TextField("", text: $text)
             .accessibilityLabel("Goal minute")
             .scaledFont(size: 18).monospacedDigit().multilineTextAlignment(.center)
-            .textFieldStyle(.roundedBorder).frame(width: 52)
+            // The native rounded bezel caps its text cell height even when the outer frame grows.
+            .textFieldStyle(.plain)
+            .padding(.horizontal, Space.xs)
+            .frame(width: 56 * ScaledFonts.scale, height: 44 * ScaledFonts.scale)
+            .background(Surface.fill, in: RoundedRectangle(cornerRadius: Radius.small))
+            .overlay(RoundedRectangle(cornerRadius: Radius.small).stroke(focused ? Color.accentColor : Surface.separator, lineWidth: 1))
             .focused($focused)
             .onAppear { text = strip(goal.minuteLabel) }
             .onChange(of: goal.minuteLabel) { _, new in if !focused { text = strip(new) } }

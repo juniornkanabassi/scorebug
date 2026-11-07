@@ -11,12 +11,15 @@ struct ClockSection: View, Equatable {
     let slot: Int
     let model: AppModel
     let zoomGeneration: Int
+    /// Read only for the period confirmation's wording; defaulted so callers that show no added time need not pass it.
+    var addedMinutes: Int? = nil
     @State private var confirmResetClock = false
+    @State private var pendingPeriod: Period?
     private static let unavailableHelp = "Only available while a period is live, not before kick-off or during a shootout"
 
     static func == (l: Self, r: Self) -> Bool {
         l.phase == r.phase && l.clock == r.clock && l.hasKnockouts == r.hasKnockouts && l.slot == r.slot
-            && l.zoomGeneration == r.zoomGeneration
+            && l.zoomGeneration == r.zoomGeneration && l.addedMinutes == r.addedMinutes
     }
 
     private var periods: [Period] { Period.allCases.filter { hasKnockouts || ($0 != .extraFirst && $0 != .extraSecond) } }
@@ -54,9 +57,23 @@ struct ClockSection: View, Equatable {
                     .help("End the current period (⇧⌘E)")
                 }
                 .buttonStyle(.bordered).controlSize(.extraLarge).scaledFont(.body, weight: .semibold)
-                // Periods remain available to correct a mistaken selection.
+                // Periods remain available to correct a mistaken selection, behind a confirmation when one would discard time.
             }
         }
+        .confirmationDialog(pendingPeriod.map { "Start the \($0.title.lowercased()) now?" } ?? "", isPresented: Binding(
+            get: { pendingPeriod != nil }, set: { if !$0 { pendingPeriod = nil } }
+        ), presenting: pendingPeriod) { p in
+            Button("Start \(p.title)", role: .destructive) { model.apply(.startPeriod(p), slot: slot) }
+        } message: { p in
+            Text(periodChangeMessage(p))
+        }
+    }
+
+    private func periodChangeMessage(_ p: Period) -> String {
+        let start = "\(p.baseSeconds / 60):00"
+        let current = "\(Int(clock.elapsed(at: .now)) / 60):\(String(format: "%02d", Int(clock.elapsed(at: .now)) % 60))"
+        let added = addedMinutes.map { " and the +\($0) added time is cleared" } ?? ""
+        return "The clock goes from \(current) to \(start)\(added). This shows on the bug at once."
     }
 
     private var resetClockButton: some View {
@@ -75,7 +92,7 @@ struct ClockSection: View, Equatable {
     @ViewBuilder
     private func periodPill(_ p: Period) -> some View {
         let button = Button {
-            model.apply(.startPeriod(p), slot: slot)
+            if AppModel.periodChangeNeedsConfirmation(from: phase, to: p) { pendingPeriod = p } else { model.apply(.startPeriod(p), slot: slot) }
         } label: {
             Text(p.shortLabel).scaledFont(.body, weight: .semibold).frame(maxWidth: .infinity).scaledControl(64)
         }

@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State private var footballDataKey = ""
     /// Nil until the first time Settings is shown; never read in the initialiser, which runs on every App.body pass.
     @State private var keyStatus: String?
+    @State private var copiedURL: String?
+    @State private var copyReset: Task<Void, Never>?
 
     private enum BackdropMode: Hashable { case none, pitch, streamer, file }
     /// Read straight from settings rather than a separate `@State`, so cancelling the file importer (which
@@ -45,6 +47,7 @@ struct SettingsView: View {
             model.settingsIsActive = false
             // An error Settings owned moves to the main window rather than vanishing with it.
             model.errorInSettings = false
+            copyReset?.cancel()
         }
         .overlay { if GridOverlay.enabled { GridOverlay() } }
         .task { await loadKeyStatus() }
@@ -67,19 +70,22 @@ struct SettingsView: View {
                 ForEach(["h/1", "h/2", "v/1", "v/2"], id: \.self) { p in
                     LabeledContent(obsRowLabel(p)) {
                         HStack(spacing: Space.sm) {
-                            Text("\(model.baseURL)/overlay/\(p)").scaledFont(.body).monospaced().textSelection(.enabled)
-                            Button("Copy") { copy("\(model.baseURL)/overlay/\(p)") }.scaledFont(.body)
+                            Text("/overlay/\(p)").scaledFont(.body).monospaced().lineLimit(1).textSelection(.enabled)
+                                .help("\(model.baseURL)/overlay/\(p)")
+                            Button(copiedURL == "\(model.baseURL)/overlay/\(p)" ? "Copied" : "Copy") { copy("\(model.baseURL)/overlay/\(p)") }.scaledFont(.body)
                                 .accessibilityLabel("Copy OBS URL for \(obsRowLabel(p))")
                         }
                     }.scaledFont(.body)
                 }
+                Text("Landscape: 1920 × 1080\nPortrait: 1080 × 1920")
+                    .scaledFont(.caption).foregroundStyle(.primary).fixedSize(horizontal: false, vertical: true)
                 LabeledContent("Port") {
                     TextField("Port", value: Binding(get: { model.settings.port }, set: { model.settings.port = min(65535, max(1024, $0)) }), format: .number.grouping(.never))
                         .scaledFont(.body).monospacedDigit().textFieldStyle(.roundedBorder).frame(width: 92).labelsHidden().accessibilityLabel("Server port")
                 }.scaledFont(.body).onChange(of: model.settings.port) { _, _ in model.saveSettings() }
-                Text("A port change takes effect after Scorebug is restarted.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("Use a port from 1024 to 65535. Restart Scorebug after changing it.").scaledFont(.caption).foregroundStyle(.secondary)
             }
-            Section("Preview") {
+            Section("Overlay position and preview") {
                 Picker("Backdrop", selection: Binding(
                     get: { backdropMode },
                     set: { mode in
@@ -99,8 +105,9 @@ struct SettingsView: View {
                 if backdropMode == .file, let path = model.settings.previewBackdrop {
                     LabeledContent("File") { Text(URL(fileURLWithPath: path).lastPathComponent).scaledFont(.body).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
                 }
-                Stepper("Portrait bug top \(String(model.settings.portraitTop)) px", value: $model.settings.portraitTop, in: 0...800, step: 10).scaledFont(.body).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
-                Text("Shown behind the bug in this window's preview only, so you can judge colours against a real picture; OBS never sees it.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("The backdrop appears only in this window. OBS never sees it.").scaledFont(.caption).foregroundStyle(.secondary)
+                Stepper("Portrait top position: \(model.settings.portraitTop) px", value: $model.settings.portraitTop, in: 0...800, step: 10).scaledFont(.body).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
+                Text("Moves the score bug down from the top of the portrait overlay, including in OBS.").scaledFont(.caption).foregroundStyle(.secondary)
             }
             .fileImporter(isPresented: $pickingBackdrop, allowedContentTypes: [.image, .movie]) { result in
                 if case .success(let url) = result {
@@ -116,32 +123,36 @@ struct SettingsView: View {
         Form {
             Section("Fixtures") {
                 LabeledContent("football-data.org key") {
-                    SecureField("API key", text: $footballDataKey).scaledFont(.body)
+                    SecureField("Paste key here", text: $footballDataKey).scaledFont(.body)
+                        .textFieldStyle(.roundedBorder).frame(minWidth: 160)
                         .accessibilityLabel("football-data.org API key")
                 }.scaledFont(.body)
                 HStack(spacing: Space.sm) {
                     Button("Save") {
-                        do { try KeychainStore.set(footballDataKey); footballDataKey = ""; keyStatus = "Saved in Keychain" }
+                        do { try KeychainStore.set(footballDataKey); footballDataKey = ""; keyStatus = "Key saved securely" }
                         catch { keyStatus = "Could not save key: \(error.localizedDescription)" }
                     }.disabled(footballDataKey.isEmpty).scaledFont(.body)
                     Button("Remove") {
                         do { try KeychainStore.delete(); keyStatus = "No key, using ESPN only" }
                         catch { keyStatus = "Could not remove key: \(error.localizedDescription)" }
                     }.scaledFont(.body)
-                    Text(keyStatus ?? "Checking Keychain…").scaledFont(.caption).foregroundStyle(.secondary)
+                    Text(keyStatus ?? "Checking saved key…").scaledFont(.caption).foregroundStyle(.secondary)
                 }
             }
             Section("Live data") {
                 ForEach(["ESPN", "FotMob", "SofaScore"], id: \.self) { source in
-                    HStack(spacing: Space.sm) {
-                        Toggle(source, isOn: Binding(
-                            get: { model.settings.liveSourceEnabled[source] ?? false },
-                            set: { model.setLiveSource(source, enabled: $0) }
-                        ))
-                        .disabled(source == "SofaScore")
-                        Spacer()
-                        Text(model.liveSourceStatus[source] ?? "Not checked").scaledFont(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
+                    LabeledContent(source) {
+                        HStack(spacing: Space.sm) {
+                            Text(sourceStatus(source)).scaledFont(.caption).foregroundStyle(.primary).lineLimit(1)
+                                .help(model.liveSourceStatus[source] ?? "Not checked")
+                            Toggle("Use \(source)", isOn: Binding(
+                                get: { model.settings.liveSourceEnabled[source] ?? false },
+                                set: { model.setLiveSource(source, enabled: $0) }
+                            ))
+                            .labelsHidden().toggleStyle(.switch).disabled(source == "SofaScore")
+                            .accessibilityLabel("Use \(source) live data")
+                        }
+                    }.scaledFont(.body)
                 }
                 Text("ESPN is primary. FotMob cross-checks goal counts. SofaScore is unavailable from this network.")
                     .scaledFont(.caption).foregroundStyle(.secondary)
@@ -172,8 +183,9 @@ struct SettingsView: View {
             }
             Section("Advanced") {
                 LabeledContent("Data folder") { Text(model.store.directory.path).scaledFont(.body).textSelection(.enabled).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
-                Toggle("Use override folder", isOn: $model.settings.themeOverridesEnabled).scaledFont(.body).onChange(of: model.settings.themeOverridesEnabled) { _, _ in model.saveSettings() }
-                Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.directory]) }.scaledFont(.body)
+                Toggle("Use my own overlay designs", isOn: $model.settings.themeOverridesEnabled).scaledFont(.body).onChange(of: model.settings.themeOverridesEnabled) { _, _ in model.saveSettings() }
+                Text("Loads your designs from the overlays folder inside the data folder. Turn this off to use Scorebug’s built-in designs.").scaledFont(.caption).foregroundStyle(.secondary)
+                Button("Show Data Folder in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.directory]) }.scaledFont(.body)
             }.scaledFont(.body)
             Section {
                 LabeledContent("Scorebug", value: AppInfo.version).scaledFont(.body)
@@ -185,24 +197,38 @@ struct SettingsView: View {
     private func loadKeyStatus() async {
         guard keyStatus == nil else { return }
         // Snapshot and other disposable runs must never touch the Keychain.
-        guard !NativeSnapshots.isRequested else { keyStatus = "Not checked in snapshots"; return }
-        guard model.options.dataDirectory == Store.defaultDirectory() else { keyStatus = "Not checked in this test instance"; return }
+        guard !NativeSnapshots.isRequested else { keyStatus = "No key needed for this preview"; return }
+        guard model.options.dataDirectory == Store.defaultDirectory() else { keyStatus = "Key unavailable in this test copy"; return }
         let saved = await Task.detached(priority: .userInitiated) { KeychainStore.get() != nil }.value
         // Save or Remove may have finished first; their result wins.
         guard keyStatus == nil else { return }
-        keyStatus = saved ? "Saved in Keychain" : "No key, using ESPN only"
+        keyStatus = saved ? "Key saved securely" : "No key, using ESPN only"
     }
 
     /// "h/1", "h/2", "v/1", "v/2" labelled by slot and size, so the two landscape (or two portrait) rows
     /// no longer read identically.
     private func obsRowLabel(_ p: String) -> String {
-        let slot = p.hasSuffix("1") ? "Slot 1" : "Slot 2"
-        let size = p.hasPrefix("h") ? "1920 × 1080" : "1080 × 1920"
+        let slot = p.hasSuffix("1") ? "Primary" : "Secondary"
+        let size = p.hasPrefix("h") ? "landscape" : "portrait"
         return "\(slot), \(size)"
     }
 
     private func copy(_ text: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+        copiedURL = text
+        copyReset?.cancel()
+        copyReset = Task { @MainActor in
+            do { try await Task.sleep(nanoseconds: 2_000_000_000) }
+            catch { return }
+            copiedURL = nil
+        }
+    }
+
+    private func sourceStatus(_ source: String) -> String {
+        let status = model.liveSourceStatus[source] ?? "Not checked"
+        if source == "SofaScore" { return "Unavailable from this network" }
+        if status.hasPrefix("Lookup failed") || status.hasPrefix("Error:") { return "Unable to connect. Try again later." }
+        return status
     }
 }

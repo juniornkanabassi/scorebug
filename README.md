@@ -54,7 +54,7 @@ Scorebug's server listens only on 127.0.0.1, so nothing on your network can reac
 The `scorebug` command and its MCP server cover every match control the window and the Stream Deck have, from the score and the clock to added time, the shootout, the first leg and live-data linking. Editing the club library and the app's settings stays in the window. Changes show in the running app and on the overlay straight away.
 
 ```sh
-SCOREBUG="/Applications/Scorebug.app/Contents/Resources/Scripts/scorebug.mjs"
+SCOREBUG="/Applications/JuniorOS Apps/Scorebug.app/Contents/Resources/Scripts/scorebug.mjs"
 node "$SCOREBUG" --help
 node "$SCOREBUG" match set --home "Real Madrid" --away Inter --competition ucl --first-leg 2-1
 node "$SCOREBUG" show --slot 1
@@ -65,7 +65,7 @@ node "$SCOREBUG" clock start --period firstHalf
 To connect the MCP server to Claude Code, using the full path to Node (`command -v node` prints it):
 
 ```sh
-claude mcp add scorebug -- /absolute/path/to/node "/Applications/Scorebug.app/Contents/Resources/mcp/scorebug-mcp.mjs"
+claude mcp add scorebug -- /absolute/path/to/node "/Applications/JuniorOS Apps/Scorebug.app/Contents/Resources/mcp/scorebug-mcp.mjs"
 ```
 
 For Codex, add this to `~/.codex/config.toml`:
@@ -73,7 +73,7 @@ For Codex, add this to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.scorebug]
 command = "/absolute/path/to/node"
-args = ["/Applications/Scorebug.app/Contents/Resources/mcp/scorebug-mcp.mjs"]
+args = ["/Applications/JuniorOS Apps/Scorebug.app/Contents/Resources/mcp/scorebug-mcp.mjs"]
 ```
 
 Every command, its options and the error codes are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#ai-control).

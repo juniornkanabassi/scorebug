@@ -57,7 +57,7 @@ struct ClubPickerButton: View, Equatable {
             // the other side's, which is what threw the two pickers out of alignment. Both dimensions scale
             // with interface zoom like every other panel control, the width base carried directly since it
             // is not the usual 44/56/64 pt shape.
-            .frame(minWidth: 220 * ScaledFonts.scale, alignment: .leading)
+            .frame(minWidth: 200 * ScaledFonts.scale, alignment: .leading)
             .scaledControl()
         }
         .buttonStyle(.bordered)

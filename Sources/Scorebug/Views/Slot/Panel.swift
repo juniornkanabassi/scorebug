@@ -1,7 +1,7 @@
 import SwiftUI
 import ScorebugCore
 
-/// A rounded, full-width block: a small uppercase caption (with an optional trailing accessory, e.g. the
+/// A rounded, full-width block: a clear sentence-case heading (with an optional trailing accessory, e.g. the
 /// Goals block's "Show scorers" switch) over its content. Replaces `Form`'s `Section`, which read far too
 /// small at Junior's window scale and buried controls in a cramped list.
 struct Panel<Content: View, Accessory: View>: View {
@@ -12,7 +12,7 @@ struct Panel<Content: View, Accessory: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.md) {
             HStack {
-                Text(caption).scaledFont(.caption, weight: .semibold).foregroundStyle(.secondary).tracking(1.2).textCase(.uppercase)
+                Text(caption).scaledFont(.headline).foregroundStyle(.primary)
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 accessory
@@ -25,6 +25,7 @@ struct Panel<Content: View, Accessory: View>: View {
         .padding(Space.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Surface.subtleFill, in: RoundedRectangle(cornerRadius: Radius.large))
+        .overlay(RoundedRectangle(cornerRadius: Radius.large).stroke(Surface.separator, lineWidth: 1))
         .gridArea("panel-\(caption)", inset: Space.lg)
     }
 }

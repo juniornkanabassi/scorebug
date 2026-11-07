@@ -2,7 +2,7 @@
 # Every headless check in one run, locally and in CI. One debug build is reused by all steps. Nothing shows a
 # window, takes focus, opens an app, plays sound, loads a network fixture or reads Junior's real data or preferences.
 #   SCOREBUG_SCRATCH    build scratch (default /private/tmp/bama/build-scorebug)
-#   SCOREBUG_SNAPSHOTS  where the 22 light and dark PNGs are copied (default: left in the run folder it prints)
+#   SCOREBUG_SNAPSHOTS  where the 32 light and dark PNGs are copied (default: left in the run folder it prints)
 # Not here: security-check, acceptance-check, mcp-check and bundled-check need a running app; plugin-check needs the
 # built Stream Deck plugin (bin/plugin.js is not in git). See REVIEW.md.
 set -euo pipefail

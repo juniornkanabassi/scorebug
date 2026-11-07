@@ -54,7 +54,7 @@ struct LibraryView: View {
     /// The Clubs/Competitions switch, now in the list column's own header (was a full-width bar above the
     /// split view, wasting the width the detail pane could otherwise use at a wide window).
     private var modePicker: some View {
-        Picker("", selection: $mode) { Text("Clubs").tag(0); Text("Competitions").tag(1) }
+        Picker("", selection: $mode) { Text("Teams").tag(0); Text("Competitions").tag(1) }
             .scaledFont(.body).pickerStyle(.segmented).labelsHidden().accessibilityLabel("Library category").padding(Space.md)
     }
 
@@ -89,7 +89,7 @@ struct LibraryView: View {
                     .padding(Space.md)
                     Divider()
                     List(filteredCompetitions, selection: $selectedCompetition) { c in
-                        HStack { CachedCompetitionMark(competition: c, size: 24); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.secondary) }
+                        HStack { CachedCompetitionMark(competition: c, size: 24).frame(width: 40); Text(c.name); Spacer(); Text(c.shortName).foregroundStyle(.primary) }
                             .scaledFont(.body)
                             .tag(c.id)
                     }
@@ -215,7 +215,8 @@ struct LibraryView: View {
                 Button("Show All") { selectedCompetitions.removeAll() }.scaledFont(.body)
             }
         } label: {
-            Label("Competitions", systemImage: "trophy").scaledFont(.body)
+            Label("Competitions", systemImage: "trophy").scaledFont(.body).labelStyle(.iconOnly)
+                .help("Filter teams by competition").accessibilityLabel("Filter teams by competition")
         }
     }
 
@@ -260,8 +261,8 @@ struct LibraryView: View {
     }
 
     private func countsRow(_ filtered: [Club]) -> some View {
-        Text("\(model.library.clubs.count) clubs and nations, \(model.library.clubs.filter { $0.crestFile != nil }.count) with crests, \(filtered.count) shown")
-            .scaledFont(.caption).foregroundStyle(.secondary)
+        Text("\(filtered.count) of \(model.library.clubs.count) teams")
+            .scaledFont(.caption).foregroundStyle(.primary)
             .padding(.horizontal, Space.md).padding(.vertical, Space.sm)
     }
 
@@ -280,7 +281,7 @@ struct LibraryView: View {
                 CachedCrestThumb(club: club, size: 24)
                 Text(club.name)
                 Spacer()
-                Text(club.defaultCode).foregroundStyle(.secondary).monospaced()
+                Text(club.defaultCode).foregroundStyle(.primary).monospaced()
                 HStack(spacing: Space.xxs) { ForEach(clubCompetitions(club, byId: byId)) { comp in CachedCompetitionMark(competition: comp, size: 16) } }
             }
             .scaledFont(.body)
@@ -307,7 +308,7 @@ struct LibraryView: View {
                     CachedCrestThumb(club: club, size: 44)
                 }
                 Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
-                Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.secondary).monospaced()
+                Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.primary).monospaced()
             }
             .padding(Space.sm)
             .frame(width: 104, height: 104)
@@ -357,7 +358,7 @@ private struct CachedCompetitionMark: View {
     var body: some View {
         Group {
             if let f = competition.logoFile, let img = CrestImage.thumbnail(file: f, size: size) {
-                Image(nsImage: img).frame(width: size, height: size)
+                Image(nsImage: img).resizable().scaledToFit().frame(width: size, height: size)
             } else {
                 CompetitionFallbackMark(competition: competition, size: size)
             }
@@ -372,9 +373,10 @@ private struct CachedCrestThumb: View {
     var body: some View {
         Group {
             if let f = club.crestFile, let img = CrestImage.thumbnail(file: f, size: size) {
-                Image(nsImage: img)
+                Image(nsImage: img).resizable().scaledToFit()
             } else {
                 Circle().fill(Color(hex: club.primaryColour))
+                    .overlay(Circle().stroke(Surface.separator, lineWidth: 1))
                     .overlay(Text(String(club.defaultCode.prefix(2))).font(.system(size: max(10, size * 0.32), weight: .bold)).foregroundStyle(Color(hex: club.textColour)))
             }
         }.frame(width: size, height: size)
@@ -436,13 +438,13 @@ struct ClubEditor: View {
                         if let f = club.crestFile, let img = CrestImage.thumbnail(file: f, size: 160) {
                             Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
                         } else {
-                            Circle().fill(Color(hex: club.primaryColour)).overlay(Text(String(club.defaultCode.prefix(2))).scaledFont(size: 44, weight: .bold).foregroundStyle(Color(hex: club.textColour)))
+                            Circle().fill(Color(hex: club.primaryColour)).overlay(Circle().stroke(Surface.separator, lineWidth: 1)).overlay(Text(String(club.defaultCode.prefix(2))).scaledFont(size: 44, weight: .bold).foregroundStyle(Color(hex: club.textColour)))
                         }
                     }.frame(width: 160, height: 160)
                     Text(club.name).scaledFont(.title2, weight: .semibold)
-                    Text(club.shortName).scaledFont(.body).foregroundStyle(.secondary)
-                    Text(club.defaultCode).scaledFont(.caption).foregroundStyle(.secondary).monospaced()
-                    Button("Import image") { importing = true }.scaledFont(.body)
+                    if club.shortName != club.name { Text(club.shortName).scaledFont(.body).foregroundStyle(.primary) }
+                    Text(club.defaultCode).scaledFont(.caption).foregroundStyle(.primary).monospaced()
+                    Button("Import Image…") { importing = true }.scaledFont(.body)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Space.sm)
@@ -450,7 +452,7 @@ struct ClubEditor: View {
             Section("Club") {
                 TextField("Full name", text: $club.name).scaledFont(.body)
                 TextField("Short name", text: $club.shortName).scaledFont(.body)
-                TextField("Default code", text: $club.defaultCode).scaledFont(.body)
+                TextField("Three-letter code", text: $club.defaultCode).scaledFont(.body)
             }
             if club.competitionIds.contains("international") {
                 Section("Confederation") {
@@ -464,9 +466,10 @@ struct ClubEditor: View {
                 ForEach(model.library.competitions) { comp in
                     TextField(comp.name, text: Binding(
                         get: { club.codes[comp.id] ?? "" },
-                        set: { v in let t = v.uppercased().trimmingCharacters(in: .whitespaces); if t.isEmpty { club.codes[comp.id] = nil } else { club.codes[comp.id] = t } }))
+                        set: { v in let t = v.uppercased().trimmingCharacters(in: .whitespaces); if t.isEmpty { club.codes[comp.id] = nil } else { club.codes[comp.id] = t } }), prompt: Text(club.defaultCode))
                     .scaledFont(.body)
-                    .help("Leave empty to use the default code")
+                    .textFieldStyle(.roundedBorder)
+                    .help("Leave empty to use \(club.defaultCode)")
                 }
             }
             Section("Colours") {

@@ -157,7 +157,7 @@ struct SidebarMatchRow: View, Equatable {
                     Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
                     if summary.visible {
                         Circle().fill(Surface.statusSuccess).frame(width: 8, height: 8).help("On air: this bug is shown in OBS")
-                        Text("LIVE").scaledFont(.caption2, weight: .bold).foregroundStyle(Surface.statusSuccess)
+                        Text("LIVE").scaledFont(.caption2, weight: .bold).foregroundStyle(.primary)
                     }
                 }
                 Text("\(summary.homeCode) \(summary.homeScore) – \(summary.awayScore) \(summary.awayCode)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
@@ -196,8 +196,10 @@ struct ContentView: View {
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: Space.sm) {
-                        Circle().fill(model.serverRunning ? Surface.statusSuccess : Surface.statusDanger).frame(width: 8, height: 8).accessibilityHidden(true)
-                        Text(model.serverRunning ? "Serving on localhost:\(model.port)" : model.serverStatus).scaledFont(.caption).foregroundStyle(.secondary).lineLimit(2)
+                        Circle().fill(model.stateSaveFailed || !model.serverRunning ? Surface.statusDanger : Surface.statusSuccess).frame(width: 8, height: 8).accessibilityHidden(true)
+                        Text(model.stateSaveFailed ? "Changes are not being saved" : model.serverRunning ? "Ready for OBS" : "Unable to start overlays")
+                            .scaledFont(.caption).foregroundStyle(.primary).lineLimit(2)
+                            .help(model.stateSaveFailed ? "Changes have not reached OBS. Check the latest save error and try again." : model.serverStatus)
                     }
                     Text("Scorebug \(AppInfo.version)").scaledFont(.caption2).foregroundStyle(.secondary)
                 }.padding(Space.md).frame(maxWidth: .infinity, alignment: .leading)
@@ -211,6 +213,12 @@ struct ContentView: View {
         }
         .appErrorAlert(model: model)
         .overlay { if GridOverlay.enabled { GridOverlay() } }
-        .onAppear { if initialSection == nil { SidebarRestoreProbe.run(selection) } }
+        .onAppear {
+            // Pin the first page per window; later picks in another window must not change this one.
+            if initialSection == nil {
+                if selectionID.isEmpty { selectionID = SidebarSection(storageID: SidebarSection.remembered).storageID }
+                SidebarRestoreProbe.run(selection)
+            }
+        }
     }
 }

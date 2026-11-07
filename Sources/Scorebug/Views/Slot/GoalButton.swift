@@ -27,6 +27,9 @@ struct PlusGoalButton: View, Equatable {
                 .frame(minWidth: buttonSide, minHeight: buttonSide)
         }
             .buttonStyle(.borderedProminent).controlSize(.extraLarge)
+            // The same accent stroke as the live period pill: the prominent fill fades once the window is not key
+            // (OBS has focus), and this keeps the most pressed control's edge visible either way.
+            .overlay(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(.tint, lineWidth: 2).opacity(phase == .shootout ? 0 : 1))
             .disabled(phase == .shootout).help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
             .accessibilityLabel("Goal for \(team.name)")
             .lazyPopover(isPresented: plusPromptBinding) {

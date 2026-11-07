@@ -11,6 +11,8 @@ struct ClockReadout: View {
     let addedMinutes: Int?
     let style: ClockStyle
     let tick: Date
+    /// The live bar's quick added-time minus and plus; nil draws the readout alone.
+    var adjustAdded: ((Int) -> Void)? = nil
     private var display: ClockDisplay {
         var m = Match(slot: 0)
         m.clock = clock; m.phase = phase; m.addedMinutes = addedMinutes
@@ -18,14 +20,36 @@ struct ClockReadout: View {
     }
 
     var body: some View {
-        VStack(spacing: Space.md) {
+        VStack(spacing: Space.sm) {
             Text(display.state ?? display.main).scaledFont(size: 48, weight: .semibold, design: .rounded).monospacedDigit()
+                .accessibilityLabel("Match clock").accessibilityValue(display.state ?? display.main)
             HStack(spacing: Space.sm) {
-                if let a = display.added { Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(Surface.statusWarningForeground).padding(.horizontal, Space.sm).padding(.vertical, Space.xxs).background(Surface.statusWarning, in: Capsule()) }
-                if let c = display.addedCounter { Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary) }
-            }.frame(height: 20)
-            Text(phase.displayTitle).scaledFont(.subheadline).foregroundStyle(.secondary)
+                if let adjustAdded { addedButton("minus", delta: -1, adjust: adjustAdded).disabled((addedMinutes ?? 0) <= 0) }
+                VStack(spacing: Space.xxs) {
+                    HStack(spacing: Space.sm) {
+                        if let a = display.added {
+                            Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(Surface.statusWarningForeground).padding(.horizontal, Space.sm).padding(.vertical, Space.xxs).background(Surface.statusWarning, in: Capsule())
+                                .accessibilityLabel("Added time").accessibilityValue(a)
+                        }
+                        if let c = display.addedCounter {
+                            Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary)
+                                .accessibilityLabel("Added time played").accessibilityValue(c)
+                        }
+                    }.frame(minHeight: 20)
+                    Text(phase.displayTitle).scaledFont(.subheadline).foregroundStyle(.secondary)
+                        .accessibilityLabel("Match phase").accessibilityValue(phase.displayTitle)
+                }
+                if let adjustAdded { addedButton("plus", delta: 1, adjust: adjustAdded).disabled((addedMinutes ?? 0) >= 15) }
+            }
         }
+    }
+
+    private func addedButton(_ symbol: String, delta: Int, adjust: @escaping (Int) -> Void) -> some View {
+        let words = delta < 0 ? "Remove a minute of added time" : "Add a minute of added time"
+        return Button { adjust(delta) } label: {
+            Image(systemName: symbol).scaledFont(.body, weight: .semibold).scaledControl(square: true)
+        }
+        .buttonStyle(.bordered).accessibilityLabel(words).help(words)
     }
 }
 
@@ -52,13 +76,13 @@ struct ClockFieldsRow: View {
             TextField("", text: $minutesText)
                 .accessibilityLabel("Clock minutes")
                 .scaledFont(size: 20).monospacedDigit().multilineTextAlignment(.trailing)
-                .textFieldStyle(.plain).frame(width: 48)
+                .textFieldStyle(.plain).frame(width: 48 * ScaledFonts.scale)
                 .focused($minutesFocused).onSubmit(applyTypedTime)
             Text(":").scaledFont(size: 20).foregroundStyle(.secondary)
             TextField("", text: $secondsText)
                 .accessibilityLabel("Clock seconds")
                 .scaledFont(size: 20).monospacedDigit().multilineTextAlignment(.leading)
-                .textFieldStyle(.plain).frame(width: 40)
+                .textFieldStyle(.plain).frame(width: 40 * ScaledFonts.scale)
                 .focused($secondsFocused).onSubmit(applyTypedTime)
         }
         .padding(.horizontal, Space.md).padding(.vertical, Space.sm)

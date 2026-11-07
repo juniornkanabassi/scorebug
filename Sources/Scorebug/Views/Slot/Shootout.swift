@@ -82,7 +82,7 @@ struct ShootoutSection: View, Equatable {
     private func kickRow(_ side: Side, _ s: Shootout) -> some View {
         let sideKicks = s.kicks.filter { $0.side == side }
         return HStack(spacing: Space.sm) {
-            Text(side == .home ? homeShortName : awayShortName).scaledFont(.body).frame(width: 100, alignment: .leading)
+            Text(side == .home ? homeShortName : awayShortName).scaledFont(.body).lineLimit(1).frame(width: 100 * ScaledFonts.scale, alignment: .leading)
             ForEach(Array(sideKicks.enumerated()), id: \.offset) { i, kick in
                 Button { cycle(side: side, index: i, current: kick.result) } label: {
                     Circle().fill(colour(kick.result)).frame(width: 28, height: 28)

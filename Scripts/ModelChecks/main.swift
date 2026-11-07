@@ -220,6 +220,31 @@ final class CannedProtocol: URLProtocol {
         check(model.match(1).aggregate == nil && model.match(1).removedLiveGoalKeys.isEmpty && model.match(1).espnEventId == nil && !model.match(1).liveSidesSwapped, "FLAW 7 same-team replacement clears tie, suppression and old link")
         check(model.match(1).kickoff == noLink.kickoff && model.match(1).revision > same.revision && model.liveLineup(slot: 1, side: .home).isEmpty, "FLAW 7 new event keeps fresh kickoff and no old lineup")
         check(!model.match(1).visible && model.match(1).themeId == "stealth" && !model.match(1).autoUpdateLiveData && model.match(1).liveDataDelayMinutes == 7, "FLAW 7 slot display and live-data settings survive replacement")
+        // A-F1: only a period jump that throws away a live or out-of-order clock asks first.
+        let confirmCases: [(Phase, Period, Bool)] = [(.preMatch, .firstHalf, false), (.halfTime, .secondHalf, false), (.fullTime, .extraFirst, false),
+            (.extraBreak, .extraSecond, false), (.secondHalf, .secondHalf, false), (.secondHalf, .firstHalf, true), (.firstHalf, .secondHalf, true),
+            (.halfTime, .firstHalf, true), (.fullTime, .secondHalf, true), (.finished, .firstHalf, true)]
+        check(confirmCases.allSatisfy { AppModel.periodChangeNeedsConfirmation(from: $0.0, to: $0.1) == $0.2 }, "A-F1 period change confirmation follows the live clock")
+        // A-F2: a goal removed in the window comes back exactly, in its own slot, only while nothing newer has happened.
+        var undoMatch = MatchEngine.apply(.goal(.home, 1), to: linked, now: Date())
+        undoMatch = MatchEngine.apply(.goal(.away, 1), to: undoMatch, now: Date())
+        undoMatch = MatchEngine.apply(.goal(.home, 1), to: undoMatch, now: Date())
+        undoMatch.autoUpdateLiveData = false
+        undoMatch.goals[0].scorer = "Undo Scorer"; undoMatch.goals[0].ownGoal = true; undoMatch.goals[0].penalty = true
+        undoMatch.goals[0].minuteLabel = "45+2'"; undoMatch.goals[0].autoAdded = true; undoMatch.goals[0].autoAddedKey = "12345:id:777"
+        seed(undoMatch)
+        check(model.removeGoalFromWindow(.removeGoal(undoMatch.goals[0].id), slot: 1) && model.match(1).homeScore == 1
+              && model.match(1).removedLiveGoalKeys.contains("12345:id:777") && model.undoableGoalRemoval(slot: 1) != nil, "A-F2 window removal is saved, suppressed and offered for undo")
+        check(model.undoableGoalRemoval(slot: 2) == nil && !model.undoGoalRemoval(slot: 2) && model.match(1).goals.count == 2, "A-F2 undo in the other slot restores nothing")
+        check(model.undoGoalRemoval(slot: 1) && model.match(1).goals == undoMatch.goals && model.match(1).homeScore == 2 && model.match(1).awayScore == 1
+              && !model.match(1).removedLiveGoalKeys.contains("12345:id:777"), "A-F2 undo restores scorer, minute, own goal, penalty, order and live identity")
+        let undoSaved = try JSONCoding.decoder().decode(MatchState.self, from: Data(contentsOf: root.appendingPathComponent("state.json")))
+        check(undoSaved.match(slot: 1)?.goals == undoMatch.goals, "A-F2 the restored goal is saved")
+        check(!model.undoGoalRemoval(slot: 1) && model.match(1).goals.count == 3, "A-F2 undo applies once")
+        check(model.removeGoalFromWindow(.goal(.home, -1), slot: 1) && model.match(1).goals.count == 2, "A-F2 live bar minus removes the last home goal")
+        try model.applyRequest(CommandRequest(command: "adjustClock", delta: 5), slot: 1)
+        let afterNewer = model.match(1)
+        check(model.undoableGoalRemoval(slot: 1) == nil && !model.undoGoalRemoval(slot: 1) && model.match(1) == afterNewer, "A-F2 a newer API command retires the undo")
         let image = root.appendingPathComponent("mark.svg")
         try Data("first image".utf8).write(to: image)
         model.importCompetitionLogo(from: image, for: "champions-league")
@@ -301,6 +326,17 @@ final class CannedProtocol: URLProtocol {
         check(model.apply(.goal(.home, 1), slot: 1) && model.match(1).homeScore == savedMatch.homeScore + 1, "rule 3 the next save after recovery applies")
         model.saveSettings(); model.updateCompetition(edited)
         check(model.snapshot().overlay.portraitTop == savedTop + 10 && model.snapshot().competitions[0] == edited, "rule 3 settings and competitions show once saved")
+        // A-F2: a failed undo save keeps the removal and the offer, and broadcasts nothing.
+        let beforeUndo = model.match(1)
+        check(model.removeGoalFromWindow(.goal(.home, -1), slot: 1), "A-F2 removal before a failed undo is saved")
+        let removedMatch = model.match(1), servedRemoved = try stripTime(try await servedState())
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: root.path)
+        check(!model.undoGoalRemoval(slot: 1) && model.match(1) == removedMatch && model.stateSaveFailed && model.undoableGoalRemoval(slot: 1) != nil, "A-F2 failed undo save rolls back and keeps the offer")
+        let servedAfterFailedUndo = try stripTime(try await servedState())
+        check(servedAfterFailedUndo == servedRemoved, "A-F2 failed undo save serves nothing new")
+        model.lastError = nil
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+        check(model.undoGoalRemoval(slot: 1) && model.match(1).goals == beforeUndo.goals && model.match(1).homeScore == beforeUndo.homeScore && !model.stateSaveFailed, "A-F2 undo succeeds once saving recovers")
         // A club whose name contains "crest" must still be titled by the failing task, not by the message text.
         let crestwood = Club(name: "Crestwood", shortName: "Crestwood", defaultCode: "CRW", primaryColour: "#000000")
         model.upsertClub(crestwood)

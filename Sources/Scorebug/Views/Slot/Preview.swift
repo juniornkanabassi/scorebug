@@ -8,6 +8,8 @@ struct PreviewStage: View {
     let slot: Int
     let baseURL: String
     let visible: Bool
+    /// Why there is nothing to load (the server is starting or failed to start); nil once it is serving.
+    var serverProblem: String? = nil
     var body: some View {
         GeometryReader { geo in
             // Both panes share one height; that height is capped by the width too, so a narrow window scales
@@ -36,6 +38,12 @@ struct PreviewStage: View {
                     .scaledFont(.caption).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center).padding(Space.sm)
                     .frame(width: width, height: height, alignment: .bottom)
+                    .background(Surface.fill)
+            } else if let serverProblem {
+                Text(serverProblem)
+                    .scaledFont(.caption).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center).padding(Space.sm)
+                    .frame(width: width, height: height)
                     .background(Surface.fill)
             } else {
                 OverlayWebView(url: URL(string: "\(baseURL)/overlay/\(path)/\(slot)?preview=1")!, scale: width / canvas.width, size: canvas)

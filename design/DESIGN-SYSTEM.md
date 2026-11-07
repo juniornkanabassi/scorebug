@@ -10,7 +10,7 @@ Keep the existing large live scores and minimum 44 pt match controls. They are d
 
 ## Colour
 
-`UI/Surfaces.swift` owns native surface and status colours, plus competition fallback colours. Use system semantic backgrounds and labels. Status includes a word or symbol as well as colour. Dynamic club colours remain user data, not app chrome.
+`UI/Surfaces.swift` owns native surface and status colours, plus competition fallback colours. Use system semantic backgrounds and labels. Match panels use `controlBackgroundColor`, a separator stroke and primary-colour sentence-case headings. Status includes a word or symbol as well as colour. Dynamic club colours remain user data, not app chrome.
 
 For a competition fallback fill, use `Surface.text(on:)`. It chooses the higher-contrast black or white foreground using WCAG relative luminance. Do not assume white text works on orange or gold. The opaque preview canvas and imported mark backing are intentional exceptions with named tokens.
 
@@ -20,10 +20,10 @@ For a competition fallback fill, use `Surface.text(on:)`. It chooses the higher-
 
 ## Commands and settings
 
-Match commands use the focused scene's actions. Goal commands use the same scorer prompt as the plus buttons. Reset opens the existing confirmation. Settings has OBS, Live Data and Advanced tabs, retains every previous option, and remembers the selected tab. The last main destination uses SceneStorage. Error alert titles name the failed task and retain the original diagnostic.
+Match commands use the focused scene's actions. Goal commands use the same scorer prompt as the plus buttons. Reset opens the existing confirmation. Settings has OBS, Live Data and Advanced tabs, retains every previous option, and remembers the selected tab. Each main window pins its own SceneStorage destination on appearance; the last pick is also stored explicitly to survive disabled window restoration. Error alert titles name the failed task and retain the original diagnostic.
 
 ## Verification
 
-`Scripts/native-style-check.sh` covers contrast, selection decoding and error titles. `Scripts/native-snapshots.sh <binary>` renders every page and each Settings tab in light and dark without showing a window, plus both match pages at zoom level 2. It uses only disposable fixtures under `/private/tmp/bama/build-scorebug`.
+`Scripts/native-style-check.sh` covers contrast, selection decoding and error titles. `Scripts/native-snapshots.sh <binary>` renders every page and each Settings tab in light and dark without showing a window, plus both match pages at zoom level 2 and all five real operating panels at the maximum zoom level 3 (1.7×). It uses only disposable fixtures under `/private/tmp/bama/build-scorebug`.
 
 The offscreen renderer checks content layout, not active window chrome or a live WebKit preview. Verify those with a live window before release. The existing overlay acceptance captures remain the proof for broadcast pixels.

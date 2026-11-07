@@ -60,6 +60,32 @@ enum NativeSnapshots {
                 for slot in [1, 2] {
                     results.append(try capture(AnyView(ContentView(initialSection: .slot(slot))), name: "slot-\(slot)-zoom-2-\(appearance)", scheme: scheme, size: CGSize(width: 1180, height: 720), model: model, output: output))
                 }
+                // The normal window cuts off later panels. Render each real panel at the largest text size.
+                model.zoomLevel = 3
+                let match = model.match(1)
+                let generation = ScaledFonts.generation
+                let panels: [(String, CGFloat, AnyView)] = [
+                    ("clock", 480, AnyView(ClockSection(phase: match.phase, clock: match.clock, hasKnockouts: true,
+                        slot: 1, model: model, zoomGeneration: generation))),
+                    ("added-time", 240, AnyView(StoppageSection(addedMinutes: match.addedMinutes, slot: 1,
+                        model: model, zoomGeneration: generation))),
+                    ("goals", 560, AnyView(GoalsSection(match: match, goals: match.goals, homeCode: match.home.code,
+                        awayCode: match.away.code, showScorers: match.showScorers, homeColour: match.home.primaryColour,
+                        awayColour: match.away.primaryColour, slot: 1, model: model, zoomGeneration: generation))),
+                    ("setup", 560, AnyView(MatchSetupSection(home: match.home, away: match.away,
+                        competitionId: match.competitionId, phase: .preMatch, aggregate: match.aggregate,
+                        hasKnockouts: true, slot: 1, model: model, zoomGeneration: generation))),
+                    ("shootout", 640, AnyView(ShootoutSection(shootout: Shootout(kicks: [
+                        Kick(side: .home, result: .scored), Kick(side: .away, result: .missed),
+                        Kick(side: .home, result: .scored), Kick(side: .away, result: .scored)
+                    ], firstKicker: .home), phase: .shootout, homeShortName: match.home.shortName,
+                        awayShortName: match.away.shortName, slot: 1, model: model, zoomGeneration: generation)))
+                ]
+                for (name, height, panel) in panels {
+                    let page = panel.padding(Space.lg).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    results.append(try capture(AnyView(page), name: "panel-\(name)-zoom-3-\(appearance)",
+                        scheme: scheme, size: CGSize(width: 928, height: height), model: model, output: output))
+                }
             }
             guard !NSApp.windows.contains(where: \.isVisible) else { throw SnapshotError.render("unexpected visible window") }
             let report: [String: Any] = [
@@ -101,17 +127,18 @@ enum NativeSnapshots {
         guard !window.isVisible, let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw SnapshotError.render(name) }
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         var sampledColours = Set<String>()
-        for y in stride(from: 0, to: bitmap.pixelsHigh, by: max(1, bitmap.pixelsHigh / 32)) {
-            for x in stride(from: 0, to: bitmap.pixelsWide, by: max(1, bitmap.pixelsWide / 48)) {
+        for y in stride(from: 0, to: bitmap.pixelsHigh, by: max(1, bitmap.pixelsHigh / 96)) {
+            for x in stride(from: 0, to: bitmap.pixelsWide, by: max(1, bitmap.pixelsWide / 128)) {
                 if let colour = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB) {
                     sampledColours.insert("\(Int(colour.redComponent * 255)),\(Int(colour.greenComponent * 255)),\(Int(colour.blueComponent * 255))")
                 }
             }
         }
-        guard sampledColours.count >= 8 else { throw SnapshotError.render("\(name): blank content") }
         guard let png = bitmap.representation(using: .png, properties: [:]), png.count > 2_000 else { throw SnapshotError.render(name) }
         let file = output.appendingPathComponent("\(name).png")
         try png.write(to: file)
+        // Keep a failed bitmap for diagnosis; the launcher copies it before cleaning its disposable run.
+        guard sampledColours.count >= 8 else { throw SnapshotError.render("\(name): blank content (\(sampledColours.count) sampled colours; bitmap saved)") }
         GridProbes.shared.write(to: output.appendingPathComponent("\(name)-layout.json").path, window: size)
         log("SNAPSHOT \(file.path) (\(bitmap.pixelsWide) × \(bitmap.pixelsHigh), offscreen)")
         return ["name": name, "file": file.lastPathComponent, "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh, "bytes": png.count, "sampledColourCount": sampledColours.count]

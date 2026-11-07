@@ -4,7 +4,7 @@ import AppKit
 /// Native semantic surfaces and status colours, resolved by macOS for each appearance.
 enum Surface {
     static let fill = Color(nsColor: .controlBackgroundColor)
-    static let subtleFill = Color(nsColor: .underPageBackgroundColor)
+    static let subtleFill = Color(nsColor: .controlBackgroundColor)
     static let separator = Color(nsColor: .separatorColor)
     static let statusSuccess = Color(nsColor: .systemGreen)
     static let statusDanger = Color(nsColor: .systemRed)

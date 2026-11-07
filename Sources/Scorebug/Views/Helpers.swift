@@ -219,7 +219,8 @@ struct CrestView: View {
                     Image(nsImage: img).resizable().aspectRatio(contentMode: .fit)
                 }
             } else {
-                Circle().fill(Color(hex: team.primaryColour)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: max(10, size * 0.36), weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
+                Circle().fill(Color(hex: team.primaryColour))
+                    .overlay(Circle().stroke(Surface.separator, lineWidth: 1)).overlay(Text(team.clubId == nil ? String(team.name.prefix(1)) : String(team.code.prefix(2))).font(.system(size: max(10, size * 0.36), weight: .bold)).foregroundStyle(Color(hex: team.textColour)))
             }
         }.frame(width: size, height: size)
     }

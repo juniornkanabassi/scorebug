@@ -30,8 +30,16 @@ struct MatchSetupSection: View, Equatable {
     private var competition: Competition? { model.library.competitions.first { $0.id == competitionId } }
 
     var body: some View {
-        Panel("Match setup") {
-            DisclosureGroup(isExpanded: $isExpanded) {
+        // One heading: the panel's own, with the show/hide control beside it, instead of a second disclosure title.
+        Panel("Match setup", accessory: {
+            Button { isExpanded.toggle() } label: {
+                Label(isExpanded ? "Hide" : "Show", systemImage: isExpanded ? "chevron.up" : "chevron.down").scaledFont(.caption)
+            }
+            .buttonStyle(.borderless).help(isExpanded ? "Hide the teams and competition" : "Show the teams and competition")
+        }) {
+            if !isExpanded {
+                Text("\(home.name) v \(away.name) · \(competition?.name ?? competitionId)").scaledFont(.body).foregroundStyle(.secondary).lineLimit(1)
+            } else {
                 VStack(alignment: .leading, spacing: Space.md) {
                     HStack(spacing: Space.md) {
                         ClubPickerButton(side: .home, slot: slot).equatable()
@@ -45,7 +53,7 @@ struct MatchSetupSection: View, Equatable {
                         if let c = competition { CompetitionMark(competition: c, size: 32, plate: true) }
                         Picker("Competition", selection: Binding(get: { competitionId }, set: { model.setCompetition($0, slot: slot) })) {
                             ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
-                        }.scaledFont(.body).frame(maxWidth: 360)
+                        }.scaledFont(.body).controlSize(.large).frame(maxWidth: 360 * ScaledFonts.scale)
                     }
                     if hasKnockouts {
                         Toggle("Second leg of a tie", isOn: Binding(
@@ -66,8 +74,8 @@ struct MatchSetupSection: View, Equatable {
                     }
                     Button { showingFixtures = true } label: { Text("Load fixture…").scaledFont(.body).scaledControl() }
                         .disabled(phase != .preMatch).help("Only available before kick-off")
-                }.padding(.top, Space.sm)
-            } label: { Text("Teams and competition").scaledFont(.caption).foregroundStyle(.secondary) }
+                }
+            }
         }
         .onChange(of: phase) { _, phase in isExpanded = phase == .preMatch }
         .sheet(isPresented: $showingFixtures) { FixturePickerSheet(competitionId: competitionId, slot: slot) }
@@ -85,7 +93,7 @@ private struct AggregateField: View {
     var body: some View {
         TextField("", text: $text)
             .scaledFont(.caption).monospacedDigit().multilineTextAlignment(.center)
-            .textFieldStyle(.roundedBorder).frame(width: 32)
+            .textFieldStyle(.roundedBorder).frame(width: 40 * ScaledFonts.scale)
             .focused($focused)
             .onAppear { text = "\(value)" }
             .onChange(of: value) { _, new in if !focused { text = "\(new)" } }

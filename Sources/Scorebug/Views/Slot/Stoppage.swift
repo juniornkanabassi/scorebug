@@ -1,7 +1,7 @@
 import SwiftUI
 import ScorebugCore
 
-/// The stoppage-time (added-time) control, alone: minus, the value, plus, and a "Show on bug" switch that
+/// The added-time control, alone: minus, the value, plus, and a "Show added time on bug" switch that
 /// hides it from the overlay (`setAddedMinutes(nil)`) without losing the number, restoring the last
 /// non-zero value when switched back on.
 struct StoppageSection: View, Equatable {
@@ -16,22 +16,24 @@ struct StoppageSection: View, Equatable {
     }
 
     /// Remembers the last non-zero value per slot, so switching slots (or reopening the app) does not forget
-    /// a "+3" that was switched off with "Show on bug".
+    /// a "+3" that was switched off with "Show added time on bug".
     private var defaultsKey: String { "lastAdded\(slot)" }
 
     var body: some View {
-        Panel("Stoppage", accessory: {
-            Toggle("Show on bug", isOn: showBinding).toggleStyle(.switch).scaledFont(.caption)
+        Panel("Added time", accessory: {
+            Toggle("Show added time on bug", isOn: showBinding).toggleStyle(.switch).scaledFont(.caption)
+                .help("Show or hide the added time on the bug; the number is kept either way")
         }) {
             HStack(spacing: Space.lg) {
                 Button { adjust(-1) } label: { Image(systemName: "minus").scaledFont(.title2, weight: .semibold).scaledControl(square: true) }
                     .buttonStyle(.bordered).controlSize(.extraLarge)
-                    .accessibilityLabel("Decrease stoppage time").help("Decrease stoppage time by one minute")
+                    .accessibilityLabel("Remove a minute of added time").help("Remove a minute of added time")
                     .disabled((addedMinutes ?? 0) <= 0)
-                Text(addedMinutes.map { "+\($0)" } ?? "Off").scaledFont(size: 28, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 80)
+                Text(addedMinutes.map { "+\($0)" } ?? "Off").scaledFont(size: 28, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 80 * ScaledFonts.scale)
+                    .accessibilityLabel("Added time").accessibilityValue(addedMinutes.map { "\($0) minutes" } ?? "Off")
                 Button { adjust(1) } label: { Image(systemName: "plus").scaledFont(.title2, weight: .semibold).scaledControl(square: true) }
                     .buttonStyle(.bordered).controlSize(.extraLarge)
-                    .accessibilityLabel("Increase stoppage time").help("Increase stoppage time by one minute")
+                    .accessibilityLabel("Add a minute of added time").help("Add a minute of added time")
                     .disabled((addedMinutes ?? 0) >= 15)
             }
             .frame(maxWidth: .infinity)

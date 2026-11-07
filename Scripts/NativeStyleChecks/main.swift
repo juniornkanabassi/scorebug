@@ -8,6 +8,12 @@ let samples: [Color] = competitions.map(CompetitionColours.colour)
     + [.black, .white, .yellow, .cyan, .gray, .green, .red]
 for name in [NSAppearance.Name.aqua, .darkAqua] {
     NSAppearance(named: name)!.performAsCurrentDrawingAppearance {
+        let panel = Surface.relativeLuminance(of: Surface.subtleFill)
+        let label = Surface.relativeLuminance(of: Color(nsColor: .labelColor))
+        let panelContrast = (max(panel, label) + 0.05) / (min(panel, label) + 0.05)
+        precondition(panelContrast >= 4.5, "Panel heading lacks contrast in \(name.rawValue): \(panelContrast)")
+        precondition(abs(panel - Surface.relativeLuminance(of: Color(nsColor: .controlBackgroundColor))) < 0.001,
+                     "Match panels must use the control surface, not the under-page background")
         for fill in samples {
             let luminance = Surface.relativeLuminance(of: fill)
             let foreground = Surface.relativeLuminance(of: Surface.text(on: fill))
@@ -21,6 +27,7 @@ for name in [NSAppearance.Name.aqua, .darkAqua] {
         }
     }
 }
+print("PASS NativePanelChecks: 2 appearance contrast and semantic surface checks")
 print("PASS NativeStyleChecks: \(checks) light/dark foreground contrast checks")
 
 let sections: [SidebarSection] = [.slot(1), .slot(2), .library]

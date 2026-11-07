@@ -18,7 +18,13 @@ struct FixturePickerSheet: View {
             if isLoading {
                 ProgressView("Loading fixtures…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if failed {
-                ContentUnavailableView("Couldn't reach the fixture service", systemImage: "wifi.exclamationmark")
+                ContentUnavailableView {
+                    Label("Couldn't reach the fixture service", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text("Check the internet connection, then try again.")
+                } actions: {
+                    Button { Task { await loadFixtures() } } label: { Text("Try Again").scaledFont(.body).scaledControl() }
+                }
             } else if fixtures.isEmpty {
                 ContentUnavailableView("No fixtures found for this date", systemImage: "calendar")
             } else {

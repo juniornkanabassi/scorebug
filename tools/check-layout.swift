@@ -33,6 +33,7 @@ struct Probe: Decodable {
 }
 
 struct LayoutFile: Decodable {
+    var window: [String: Double]
     var probes: [Probe]
 }
 
@@ -66,6 +67,13 @@ for path in paths {
     let areas = Dictionary(file.probes.filter { $0.kind == "area" }.map { ($0.area, $0) },
                            uniquingKeysWith: { first, _ in first })
     let probes = file.probes.filter { $0.kind == "probe" }
+
+    // A scrolling page may extend vertically, but its custom areas must fit the window horizontally.
+    if let width = file.window["width"] {
+        for area in areas.values where area.x < -tolerance || area.maxX > width + tolerance {
+            problems.append("\(area.name): horizontal bounds \(fmt(area.x))...\(fmt(area.maxX)) exceed window 0...\(fmt(width))")
+        }
+    }
 
     for probe in file.probes where probe.width > 0 {
         if !onGrid(probe.x, step: 0.5, within: pixelTolerance) {

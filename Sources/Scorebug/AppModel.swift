@@ -199,6 +199,82 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Starting a period always restarts the clock at that period's base and clears added time. That is the normal
+    /// next step from kick-off or a break, so only a jump that throws away a live or out-of-order clock asks first.
+    nonisolated static func periodChangeNeedsConfirmation(from phase: Phase, to period: Period) -> Bool {
+        guard phase != .preMatch, phase.period != period else { return false }
+        let natural: Period? = switch phase {
+        case .halfTime: .secondHalf
+        case .fullTime: .extraFirst
+        case .extraBreak: .extraSecond
+        default: nil
+        }
+        return natural != period
+    }
+
+    // MARK: Undo a goal removed in the window
+
+    /// The one goal last removed from the window in a slot, kept so the operator can put it back exactly.
+    /// Only valid while the match is still at `revision`: any later command, API call or live poll moves the
+    /// revision on and quietly retires it, so a restore never lands on top of newer state.
+    struct GoalRemoval: Equatable {
+        let goal: Goal
+        let index: Int
+        /// The live-feed key this removal added to `removedLiveGoalKeys`, taken back out on restore.
+        let suppressedKey: String?
+        let revision: Int
+    }
+    @Published private var goalRemovals: [Int: GoalRemoval] = [:]
+
+    /// The removal the window may offer to undo, or nil once the slot has changed since.
+    func undoableGoalRemoval(slot: Int) -> GoalRemoval? {
+        guard let removal = goalRemovals[slot], state.match(slot: slot)?.revision == removal.revision else { return nil }
+        return removal
+    }
+
+    func dismissGoalUndo(slot: Int) { goalRemovals[slot] = nil }
+
+    /// The window's goal minus buttons: `.goal(side, -1)` or `.removeGoal(id)`, remembered for Undo once saved.
+    @discardableResult
+    func removeGoalFromWindow(_ command: Command, slot: Int) -> Bool {
+        guard let idx = state.matches.firstIndex(where: { $0.slot == slot }) else { return false }
+        let before = state.matches[idx]
+        let index: Int? = switch command {
+        case .removeGoal(let id): before.goals.firstIndex { $0.id == id }
+        case .goal(let side, let delta) where delta < 0: before.goals.lastIndex { $0.side == side }
+        default: nil
+        }
+        guard apply(command, slot: slot) else { return false }
+        let after = match(slot)
+        if let index, !after.goals.contains(where: { $0.id == before.goals[index].id }) {
+            let goal = before.goals[index]
+            let key = goal.autoAddedKey.flatMap { before.removedLiveGoalKeys.contains($0) ? nil : $0 }
+            goalRemovals[slot] = GoalRemoval(goal: goal, index: index, suppressedKey: key, revision: after.revision)
+        } else {
+            goalRemovals[slot] = nil
+        }
+        return true
+    }
+
+    /// Puts the removed goal back with its scorer, minute, own-goal and penalty marks, and lifts the live-feed
+    /// suppression the removal added. Saved before it is broadcast; a failed save keeps the offer open.
+    @discardableResult
+    func undoGoalRemoval(slot: Int) -> Bool {
+        guard let removal = undoableGoalRemoval(slot: slot), let idx = state.matches.firstIndex(where: { $0.slot == slot }) else {
+            goalRemovals[slot] = nil; return false
+        }
+        var m = state.matches[idx]
+        guard m.phase != .shootout, !m.goals.contains(where: { $0.id == removal.goal.id }) else { goalRemovals[slot] = nil; return false }
+        m.goals.insert(removal.goal, at: min(removal.index, m.goals.count))
+        if removal.goal.side == .home { m.homeScore += 1 } else { m.awayScore += 1 }
+        if let key = removal.suppressedKey { m.removedLiveGoalKeys.removeAll { $0 == key } }
+        m.revision += 1
+        state.matches[idx] = m
+        guard persistAndBroadcast() else { return false }
+        goalRemovals[slot] = nil
+        return true
+    }
+
     // ponytail: last 500 successful responses per session; durable retry history only if needed.
     private var commandResponses: [String: (Data, Bool)] = [:]
     private var commandResponseOrder: [String] = []
@@ -492,7 +568,7 @@ final class AppModel: ObservableObject {
         edit(&state.matches[idx].goals[goal]); state.matches[idx].revision += 1; persistAndBroadcast()
     }
 
-    private(set) var stateSaveFailed = false
+    @Published private(set) var stateSaveFailed = false
     private var stateSaveFailures = 0
     @discardableResult
     private func persistAndBroadcast(deferUIUpdate: Bool = false) -> Bool {

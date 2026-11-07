@@ -20,18 +20,30 @@ fi
 source "${0:A:h}/agent-launch.zsh"
 agent_setup "${1:-${SCOREBUG_SCRATCH:-$safe}/release/Scorebug}" native-snapshots
 [[ -n $out ]] || agent_keep_run=1
-trap agent_cleanup EXIT
+snapshot_cleanup() {
+    local snapshot_exit=$?
+    if (( snapshot_exit != 0 )) && [[ -n $out && -d $run/images ]]; then
+        mkdir -p "$dest"
+        local images=("$run"/images/*.png(N) "$run"/images/*-layout.json(N))
+        (( ${#images} == 0 )) || cp "${images[@]}" "$dest/"
+        print -u2 "Failed snapshot evidence retained: $dest"
+    fi
+    agent_cleanup
+    return $snapshot_exit
+}
+trap snapshot_cleanup EXIT
 mkdir -p "$run/images"
 CFFIXED_USER_HOME="$run/home" SCOREBUG_NATIVE_SNAPSHOTS="$run/images" SCOREBUG_SNAPSHOT=1 \
     deadline 180 "$app" --data-directory "$run/data" --background --agent-screen
 python3 - "$run/images/report.json" <<'PY'
 import hashlib, json, pathlib, sys
 report = json.loads(pathlib.Path(sys.argv[1]).read_text())
-assert report['status'] == 'PASS' and report['count'] == 22, report
+assert report['status'] == 'PASS' and report['count'] == 32, report
 names = {image['name'] for image in report['images']}
 for name in ['primary', 'secondary', 'library', 'library-club', 'library-competition',
              'library-icons', 'settings-obs', 'settings-live-data', 'settings-advanced',
-             'slot-1-zoom-2', 'slot-2-zoom-2']:
+             'slot-1-zoom-2', 'slot-2-zoom-2', 'panel-clock-zoom-3', 'panel-added-time-zoom-3',
+             'panel-goals-zoom-3', 'panel-setup-zoom-3', 'panel-shootout-zoom-3']:
     for appearance in ['light', 'dark']:
         assert f'{name}-{appearance}' in names, (name, appearance)
 for image in report['images']:
@@ -39,7 +51,9 @@ for image in report['images']:
     assert path.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'), path
     assert image['width'] > 0 and image['height'] > 0 and image['bytes'] > 2000, image
     assert image['sampledColourCount'] >= 8, image
-for name in ['primary', 'secondary', 'library', 'settings-obs', 'settings-live-data', 'settings-advanced']:
+for name in ['primary', 'secondary', 'library', 'settings-obs', 'settings-live-data', 'settings-advanced',
+             'panel-clock-zoom-3', 'panel-added-time-zoom-3', 'panel-goals-zoom-3',
+             'panel-setup-zoom-3', 'panel-shootout-zoom-3']:
     light = pathlib.Path(sys.argv[1]).parent / f'{name}-light.png'
     dark = pathlib.Path(sys.argv[1]).parent / f'{name}-dark.png'
     assert hashlib.sha256(light.read_bytes()).digest() != hashlib.sha256(dark.read_bytes()).digest(), name

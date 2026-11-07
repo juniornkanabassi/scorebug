@@ -33,7 +33,7 @@ struct LiveMatchBar: View, Equatable {
             VStack(spacing: Space.md) {
                 TimelineView(.periodic(from: .now, by: clock.running ? 1.0 : 3600)) { context in
                     ClockReadout(clock: clock, phase: phase, addedMinutes: addedMinutes,
-                                 style: clockStyle ?? .runOn, tick: context.date)
+                                 style: clockStyle ?? .runOn, tick: context.date, adjustAdded: adjustAdded)
                 }
                 Button { model.apply(.playPause, slot: slot) } label: {
                     Label(clock.running ? "Pause" : "Play", systemImage: clock.running ? "pause.fill" : "play.fill")
@@ -51,8 +51,14 @@ struct LiveMatchBar: View, Equatable {
             .frame(minWidth: 180)
             teamColumn(.away, team: away, score: awayScore)
         }
-        .padding(.horizontal, Space.lg).padding(.vertical, Space.md)
+        .padding(.horizontal, Space.lg).padding(.vertical, Space.sm)
         .background(.bar)
+    }
+
+    /// The same step and limits as the Added time panel, so the live bar is a shortcut, not a second rule.
+    private func adjustAdded(_ delta: Int) {
+        let clamped = max(0, min(15, (addedMinutes ?? 0) + delta))
+        model.apply(.setAddedMinutes(clamped == 0 ? nil : clamped), slot: slot)
     }
 
     private func teamColumn(_ side: Side, team: TeamEntry, score: Int) -> some View {
@@ -63,14 +69,18 @@ struct LiveMatchBar: View, Equatable {
                 Text(team.shortName).scaledFont(.headline).lineLimit(1).help(team.name)
             }
             HStack(spacing: Space.sm) {
+                let total = aggregate.map { score + (side == .home ? $0.firstLegHome : $0.firstLegAway) }
                 VStack(spacing: 0) {
                     Text("\(score)").scaledFont(size: 56, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 64)
-                    if let agg = aggregate {
-                        Text("(\(score + (side == .home ? agg.firstLegHome : agg.firstLegAway)))")
-                            .scaledFont(.caption).monospacedDigit().foregroundStyle(.secondary)
+                    if let total {
+                        Text("Agg \(total)").scaledFont(.caption).monospacedDigit().foregroundStyle(.secondary)
+                            .help("Aggregate score, including the first leg")
                     }
                 }
-                Button { model.apply(.goal(side, -1), slot: slot) } label: {
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(team.name) score")
+                .accessibilityValue(total.map { "\(score), \($0) on aggregate" } ?? "\(score)")
+                Button { model.removeGoalFromWindow(.goal(side, -1), slot: slot) } label: {
                     Image(systemName: "minus").scaledFont(.title, weight: .bold).frame(width: goalButtonSide, height: goalButtonSide)
                         .frame(minWidth: goalButtonSide, minHeight: goalButtonSide)
                 }
