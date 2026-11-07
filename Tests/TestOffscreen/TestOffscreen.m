@@ -28,6 +28,11 @@ static void swap(Class type, SEL original, SEL replacement) {
 - (void)testOffscreen_makeKeyAndOrderFront:(id)sender { [self testOffscreen_hide]; [self testOffscreen_makeKeyAndOrderFront:sender]; }
 @end
 
+@implementation NSResponder (TestOffscreen)
+// Unhandled key presses must not play the system alert sound during hidden checks.
+- (void)testOffscreen_noResponderFor:(SEL)eventSelector {}
+@end
+
 @implementation NSApplication (TestOffscreen)
 - (void)testOffscreen_activateIgnoringOtherApps:(BOOL)flag {}
 - (void)testOffscreen_activate {}
@@ -40,6 +45,7 @@ __attribute__((constructor)) static void installTestOffscreen(void) {
   swap(window, @selector(orderFront:), @selector(testOffscreen_orderFront:));
   swap(window, @selector(orderFrontRegardless), @selector(testOffscreen_orderFrontRegardless));
   swap(window, @selector(makeKeyAndOrderFront:), @selector(testOffscreen_makeKeyAndOrderFront:));
+  swap(NSResponder.class, @selector(noResponderFor:), @selector(testOffscreen_noResponderFor:));
   swap(app, @selector(activateIgnoringOtherApps:), @selector(testOffscreen_activateIgnoringOtherApps:));
   swap(app, @selector(activate), @selector(testOffscreen_activate));
 }

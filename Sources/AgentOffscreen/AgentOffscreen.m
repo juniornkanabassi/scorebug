@@ -28,6 +28,11 @@ static void swap(Class type, SEL original, SEL replacement) {
 - (void)agentOffscreen_makeKeyAndOrderFront:(id)sender { [self agentOffscreen_hide]; [self agentOffscreen_makeKeyAndOrderFront:sender]; }
 @end
 
+@implementation NSResponder (AgentOffscreen)
+// Unhandled key presses must not play the system alert sound during hidden checks.
+- (void)agentOffscreen_noResponderFor:(SEL)eventSelector {}
+@end
+
 @implementation NSApplication (AgentOffscreen)
 - (void)agentOffscreen_activateIgnoringOtherApps:(BOOL)flag {}
 - (void)agentOffscreen_activate {}
@@ -44,6 +49,7 @@ __attribute__((constructor)) static void installAgentOffscreen(int argc, const c
   swap(window, @selector(orderFront:), @selector(agentOffscreen_orderFront:));
   swap(window, @selector(orderFrontRegardless), @selector(agentOffscreen_orderFrontRegardless));
   swap(window, @selector(makeKeyAndOrderFront:), @selector(agentOffscreen_makeKeyAndOrderFront:));
+  swap(NSResponder.class, @selector(noResponderFor:), @selector(agentOffscreen_noResponderFor:));
   swap(app, @selector(activateIgnoringOtherApps:), @selector(agentOffscreen_activateIgnoringOtherApps:));
   swap(app, @selector(activate), @selector(agentOffscreen_activate));
 }
