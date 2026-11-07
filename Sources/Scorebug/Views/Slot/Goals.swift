@@ -34,18 +34,19 @@ struct GoalsSection: View, Equatable {
                 HStack(spacing: Space.sm) {
                     if match.espnEventId != nil {
                         Label("Linked to ESPN · \(match.home.shortName) v \(match.away.shortName)", systemImage: "link")
-                            .scaledFont(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        Button("Unlink") { model.apply(.setLiveLink(eventId: nil, league: nil), slot: slot) }.scaledFont(.caption)
+                            .scaledFont(.caption).foregroundStyle(.primary).lineLimit(1)
+                        Button { model.apply(.setLiveLink(eventId: nil, league: nil), slot: slot) } label: { Text("Unlink").scaledFont(.caption).scaledControl() }.buttonStyle(.bordered)
                     } else {
-                        Text("Not linked to live data").scaledFont(.caption).foregroundStyle(.secondary)
+                        Text("Not linked to live data").scaledFont(.caption).foregroundStyle(.primary)
                         if linking {
                             ProgressView().controlSize(.small).accessibilityLabel("Looking for the ESPN fixture")
-                            Text("Looking for the ESPN fixture…").scaledFont(.caption).foregroundStyle(.secondary)
+                            Text("Looking for the ESPN fixture…").scaledFont(.caption).foregroundStyle(.primary)
                         } else {
-                            Button("Link") {
+                            Button {
                                 linking = true
                                 Task { await model.linkESPN(slot: slot); linking = false }
-                            }.scaledFont(.caption).help("Find this match on ESPN; press again to retry")
+                            } label: { Text("Link").scaledFont(.caption).scaledControl() }
+                            .buttonStyle(.bordered).help("Find this match on ESPN; press again to retry")
                         }
                     }
                     Spacer()
@@ -53,21 +54,23 @@ struct GoalsSection: View, Equatable {
                         .toggleStyle(.switch).scaledFont(.caption)
                 }
                 HStack {
-                    Text("Spoiler delay").scaledFont(.caption).foregroundStyle(.secondary)
+                    Text("Spoiler delay").scaledFont(.caption).foregroundStyle(.primary)
                     Picker("Spoiler delay", selection: Binding(get: { match.liveDataDelayMinutes }, set: { model.apply(.setLiveDataDelay($0), slot: slot) })) {
                         ForEach(0...10, id: \.self) { Text("\($0) min").tag($0) }
-                    }.labelsHidden().frame(width: 96 * ScaledFonts.scale)
+                    }.labelsHidden().scaledFont(.body).controlSize(.extraLarge)
+                    .frame(width: 96 * ScaledFonts.scale, height: 44 * ScaledFonts.scale)
                     Spacer()
                 }
                 if let notice = match.liveDataNotice {
-                    Text(notice).scaledFont(.caption).foregroundStyle(.secondary)
+                    Text(notice).scaledFont(.caption).foregroundStyle(.primary)
                 }
                 if goals.isEmpty {
-                    Text("No goals yet. Use the plus buttons above; each goal gets a line here for the scorer's name.").scaledFont(.caption).foregroundStyle(.secondary)
+                    Text("No goals yet. Use the plus buttons above; each goal gets a line here for the scorer's name.").scaledFont(.caption).foregroundStyle(.primary)
                 }
                 ForEach(goals) { goal in
                     HStack(spacing: Space.md) {
-                        Circle().fill(Color(hex: goal.side == .home ? homeColour : awayColour)).frame(width: 8, height: 8)
+                        Circle().fill(Color(hex: goal.side == .home ? homeColour : awayColour))
+                            .overlay(Circle().stroke(Surface.separator, lineWidth: 1)).frame(width: 8, height: 8)
                         Text(goal.side == .home ? homeCode : awayCode).scaledFont(.body).lineLimit(1).frame(width: 56 * ScaledFonts.scale, alignment: .leading)
                         GoalMinuteField(goal: goal, slot: slot)
                         if goal.autoAdded { Text("Auto").scaledFont(.caption, weight: .semibold).padding(.horizontal, Space.sm).padding(.vertical, Space.xs).background(.secondary.opacity(0.16), in: Capsule()) }
@@ -104,8 +107,11 @@ struct GoalMinuteField: View {
             .textFieldStyle(.plain)
             .padding(.horizontal, Space.xs)
             .frame(width: 56 * ScaledFonts.scale, height: 44 * ScaledFonts.scale)
-            .background(Surface.fill, in: RoundedRectangle(cornerRadius: Radius.small))
-            .overlay(RoundedRectangle(cornerRadius: Radius.small).stroke(focused ? Color.accentColor : Surface.separator, lineWidth: 1))
+            .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: Radius.small))
+            .overlay {
+                RoundedRectangle(cornerRadius: Radius.small).stroke(.tertiary, lineWidth: 1)
+                if focused { RoundedRectangle(cornerRadius: Radius.small).stroke(Color.accentColor, lineWidth: 1) }
+            }
             .focused($focused)
             .onAppear { text = strip(goal.minuteLabel) }
             .onChange(of: goal.minuteLabel) { _, new in if !focused { text = strip(new) } }

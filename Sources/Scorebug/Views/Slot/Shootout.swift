@@ -12,6 +12,7 @@ struct ShootoutSection: View, Equatable {
     let slot: Int
     let model: AppModel
     let zoomGeneration: Int
+    @FocusState private var focusedKick: UUID?
 
     static func == (l: Self, r: Self) -> Bool {
         l.shootout == r.shootout && l.phase == r.phase && l.homeShortName == r.homeShortName
@@ -24,7 +25,7 @@ struct ShootoutSection: View, Equatable {
         Panel("Shootout") {
             VStack(alignment: .leading, spacing: Space.lg) {
                 if beforeKickoff {
-                    Text("Available after kick-off").scaledFont(.caption).foregroundStyle(.secondary)
+                    Text("Available after kick-off").scaledFont(.caption).foregroundStyle(.primary)
                 }
                 Grid(horizontalSpacing: Space.md, verticalSpacing: Space.md) {
                     GridRow {
@@ -50,13 +51,12 @@ struct ShootoutSection: View, Equatable {
                     Button {
                         model.apply(.startShootout(.home), slot: slot)
                     } label: {
-                        // Painted as our own layer, same as the Play/Pause tint, so it still reads once the
-                        // window is not key (the streamer has OBS focused).
                         Text("Start shootout").frame(maxWidth: .infinity).scaledControl(64)
-                            .background(Surface.accentFill, in: RoundedRectangle(cornerRadius: Radius.medium))
+                            .foregroundStyle(Surface.text(on: Color.accentColor))
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: Radius.medium))
                     }
-                    .buttonStyle(.borderedProminent).controlSize(.extraLarge)
-                    .disabled(beforeKickoff)
+                    .buttonStyle(.plain)
+                    .disabled(beforeKickoff).opacity(beforeKickoff ? 0.45 : 1)
                 }
             }
         }
@@ -67,13 +67,14 @@ struct ShootoutSection: View, Equatable {
         Button {
             model.apply(.recordKick(side, result), slot: slot)
         } label: {
-            Text(title).frame(maxWidth: .infinity).scaledControl(64)
-                .background(tint.opacity(0.35), in: RoundedRectangle(cornerRadius: Radius.medium))
+            Text(title).scaledFont(.body).frame(maxWidth: .infinity).scaledControl(64)
+                .foregroundStyle(Surface.text(on: tint))
+                .background(tint, in: RoundedRectangle(cornerRadius: Radius.medium))
         }
-        .buttonStyle(.borderedProminent).controlSize(.extraLarge).tint(tint)
+        .buttonStyle(.plain).tint(tint)
         // The engine takes kicks whenever a shootout exists, not only while `phase == .shootout` (a kick can
         // land after full time or extra time too), so the buttons follow the shootout's existence, not the phase.
-        .disabled(shootout == nil)
+        .disabled(shootout == nil).opacity(shootout == nil ? 0.45 : 1)
     }
 
     /// This side's kicks in order, each a round cell that cycles scored → missed → removed on a press
@@ -82,25 +83,38 @@ struct ShootoutSection: View, Equatable {
     private func kickRow(_ side: Side, _ s: Shootout) -> some View {
         let sideKicks = s.kicks.filter { $0.side == side }
         return HStack(spacing: Space.sm) {
-            Text(side == .home ? homeShortName : awayShortName).scaledFont(.body).lineLimit(1).frame(width: 100 * ScaledFonts.scale, alignment: .leading)
-            ForEach(Array(sideKicks.enumerated()), id: \.offset) { i, kick in
-                Button { cycle(side: side, index: i, current: kick.result) } label: {
-                    Circle().fill(colour(kick.result)).frame(width: 28, height: 28)
-                        .overlay {
-                            Image(systemName: kick.result == .scored ? "checkmark" : kick.result == .missed ? "xmark" : "ellipsis")
-                                .scaledFont(.caption, weight: .bold)
-                                .foregroundStyle(Surface.text(on: colour(kick.result)))
+            Text(side == .home ? homeShortName : awayShortName).scaledFont(.body).lineLimit(2)
+                .frame(width: 140 * ScaledFonts.scale, alignment: .leading).fixedSize(horizontal: false, vertical: true)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: Space.sm) {
+                        ForEach(Array(sideKicks.enumerated()), id: \.offset) { i, kick in
+                            Button { cycle(side: side, index: i, current: kick.result) } label: {
+                                Circle().fill(colour(kick.result)).frame(width: 28, height: 28)
+                                    .overlay {
+                                        Image(systemName: kick.result == .scored ? "checkmark" : kick.result == .missed ? "xmark" : "ellipsis")
+                                            .scaledFont(.caption, weight: .bold)
+                                            .foregroundStyle(Surface.text(on: colour(kick.result)))
+                                    }
+                            }
+                            .buttonStyle(.plain)
+                            .frame(width: 44 * ScaledFonts.scale, height: 44 * ScaledFonts.scale)
+                            .contentShape(Rectangle())
+                            .id(kick.id)
+                            .focused($focusedKick, equals: kick.id)
+                            .help(helpText(for: kick.result))
+                            .accessibilityLabel("\(side == .home ? homeShortName : awayShortName) penalty \(i + 1)")
+                            .accessibilityValue(kick.result == .scored ? "Scored" : kick.result == .missed ? "Missed" : "Pending")
+                            .accessibilityHint(helpText(for: kick.result))
                         }
+                    }
                 }
-                .buttonStyle(.plain)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-                .help(helpText(for: kick.result))
-                .accessibilityLabel("\(side == .home ? homeShortName : awayShortName) penalty \(i + 1)")
-                .accessibilityValue(kick.result == .scored ? "Scored" : kick.result == .missed ? "Missed" : "Pending")
-                .accessibilityHint(helpText(for: kick.result))
+                .frame(maxWidth: .infinity, minHeight: 44 * ScaledFonts.scale)
+                .onChange(of: focusedKick) { _, id in
+                    if let id { proxy.scrollTo(id, anchor: .center) }
+                }
             }
-            if s.nextSide == side && phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.secondary) }
+            if s.nextSide == side && phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.primary) }
         }
     }
 

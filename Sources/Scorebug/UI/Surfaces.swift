@@ -6,6 +6,8 @@ enum Surface {
     static let fill = Color(nsColor: .controlBackgroundColor)
     static let subtleFill = Color(nsColor: .controlBackgroundColor)
     static let separator = Color(nsColor: .separatorColor)
+    // Neutral button boundary remains visible when OBS has focus, without implying keyboard focus.
+    static let controlOutline = Color(nsColor: .systemGray)
     static let statusSuccess = Color(nsColor: .systemGreen)
     static let statusDanger = Color(nsColor: .systemRed)
     static let statusWarning = Color(nsColor: .systemOrange)

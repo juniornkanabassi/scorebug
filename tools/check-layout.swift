@@ -14,6 +14,10 @@
 //   5. Stacked probes on one edge are a multiple of the unit apart. Text heights
 //      have fractions and SwiftUI rounds positions, so gaps get 0.5 pt of room.
 //   6. Probes in one area never overlap.
+//   7. Above the fold, by file name, at the default 1180 × 720 window (Scorebug B6):
+//      primary-* (a live second half): the Clock and Added time panels end inside the window;
+//      secondary-* (before kick-off): the Clock panel, whose first row is the 1st pill the live bar
+//      points at, ends inside the window and comes before Match setup.
 // Prints PASS or FAIL per file and exits with 1 on any failure.
 
 import Foundation
@@ -76,18 +80,25 @@ for path in paths {
     }
 
     for probe in file.probes where probe.width > 0 {
-        if !onGrid(probe.x, step: 0.5, within: pixelTolerance) {
+        // Responsive live-bar columns divide the remaining width; their fractional x positions are intentional.
+        if !probe.area.hasPrefix("livebar-"), !onGrid(probe.x, step: 0.5, within: pixelTolerance) {
             problems.append("\(probe.name): x \(fmt(probe.x)) is between pixels")
         }
     }
 
     for probe in probes {
+        if probe.name.hasPrefix("livebar-") && (probe.width < 1 || probe.height < 1) {
+            problems.append("\(probe.name): collapsed live control (\(fmt(probe.width)) × \(fmt(probe.height)))")
+        }
+        if probe.name.hasPrefix("livebar-button-") && (probe.width < 44 - tolerance || probe.height < 44 - tolerance) {
+            problems.append("\(probe.name): hit target below 44 pt")
+        }
         guard let area = areas[probe.area] else {
             problems.append("\(probe.name): area \"\(probe.area)\" has no .gridArea")
             continue
         }
         let lead = probe.x - area.x
-        if !onGrid(lead, step: unit) {
+        if !probe.area.hasPrefix("livebar-"), !onGrid(lead, step: unit) {
             problems.append("\(probe.name): starts \(fmt(lead)) pt into \(area.name), not a multiple of \(fmt(unit))")
         }
         if lead < area.inset - tolerance {
@@ -128,6 +139,19 @@ for path in paths {
     }
 
     let name = (path as NSString).lastPathComponent
+    let folds: [String: [String]] = ["primary-": ["panel-Clock", "panel-Added time"], "secondary-": ["panel-Clock"]]
+    if let height = file.window["height"], let required = folds.first(where: { name.hasPrefix($0.key) })?.value {
+        for key in required {
+            guard let area = areas[key] else { problems.append("\(key): missing, cannot check the fold"); continue }
+            if area.maxY > height + tolerance {
+                problems.append("\(key): ends at \(fmt(area.maxY)), below the \(fmt(height)) pt window (fold)")
+            }
+        }
+        if name.hasPrefix("secondary-"), let clock = areas["panel-Clock"], let setup = areas["panel-Match setup"], setup.y < clock.y {
+            problems.append("panel-Match setup comes before panel-Clock before kick-off; the 1st pill is pushed down")
+        }
+    }
+
     if problems.isEmpty {
         print("PASS \(name): \(probes.count) probes in \(areas.count) areas")
     } else {

@@ -30,29 +30,45 @@ struct LiveMatchBar: View, Equatable {
     var body: some View {
         HStack(spacing: Space.sm) {
             teamColumn(.home, team: home, score: homeScore)
-            VStack(spacing: Space.md) {
+                .gridProbe("livebar-home", area: "livebar-columns", edge: nil)
+            // Two rows: the clock with its phase, then Play beside the added-time controls. Rows only grow with
+            // the phase (the pre-match hint), never with a tick, so nothing below jumps while the clock runs.
+            VStack(spacing: Space.sm) {
                 TimelineView(.periodic(from: .now, by: clock.running ? 1.0 : 3600)) { context in
                     ClockReadout(clock: clock, phase: phase, addedMinutes: addedMinutes,
-                                 style: clockStyle ?? .runOn, tick: context.date, adjustAdded: adjustAdded)
+                                 style: clockStyle ?? .runOn, tick: context.date, adjustAdded: adjustAdded) { playButton }
+                        .layoutPriority(1)
                 }
-                Button { model.apply(.playPause, slot: slot) } label: {
-                    Label(clock.running ? "Pause" : "Play", systemImage: clock.running ? "pause.fill" : "play.fill")
-                        .frame(minWidth: 180).scaledControl(56)
-                        .background(clock.running ? Surface.statusSuccess.opacity(0.35) : .clear, in: RoundedRectangle(cornerRadius: Radius.medium))
-                }
-                .buttonStyle(.borderedProminent).controlSize(.extraLarge).tint(clock.running ? Surface.statusSuccess : .accentColor)
-                // Bare Space lives here, in the main window only, as before the menu commands; the menu uses ⇧⌘Space.
-                .keyboardShortcut(.space, modifiers: [])
-                .disabled(phase.period == nil).help("Play or pause the clock (Space)")
                 if phase == .preMatch {
-                    Text("Choose 1st to kick off").scaledFont(.caption).foregroundStyle(.secondary)
+                    Text("Choose 1st in the Clock panel to kick off").scaledFont(.caption).foregroundStyle(.primary)
                 }
             }
-            .frame(minWidth: 180)
+            .fixedSize(horizontal: true, vertical: false)
+            .gridProbe("livebar-centre", area: "livebar-columns", edge: nil)
             teamColumn(.away, team: away, score: awayScore)
+                .gridProbe("livebar-away", area: "livebar-columns", edge: nil)
         }
         .padding(.horizontal, Space.lg).padding(.vertical, Space.sm)
         .background(.bar)
+        .gridArea("livebar-columns", inset: Space.lg)
+    }
+
+    /// One coherent surface (B10): the system prominent bezel, green while running, with no painted inner layer.
+    /// The same neutral 1 pt edge as the goal plus beside it keeps it readable once OBS has focus.
+    private var playButton: some View {
+        let enabled = phase.period != nil
+        let tint = clock.running ? Surface.statusSuccess : Color.accentColor
+        return Button { model.apply(.playPause, slot: slot) } label: {
+            Label(clock.running ? "Pause" : "Play", systemImage: clock.running ? "pause.fill" : "play.fill")
+                .scaledFont(.body, weight: .semibold)
+                .frame(minWidth: 80 * ScaledFonts.scale).scaledControl()
+        }
+        .buttonStyle(.borderedProminent).controlSize(.extraLarge).tint(tint)
+        .overlay(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(Surface.controlOutline, lineWidth: 1).opacity(enabled ? 1 : 0))
+        // Bare Space lives here, in the main window only, as before the menu commands; the menu uses ⇧⌘Space.
+        .keyboardShortcut(.space, modifiers: [])
+        .disabled(!enabled).help("Play or pause the clock (Space)")
+        .gridProbe("livebar-button-play", area: "livebar-centre", edge: nil)
     }
 
     /// The same step and limits as the Added time panel, so the live bar is a shortcut, not a second rule.
@@ -62,37 +78,60 @@ struct LiveMatchBar: View, Equatable {
     }
 
     private func teamColumn(_ side: Side, team: TeamEntry, score: Int) -> some View {
-        let goalButtonSide = max(44, 56) * ScaledFonts.scale
+        // The design system's 44 pt minimum, scaled: big enough to hit live, small enough to keep the bar short.
+        let goalButtonSide = 44 * ScaledFonts.scale
         return VStack(spacing: Space.sm) {
             HStack(spacing: Space.sm) {
-                CrestView(team: team, size: 40, fitted: true)
+                CrestView(team: team, size: 32, fitted: true)
                 Text(team.shortName).scaledFont(.headline).lineLimit(1).help(team.name)
             }
-            HStack(spacing: Space.sm) {
-                let total = aggregate.map { score + (side == .home ? $0.firstLegHome : $0.firstLegAway) }
-                VStack(spacing: 0) {
-                    Text("\(score)").scaledFont(size: 56, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 64)
-                    if let total {
-                        Text("Agg \(total)").scaledFont(.caption).monospacedDigit().foregroundStyle(.secondary)
-                            .help("Aggregate score, including the first leg")
-                    }
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(team.name) score")
-                .accessibilityValue(total.map { "\(score), \($0) on aggregate" } ?? "\(score)")
-                Button { model.removeGoalFromWindow(.goal(side, -1), slot: slot) } label: {
-                    Image(systemName: "minus").scaledFont(.title, weight: .bold).frame(width: goalButtonSide, height: goalButtonSide)
-                        .frame(minWidth: goalButtonSide, minHeight: goalButtonSide)
-                }
-                .buttonStyle(.bordered).controlSize(.extraLarge).disabled(score == 0)
-                .accessibilityLabel("Remove last \(team.shortName) goal")
-                .help(score == 0 ? "No \(team.shortName) goals to remove" : "Remove the last \(team.shortName) goal")
-                PlusGoalButton(side: side, team: team, phase: phase, slot: slot, model: model,
-                               buttonSide: goalButtonSide, promptGoalId: promptGoalId,
-                               addGoal: { addGoal(side) }, dismissGoal: dismissGoal).equatable()
+            // Keep the normal compact score row when it fits; larger text moves the score above its controls.
+            // Both alternatives keep intrinsic sizes, so ViewThatFits never compresses a clock or hit target.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Space.sm) {
+                    scoreValue(side, team: team, score: score)
+                    goalControls(side, team: team, score: score, buttonSide: goalButtonSide)
+                }.fixedSize(horizontal: true, vertical: false)
+                VStack(spacing: Space.sm) {
+                    scoreValue(side, team: team, score: score)
+                    goalControls(side, team: team, score: score, buttonSide: goalButtonSide)
+                }.fixedSize(horizontal: true, vertical: false)
             }
         }
         .frame(maxWidth: .infinity)
     }
+
+    private func scoreValue(_ side: Side, team: TeamEntry, score: Int) -> some View {
+        let total = aggregate.map { score + (side == .home ? $0.firstLegHome : $0.firstLegAway) }
+        return VStack(spacing: 0) {
+            Text("\(score)").scaledFont(size: 56, weight: .bold, design: .rounded).monospacedDigit()
+                .frame(minWidth: 64)
+            if let total {
+                Text("Agg \(total)").scaledFont(.caption).monospacedDigit().foregroundStyle(.primary)
+                    .help("Aggregate score, including the first leg")
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(team.name) score")
+        .accessibilityValue(total.map { "\(score), \($0) on aggregate" } ?? "\(score)")
+    }
+
+    private func goalControls(_ side: Side, team: TeamEntry, score: Int, buttonSide: CGFloat) -> some View {
+        HStack(spacing: Space.sm) {
+            Button { model.removeGoalFromWindow(.goal(side, -1), slot: slot) } label: {
+                Image(systemName: "minus").scaledFont(.title, weight: .bold)
+                    .frame(width: buttonSide, height: buttonSide)
+                    .background(Surface.fill, in: RoundedRectangle(cornerRadius: Radius.medium))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.medium).stroke(Surface.controlOutline, lineWidth: 1))
+            }
+            .buttonStyle(.plain).disabled(score == 0).opacity(score == 0 ? 0.45 : 1)
+            .accessibilityLabel("Remove last \(team.shortName) goal")
+            .help(score == 0 ? "No \(team.shortName) goals to remove" : "Remove the last \(team.shortName) goal")
+            PlusGoalButton(side: side, team: team, phase: phase, slot: slot, model: model,
+                           buttonSide: buttonSide, promptGoalId: promptGoalId,
+                           addGoal: { addGoal(side) }, dismissGoal: dismissGoal).equatable()
+        }
+    }
+
 }
 

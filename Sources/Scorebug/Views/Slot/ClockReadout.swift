@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import ScorebugCore
 
@@ -5,7 +6,7 @@ import ScorebugCore
 /// scratch `Match` is built once per tick to reuse `ClockEngine.display`, the single source of truth also
 /// used by overlay.js), and `tick` from `ClockSection`'s own quarter-second timer, shared with
 /// `ClockFieldsRow` rather than each running its own subscription for the same purpose.
-struct ClockReadout: View {
+struct ClockReadout<Leading: View>: View {
     let clock: Clock
     let phase: Phase
     let addedMinutes: Int?
@@ -13,6 +14,8 @@ struct ClockReadout: View {
     let tick: Date
     /// The live bar's quick added-time minus and plus; nil draws the readout alone.
     var adjustAdded: ((Int) -> Void)? = nil
+    /// Drawn before the added-time pair on the second row (the live bar's Play button).
+    @ViewBuilder var leading: Leading
     private var display: ClockDisplay {
         var m = Match(slot: 0)
         m.clock = clock; m.phase = phase; m.addedMinutes = addedMinutes
@@ -21,26 +24,50 @@ struct ClockReadout: View {
 
     var body: some View {
         VStack(spacing: Space.sm) {
-            Text(display.state ?? display.main).scaledFont(size: 48, weight: .semibold, design: .rounded).monospacedDigit()
-                .accessibilityLabel("Match clock").accessibilityValue(display.state ?? display.main)
-            HStack(spacing: Space.sm) {
-                if let adjustAdded { addedButton("minus", delta: -1, adjust: adjustAdded).disabled((addedMinutes ?? 0) <= 0) }
-                VStack(spacing: Space.xxs) {
-                    HStack(spacing: Space.sm) {
-                        if let a = display.added {
-                            Text(a).scaledFont(.title3, weight: .semibold).foregroundStyle(Surface.statusWarningForeground).padding(.horizontal, Space.sm).padding(.vertical, Space.xxs).background(Surface.statusWarning, in: Capsule())
-                                .accessibilityLabel("Added time").accessibilityValue(a)
-                        }
-                        if let c = display.addedCounter {
-                            Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.secondary)
-                                .accessibilityLabel("Added time played").accessibilityValue(c)
-                        }
-                    }.frame(minHeight: 20)
-                    Text(phase.displayTitle).scaledFont(.subheadline).foregroundStyle(.secondary)
-                        .accessibilityLabel("Match phase").accessibilityValue(phase.displayTitle)
-                }
-                if let adjustAdded { addedButton("plus", delta: 1, adjust: adjustAdded).disabled((addedMinutes ?? 0) >= 15) }
+            // The phase sits beside the clock, so the −/+ below flank only the added time they change (B11).
+            HStack(alignment: .firstTextBaseline, spacing: Space.md) {
+                Text(display.state ?? display.main).scaledFont(size: 48, weight: .semibold, design: .rounded).monospacedDigit()
+                    .lineLimit(1).fixedSize(horizontal: true, vertical: false)
+                    .accessibilityLabel("Match clock").accessibilityValue(display.state ?? display.main)
+                    .gridProbe("livebar-clock-value", area: "livebar-centre", edge: nil)
+                Text(phase.displayTitle).scaledFont(.subheadline).foregroundStyle(.primary).lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .accessibilityLabel("Match phase").accessibilityValue(phase.displayTitle)
+                    .gridProbe("livebar-clock-phase", area: "livebar-centre", edge: nil)
             }
+            HStack(spacing: Space.sm) {
+                leading
+                if let adjustAdded { addedControls(adjustAdded) }
+            }
+        }
+        .gridArea("livebar-centre", inset: 0)
+    }
+
+    /// "− Added time [+4] +", with a grey +0 while none is set so the pair always names what it changes.
+    /// Disabled outside a live period, as the clock nudges are, so nothing reaches the bug before kick-off.
+    private func addedControls(_ adjust: @escaping (Int) -> Void) -> some View {
+        let live = phase.period != nil
+        let minutes = addedMinutes ?? 0
+        return HStack(spacing: Space.sm) {
+            addedButton("minus", delta: -1, adjust: adjust).disabled(!live || minutes <= 0)
+            let chip = Text(display.added ?? "+0").scaledFont(.title3, weight: .semibold).monospacedDigit()
+                .padding(.horizontal, Space.sm).padding(.vertical, Space.xxs).fixedSize()
+            VStack(spacing: Space.xxs) {
+                Text("Added time").scaledFont(.caption).foregroundStyle(.primary).lineLimit(1).fixedSize().accessibilityHidden(true)
+                if display.added != nil {
+                    chip.foregroundStyle(Surface.statusWarningForeground).background(Surface.statusWarning, in: Capsule())
+                } else {
+                    chip.foregroundStyle(.primary).background(.quaternary, in: Capsule())
+                }
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            .accessibilityLabel("Added time").accessibilityValue(display.added ?? "None")
+            .gridProbe("livebar-added-chip", area: "livebar-centre", edge: nil)
+            if let c = display.addedCounter {
+                Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.primary)
+                    .accessibilityLabel("Added time played").accessibilityValue(c)
+            }
+            addedButton("plus", delta: 1, adjust: adjust).disabled(!live || minutes >= 15)
         }
     }
 
@@ -49,7 +76,9 @@ struct ClockReadout: View {
         return Button { adjust(delta) } label: {
             Image(systemName: symbol).scaledFont(.body, weight: .semibold).scaledControl(square: true)
         }
-        .buttonStyle(.bordered).accessibilityLabel(words).help(words)
+        .buttonStyle(.bordered).accessibilityLabel(words)
+        .gridProbe("livebar-button-added-\(symbol)", area: "livebar-centre", edge: nil)
+        .help(phase.period == nil ? "Only available while a period is live, not before kick-off or during a shootout" : words)
     }
 }
 
@@ -78,7 +107,7 @@ struct ClockFieldsRow: View {
                 .scaledFont(size: 20).monospacedDigit().multilineTextAlignment(.trailing)
                 .textFieldStyle(.plain).frame(width: 48 * ScaledFonts.scale)
                 .focused($minutesFocused).onSubmit(applyTypedTime)
-            Text(":").scaledFont(size: 20).foregroundStyle(.secondary)
+            Text(":").scaledFont(size: 20).foregroundStyle(.primary)
             TextField("", text: $secondsText)
                 .accessibilityLabel("Clock seconds")
                 .scaledFont(size: 20).monospacedDigit().multilineTextAlignment(.leading)
@@ -86,7 +115,8 @@ struct ClockFieldsRow: View {
                 .focused($secondsFocused).onSubmit(applyTypedTime)
         }
         .padding(.horizontal, Space.md).padding(.vertical, Space.sm)
-        .background(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(Surface.separator))
+        .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: Radius.medium))
+        .overlay(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(.tertiary))
         .disabled(match.currentPeriod == nil)
         .help(match.currentPeriod == nil ? "Only available while a period is live, not before kick-off or during a shootout" : "")
         .onChange(of: tick) { _, _ in resyncIfIdle() }

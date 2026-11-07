@@ -29,6 +29,8 @@ enum NativeSnapshots {
             try JSONCoding.prettyEncoder().encode(fixtures.library).write(to: options.dataDirectory.appendingPathComponent("library.json"))
             try JSONCoding.prettyEncoder().encode(ScorebugCore.Settings(liveSourceEnabled: [:])).write(to: options.dataDirectory.appendingPathComponent("settings.json"))
             UserDefaults.standard.set(true, forKey: "showPreview")
+            // The default preview height is what the fold rule in tools/check-layout.swift measures.
+            UserDefaults.standard.removeObject(forKey: "previewHeight")
             UserDefaults.standard.set(1, forKey: "zoomLevel")
             let model = AppModel(options: options, startsBackgroundTasks: false)
             // Keep only the small synthetic catalogue. The ordinary seed merge is deliberately not the screenshot fixture.
@@ -62,6 +64,10 @@ enum NativeSnapshots {
                 }
                 // The normal window cuts off later panels. Render each real panel at the largest text size.
                 model.zoomLevel = 3
+                for slot in [1, 2] {
+                    results.append(try capture(AnyView(ContentView(initialSection: .slot(slot))), name: "slot-\(slot)-zoom-3-\(appearance)", scheme: scheme, size: CGSize(width: 1180, height: 720), model: model, output: output))
+                }
+                results.append(contentsOf: try stressSnapshots(model: model, scheme: scheme, appearance: appearance, output: output))
                 let match = model.match(1)
                 let generation = ScaledFonts.generation
                 let panels: [(String, CGFloat, AnyView)] = [
@@ -75,10 +81,9 @@ enum NativeSnapshots {
                     ("setup", 560, AnyView(MatchSetupSection(home: match.home, away: match.away,
                         competitionId: match.competitionId, phase: .preMatch, aggregate: match.aggregate,
                         hasKnockouts: true, slot: 1, model: model, zoomGeneration: generation))),
-                    ("shootout", 640, AnyView(ShootoutSection(shootout: Shootout(kicks: [
-                        Kick(side: .home, result: .scored), Kick(side: .away, result: .missed),
-                        Kick(side: .home, result: .scored), Kick(side: .away, result: .scored)
-                    ], firstKicker: .home), phase: .shootout, homeShortName: match.home.shortName,
+                    ("shootout", 640, AnyView(ShootoutSection(shootout: Shootout(kicks: (0..<10).flatMap { i in
+                        [Kick(side: .home, result: .scored), Kick(side: .away, result: i == 3 ? .missed : .scored)]
+                    }, firstKicker: .home), phase: .shootout, homeShortName: match.home.shortName,
                         awayShortName: match.away.shortName, slot: 1, model: model, zoomGeneration: generation)))
                 ]
                 for (name, height, panel) in panels {
@@ -101,6 +106,34 @@ enum NativeSnapshots {
             log("FAIL: native snapshots: \(error)")
             exit(1)
         }
+    }
+
+    /// Full-window stress states share only disposable fixtures; restore the normal match between captures.
+    private static func stressSnapshots(model: AppModel, scheme: ColorScheme, appearance: String, output: URL) throws -> [[String: Any]] {
+        let original = model.state
+        defer { model.state = original }
+        var results: [[String: Any]] = []
+        var extraTime = original
+        extraTime.matches[0].phase = .extraSecond
+        extraTime.matches[0].clock = Clock(periodBaseSeconds: 6300, accumulated: 960, running: false)
+        extraTime.matches[0].addedMinutes = 4
+        model.state = extraTime
+        results.append(try capture(AnyView(ContentView(initialSection: .slot(1))),
+            name: "extra-time-zoom-3-\(appearance)", scheme: scheme,
+            size: CGSize(width: 1180, height: 720), model: model, output: output))
+        model.state = original
+        var shootout = original
+        shootout.matches[0].phase = .shootout
+        shootout.matches[0].clock.running = false
+        shootout.matches[0].shootout = Shootout(kicks: [
+            Kick(side: .home, result: .scored), Kick(side: .away, result: .missed),
+            Kick(side: .home, result: .scored), Kick(side: .away, result: .scored)
+        ], firstKicker: .home)
+        model.state = shootout
+        results.append(try capture(AnyView(ContentView(initialSection: .slot(1))),
+            name: "shootout-zoom-3-\(appearance)", scheme: scheme,
+            size: CGSize(width: 1180, height: 720), model: model, output: output))
+        return results
     }
 
     private static func isScratchChild(_ url: URL) -> Bool {

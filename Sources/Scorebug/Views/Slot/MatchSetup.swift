@@ -33,12 +33,12 @@ struct MatchSetupSection: View, Equatable {
         // One heading: the panel's own, with the show/hide control beside it, instead of a second disclosure title.
         Panel("Match setup", accessory: {
             Button { isExpanded.toggle() } label: {
-                Label(isExpanded ? "Hide" : "Show", systemImage: isExpanded ? "chevron.up" : "chevron.down").scaledFont(.caption)
+                Label(isExpanded ? "Hide" : "Show", systemImage: isExpanded ? "chevron.up" : "chevron.down").scaledFont(.caption).scaledControl()
             }
             .buttonStyle(.borderless).help(isExpanded ? "Hide the teams and competition" : "Show the teams and competition")
         }) {
             if !isExpanded {
-                Text("\(home.name) v \(away.name) · \(competition?.name ?? competitionId)").scaledFont(.body).foregroundStyle(.secondary).lineLimit(1)
+                Text("\(home.name) v \(away.name) · \(competition?.name ?? competitionId)").scaledFont(.body).foregroundStyle(.primary).lineLimit(1)
             } else {
                 VStack(alignment: .leading, spacing: Space.md) {
                     HStack(spacing: Space.md) {
@@ -49,26 +49,31 @@ struct MatchSetupSection: View, Equatable {
                         }
                         .buttonStyle(.bordered).help("Swap home and away")
                     }
-                    HStack(spacing: Space.sm) {
-                        if let c = competition { CompetitionMark(competition: c, size: 32, plate: true) }
-                        Picker("Competition", selection: Binding(get: { competitionId }, set: { model.setCompetition($0, slot: slot) })) {
-                            ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
-                        }.scaledFont(.body).controlSize(.large).frame(maxWidth: 360 * ScaledFonts.scale)
+                    Picker(selection: Binding(get: { competitionId }, set: { model.setCompetition($0, slot: slot) })) {
+                        ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
+                    } label: {
+                        HStack(spacing: Space.sm) {
+                            if let c = competition { CompetitionMark(competition: c, size: 32, plate: true) }
+                            Text("Competition").scaledFont(.body)
+                        }
                     }
+                    .scaledFont(.body).controlSize(.extraLarge)
+                    .frame(maxWidth: .infinity, minHeight: 44 * ScaledFonts.scale)
+                    .accessibilityLabel("Competition")
                     if hasKnockouts {
                         Toggle("Second leg of a tie", isOn: Binding(
                             get: { aggregate != nil },
                             set: { on in model.apply(on ? .setAggregate(home: aggregate?.firstLegHome ?? 0, away: aggregate?.firstLegAway ?? 0) : .clearAggregate, slot: slot) }
-                        )).scaledFont(.body)
+                        )).scaledFont(.body).controlSize(.large).frame(minHeight: 44 * ScaledFonts.scale)
                         if let agg = aggregate {
                             HStack(spacing: Space.xs) {
-                                Text("First leg \(home.code)").scaledFont(.caption).foregroundStyle(.secondary)
+                                Text("First leg \(home.code)").scaledFont(.body).foregroundStyle(.primary)
                                 AggregateField(value: agg.firstLegHome) { model.apply(.setAggregate(home: $0, away: agg.firstLegAway), slot: slot) }
                                     .accessibilityLabel("First leg home score")
-                                Text("–").scaledFont(.caption).foregroundStyle(.secondary)
+                                Text("–").scaledFont(.body).foregroundStyle(.primary)
                                 AggregateField(value: agg.firstLegAway) { model.apply(.setAggregate(home: agg.firstLegHome, away: $0), slot: slot) }
                                     .accessibilityLabel("First leg away score")
-                                Text(away.code).scaledFont(.caption).foregroundStyle(.secondary)
+                                Text(away.code).scaledFont(.body).foregroundStyle(.primary)
                             }
                         }
                     }
@@ -92,8 +97,14 @@ private struct AggregateField: View {
 
     var body: some View {
         TextField("", text: $text)
-            .scaledFont(.caption).monospacedDigit().multilineTextAlignment(.center)
-            .textFieldStyle(.roundedBorder).frame(width: 40 * ScaledFonts.scale)
+            .scaledFont(.body).monospacedDigit().multilineTextAlignment(.center)
+            .textFieldStyle(.plain).controlSize(.large)
+            .frame(width: 48 * ScaledFonts.scale, height: 44 * ScaledFonts.scale)
+            .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: Radius.small))
+            .overlay {
+                RoundedRectangle(cornerRadius: Radius.small).stroke(.tertiary, lineWidth: 1)
+                if focused { RoundedRectangle(cornerRadius: Radius.small).stroke(Color.accentColor, lineWidth: 1) }
+            }
             .focused($focused)
             .onAppear { text = "\(value)" }
             .onChange(of: value) { _, new in if !focused { text = "\(new)" } }

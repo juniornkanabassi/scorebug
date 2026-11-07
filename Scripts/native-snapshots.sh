@@ -38,12 +38,13 @@ CFFIXED_USER_HOME="$run/home" SCOREBUG_NATIVE_SNAPSHOTS="$run/images" SCOREBUG_S
 python3 - "$run/images/report.json" <<'PY'
 import hashlib, json, pathlib, sys
 report = json.loads(pathlib.Path(sys.argv[1]).read_text())
-assert report['status'] == 'PASS' and report['count'] == 32, report
+assert report['status'] == 'PASS' and report['count'] == 40, report
 names = {image['name'] for image in report['images']}
 for name in ['primary', 'secondary', 'library', 'library-club', 'library-competition',
              'library-icons', 'settings-obs', 'settings-live-data', 'settings-advanced',
-             'slot-1-zoom-2', 'slot-2-zoom-2', 'panel-clock-zoom-3', 'panel-added-time-zoom-3',
-             'panel-goals-zoom-3', 'panel-setup-zoom-3', 'panel-shootout-zoom-3']:
+             'slot-1-zoom-2', 'slot-2-zoom-2', 'slot-1-zoom-3', 'slot-2-zoom-3', 'panel-clock-zoom-3', 'panel-added-time-zoom-3',
+             'panel-goals-zoom-3', 'panel-setup-zoom-3', 'panel-shootout-zoom-3',
+             'extra-time-zoom-3', 'shootout-zoom-3']:
     for appearance in ['light', 'dark']:
         assert f'{name}-{appearance}' in names, (name, appearance)
 for image in report['images']:

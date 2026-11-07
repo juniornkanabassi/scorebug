@@ -1,8 +1,8 @@
 import SwiftUI
 import ScorebugCore
 
-/// Live preview of both pages from the local server, so the window shows exactly what OBS shows. Drag the
-/// divider below it to resize. Takes the base URL directly rather than the whole model, so a command on
+/// Live preview of both pages from the local server, so the window shows exactly what OBS shows. SlotView sets
+/// its height (drag the handle below it); both panes fit that height, or the width if narrower, never cropped. Takes the base URL directly rather than the whole model, so a command on
 /// either slot never invalidates this view (its `updateNSView` already no-ops when nothing changed).
 struct PreviewStage: View {
     let slot: Int
@@ -35,13 +35,13 @@ struct PreviewStage: View {
         Group {
             if NativeSnapshots.isRequested {
                 Text("Overlay preview requires the running server")
-                    .scaledFont(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.secondary).minimumScaleFactor(0.6)
                     .multilineTextAlignment(.center).padding(Space.sm)
                     .frame(width: width, height: height, alignment: .bottom)
                     .background(Surface.fill)
             } else if let serverProblem {
                 Text(serverProblem)
-                    .scaledFont(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.secondary).minimumScaleFactor(0.6)
                     .multilineTextAlignment(.center).padding(Space.sm)
                     .frame(width: width, height: height)
                     .background(Surface.fill)

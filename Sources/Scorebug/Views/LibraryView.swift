@@ -162,8 +162,6 @@ struct LibraryView: View {
                     Divider()
                     Group { if viewMode == .list { clubList(filtered) } else { clubGrid(filtered) } }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    Divider()
-                    addRemoveRow
                 }
                 // This pane's own root view must carry maxHeight: .infinity, or NSSplitView sizes the pane
                 // to the VStack's ideal height and the list renders at zero height instead of filling it.
@@ -172,7 +170,7 @@ struct LibraryView: View {
                     if let id = selected, let club = model.library.clubs.first(where: { $0.id == id }) {
                         ClubEditor(club: club).id(id)
                     } else {
-                        ContentUnavailableView("Choose a club", systemImage: "shield")
+                        ContentUnavailableView("Choose a team", systemImage: "shield")
                     }
                 }.frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -189,6 +187,10 @@ struct LibraryView: View {
             searchField
             HStack(spacing: Space.md) {
                 competitionsMenu
+                Spacer()
+                addRemoveRow
+            }
+            HStack(spacing: Space.md) {
                 Picker("", selection: $clubsNationsFilter) {
                     ForEach(ClubsNationsFilter.allCases) { f in Text(f.title).tag(f) }
                 }.scaledFont(.body).pickerStyle(.segmented).labelsHidden().accessibilityLabel("Club type")
@@ -215,7 +217,8 @@ struct LibraryView: View {
                 Button("Show All") { selectedCompetitions.removeAll() }.scaledFont(.body)
             }
         } label: {
-            Label("Competitions", systemImage: "trophy").scaledFont(.body).labelStyle(.iconOnly)
+            Label(selectedCompetitions.isEmpty ? "All competitions" : selectedCompetitions.count == 1 ? "1 competition" : "\(selectedCompetitions.count) competitions", systemImage: "trophy")
+                .scaledFont(.body).fixedSize()
                 .help("Filter teams by competition").accessibilityLabel("Filter teams by competition")
         }
     }
@@ -235,7 +238,7 @@ struct LibraryView: View {
     private var searchField: some View {
         HStack(spacing: Space.sm) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField("Search clubs and nations", text: $search).scaledFont(.body).textFieldStyle(.plain)
+            TextField("Search teams", text: $search).scaledFont(.body).textFieldStyle(.plain)
             if !search.isEmpty {
                 Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }
                     .scaledFont(.body).buttonStyle(.plain).foregroundStyle(.secondary)
@@ -292,7 +295,7 @@ struct LibraryView: View {
 
     private func clubGrid(_ filtered: [Club]) -> some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 104), spacing: Space.md)], spacing: Space.md) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: Space.md)], spacing: Space.md) {
                 ForEach(filtered) { club in clubTile(club) }
             }.gridProbe("club tiles", area: "library grid", edge: nil)
                 .padding(Space.md).gridArea("library grid", inset: Space.md)
@@ -307,11 +310,11 @@ struct LibraryView: View {
                     Circle().fill(.quaternary).frame(width: 56, height: 56)
                     CachedCrestThumb(club: club, size: 44)
                 }
-                Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.8)
+                Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.primary).monospaced()
             }
             .padding(Space.sm)
-            .frame(width: 104, height: 104)
+            .frame(width: 128).frame(minHeight: 176)
             .background(RoundedRectangle(cornerRadius: Radius.large).fill(isSelected ? Surface.selectedFill : Color.clear))
             .overlay(RoundedRectangle(cornerRadius: Radius.large).stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2))
             .contentShape(Rectangle())
@@ -334,9 +337,7 @@ struct LibraryView: View {
                 if let id = selected { confirmDelete = model.library.clubs.first(where: { $0.id == id }) }
             } label: { Image(systemName: "minus") }
                 .scaledFont(.body).help("Delete selected club").accessibilityLabel("Delete selected club").disabled(selected == nil)
-            Spacer()
         }
-        .padding(Space.sm)
         .confirmationDialog(
             "Delete \(confirmDelete?.name ?? "this club")?",
             isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } }),

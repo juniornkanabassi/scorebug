@@ -24,13 +24,12 @@ struct PlusGoalButton: View, Equatable {
     var body: some View {
         Button(action: addGoal) {
             Image(systemName: "plus").scaledFont(.title, weight: .bold).frame(width: buttonSide, height: buttonSide)
-                .frame(minWidth: buttonSide, minHeight: buttonSide)
+                .background(Surface.fill, in: RoundedRectangle(cornerRadius: Radius.medium))
         }
-            .buttonStyle(.borderedProminent).controlSize(.extraLarge)
-            // The same accent stroke as the live period pill: the prominent fill fades once the window is not key
-            // (OBS has focus), and this keeps the most pressed control's edge visible either way.
-            .overlay(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(.tint, lineWidth: 2).opacity(phase == .shootout ? 0 : 1))
-            .disabled(phase == .shootout).help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
+            .buttonStyle(.plain)
+            // A neutral edge survives an inactive window without looking like a second keyboard focus ring.
+            .overlay(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(Surface.controlOutline, lineWidth: 1).opacity(phase == .shootout ? 0 : 1))
+            .disabled(phase == .shootout).opacity(phase == .shootout ? 0.45 : 1).help("Goal for \(team.name) (⇧⌘\(side == .home ? "H" : "A"))")
             .accessibilityLabel("Goal for \(team.name)")
             .lazyPopover(isPresented: plusPromptBinding) {
                 if let id = promptGoalId, let g = model.match(slot).goals.first(where: { $0.id == id }) {

@@ -14,6 +14,15 @@ for name in [NSAppearance.Name.aqua, .darkAqua] {
         precondition(panelContrast >= 4.5, "Panel heading lacks contrast in \(name.rawValue): \(panelContrast)")
         precondition(abs(panel - Surface.relativeLuminance(of: Color(nsColor: .controlBackgroundColor))) < 0.001,
                      "Match panels must use the control surface, not the under-page background")
+        let outline = Surface.relativeLuminance(of: Surface.controlOutline)
+        let outlineContrast = (max(panel, outline) + 0.05) / (min(panel, outline) + 0.05)
+        precondition(outlineContrast >= 3, "Neutral goal button outline lacks contrast in \(name.rawValue): \(outlineContrast)")
+        for fill in [Surface.statusSuccess, Surface.statusDanger, Color.accentColor] {
+            let background = Surface.relativeLuminance(of: fill)
+            let foreground = Surface.relativeLuminance(of: Surface.text(on: fill))
+            let contrast = (max(background, foreground) + 0.05) / (min(background, foreground) + 0.05)
+            precondition(contrast >= 4.5, "Shootout action text lacks contrast in \(name.rawValue): \(contrast)")
+        }
         for fill in samples {
             let luminance = Surface.relativeLuminance(of: fill)
             let foreground = Surface.relativeLuminance(of: Surface.text(on: fill))
@@ -27,6 +36,7 @@ for name in [NSAppearance.Name.aqua, .darkAqua] {
         }
     }
 }
+print("PASS NativeActionChecks: 2 neutral outline and 6 filled action text contrast checks")
 print("PASS NativePanelChecks: 2 appearance contrast and semantic surface checks")
 print("PASS NativeStyleChecks: \(checks) light/dark foreground contrast checks")
 

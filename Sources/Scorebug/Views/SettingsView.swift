@@ -59,7 +59,7 @@ struct SettingsView: View {
         switch selectedTab.wrappedValue {
         case .obs: base = 520
         case .liveData: base = 320
-        case .advanced: base = 360
+        case .advanced: base = 420
         }
         return min(640, (base * model.zoomScale / 4).rounded(.up) * 4)
     }
@@ -67,10 +67,13 @@ struct SettingsView: View {
     private var obsSettings: some View {
         Form {
             Section("OBS") {
+                LabeledContent("Server address") {
+                    Text(model.baseURL).scaledFont(.body).monospaced().foregroundStyle(.primary).textSelection(.enabled)
+                }.scaledFont(.body)
                 ForEach(["h/1", "h/2", "v/1", "v/2"], id: \.self) { p in
                     LabeledContent(obsRowLabel(p)) {
                         HStack(spacing: Space.sm) {
-                            Text("/overlay/\(p)").scaledFont(.body).monospaced().lineLimit(1).textSelection(.enabled)
+                            Text("/overlay/\(p)").scaledFont(.body).monospaced().foregroundStyle(.primary).lineLimit(1).textSelection(.enabled)
                                 .help("\(model.baseURL)/overlay/\(p)")
                             Button(copiedURL == "\(model.baseURL)/overlay/\(p)" ? "Copied" : "Copy") { copy("\(model.baseURL)/overlay/\(p)") }.scaledFont(.body)
                                 .accessibilityLabel("Copy OBS URL for \(obsRowLabel(p))")
@@ -83,7 +86,7 @@ struct SettingsView: View {
                     TextField("Port", value: Binding(get: { model.settings.port }, set: { model.settings.port = min(65535, max(1024, $0)) }), format: .number.grouping(.never))
                         .scaledFont(.body).monospacedDigit().textFieldStyle(.roundedBorder).frame(width: 92).labelsHidden().accessibilityLabel("Server port")
                 }.scaledFont(.body).onChange(of: model.settings.port) { _, _ in model.saveSettings() }
-                Text("Use a port from 1024 to 65535. Restart Scorebug after changing it.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("Use a port from 1024 to 65535. Restart Scorebug after changing it.").scaledFont(.caption).foregroundStyle(.primary)
             }
             Section("Overlay position and preview") {
                 Picker("Backdrop", selection: Binding(
@@ -103,11 +106,11 @@ struct SettingsView: View {
                     Text("Choose file…").tag(BackdropMode.file)
                 }.scaledFont(.body)
                 if backdropMode == .file, let path = model.settings.previewBackdrop {
-                    LabeledContent("File") { Text(URL(fileURLWithPath: path).lastPathComponent).scaledFont(.body).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
+                    LabeledContent("File") { Text(URL(fileURLWithPath: path).lastPathComponent).scaledFont(.body).foregroundStyle(.primary).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
                 }
-                Text("The backdrop appears only in this window. OBS never sees it.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("The backdrop appears only in this window. OBS never sees it.").scaledFont(.caption).foregroundStyle(.primary)
                 Stepper("Portrait top position: \(model.settings.portraitTop) px", value: $model.settings.portraitTop, in: 0...800, step: 10).scaledFont(.body).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
-                Text("Moves the score bug down from the top of the portrait overlay, including in OBS.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("Moves the score bug down from the top of the portrait overlay, including in OBS.").scaledFont(.caption).foregroundStyle(.primary)
             }
             .fileImporter(isPresented: $pickingBackdrop, allowedContentTypes: [.image, .movie]) { result in
                 if case .success(let url) = result {
@@ -123,8 +126,8 @@ struct SettingsView: View {
         Form {
             Section("Fixtures") {
                 LabeledContent("football-data.org key") {
-                    SecureField("Paste key here", text: $footballDataKey).scaledFont(.body)
-                        .textFieldStyle(.roundedBorder).frame(minWidth: 160)
+                    SecureField("", text: $footballDataKey, prompt: Text("Paste key here")).scaledFont(.body)
+                        .textFieldStyle(.roundedBorder).labelsHidden().frame(minWidth: 160)
                         .accessibilityLabel("football-data.org API key")
                 }.scaledFont(.body)
                 HStack(spacing: Space.sm) {
@@ -136,7 +139,7 @@ struct SettingsView: View {
                         do { try KeychainStore.delete(); keyStatus = "No key, using ESPN only" }
                         catch { keyStatus = "Could not remove key: \(error.localizedDescription)" }
                     }.scaledFont(.body)
-                    Text(keyStatus ?? "Checking saved key…").scaledFont(.caption).foregroundStyle(.secondary)
+                    Text(keyStatus ?? "Checking saved key…").scaledFont(.caption).foregroundStyle(.primary)
                 }
             }
             Section("Live data") {
@@ -155,7 +158,7 @@ struct SettingsView: View {
                     }.scaledFont(.body)
                 }
                 Text("ESPN is primary. FotMob cross-checks goal counts. SofaScore is unavailable from this network.")
-                    .scaledFont(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.primary)
             }
         }.formStyle(.grouped)
     }
@@ -165,7 +168,7 @@ struct SettingsView: View {
             Section("Crests") {
                 LabeledContent("Folder") {
                     HStack(spacing: Space.sm) {
-                        Text(model.settings.crestFolder ?? "Not set").scaledFont(.body).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                        Text(model.settings.crestFolder ?? "Not set").scaledFont(.body).foregroundStyle(.primary).lineLimit(1).truncationMode(.middle)
                         Button("Choose…") { pickingFolder = true }.scaledFont(.body)
                         if let folder = model.settings.crestFolder {
                             Button("Import again") { model.importCrestFolder(URL(fileURLWithPath: folder, isDirectory: true)) }.scaledFont(.body)
@@ -173,7 +176,7 @@ struct SettingsView: View {
                     }
                 }
                 .scaledFont(.body)
-                Text("Image files are matched to clubs by name and copied into your data folder; clubs that already have a crest are left alone.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("Image files are matched to clubs by name and copied into your data folder; clubs that already have a crest are left alone.").scaledFont(.caption).foregroundStyle(.primary)
             }
             .fileImporter(isPresented: $pickingFolder, allowedContentTypes: [.folder]) { result in
                 if case .success(let url) = result {
@@ -184,12 +187,12 @@ struct SettingsView: View {
             Section("Advanced") {
                 LabeledContent("Data folder") { Text(model.store.directory.path).scaledFont(.body).textSelection(.enabled).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
                 Toggle("Use my own overlay designs", isOn: $model.settings.themeOverridesEnabled).scaledFont(.body).onChange(of: model.settings.themeOverridesEnabled) { _, _ in model.saveSettings() }
-                Text("Loads your designs from the overlays folder inside the data folder. Turn this off to use Scorebug’s built-in designs.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("Loads your designs from the overlays folder inside the data folder. Turn this off to use Scorebug’s built-in designs.").scaledFont(.caption).foregroundStyle(.primary)
                 Button("Show Data Folder in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.directory]) }.scaledFont(.body)
             }.scaledFont(.body)
             Section {
                 LabeledContent("Scorebug", value: AppInfo.version).scaledFont(.body)
-                Text("© 2026 Junior Nkana Bassi.").scaledFont(.caption).foregroundStyle(.secondary)
+                Text("© 2026 Junior Nkana Bassi.").scaledFont(.caption).foregroundStyle(.primary)
             }
         }.formStyle(.grouped)
     }
