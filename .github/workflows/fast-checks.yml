@@ -1,4 +1,5 @@
-# Fast checks on every pull request: the core engine assertions and the overlay and Stream Deck client checks.
+# Checks on every pull request through test.sh: tests, core and model checks, grid lint, overlay, CLI and Stream Deck
+# client checks, and light and dark native snapshots of every page (uploaded as an artifact).
 # Unsigned, no secrets, read-only token, disposable data only; nothing is signed, released, published or installed.
 # build.sh, release.sh, install.sh, security-check and acceptance-check (a running app on a chosen port) stay on the Mac.
 name: Fast checks
@@ -13,7 +14,7 @@ concurrency:
 jobs:
   checks:
     runs-on: macos-15   # Package.swift targets macOS 15; plugin-command-check writes under /private/tmp
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
@@ -21,13 +22,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24   # plugin-command-check needs node:module stripTypeScriptTypes
-      - name: Invisible test windows and launch flags
-        run: swift test
-      - name: Core engine assertions (CoreChecks)
-        run: swift run CoreChecks
-      - name: Real AppModel and OverlayServer, canned providers, temporary home and free port
-        run: zsh Scripts/model-check.sh
-      - name: Overlay script against a minimal DOM
-        run: node Scripts/overlay-check.mjs
-      - name: Stream Deck plugin client, transport stubbed
-        run: node Scripts/plugin-command-check.mjs
+      - name: Every headless check (test.sh)
+        run: zsh test.sh
+        env:
+          SCOREBUG_SNAPSHOTS: ${{ runner.temp }}/native-snapshots
+      - name: Native snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-snapshots
+          path: ${{ runner.temp }}/native-snapshots
+          if-no-files-found: ignore

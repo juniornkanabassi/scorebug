@@ -83,13 +83,11 @@ Every command, its options and the error codes are in [docs/DEVELOPMENT.md](docs
 You need an Apple silicon Mac with Xcode or the Swift 6 command-line tools. The Swift dependencies are FlyingFox and Sparkle, which SwiftPM fetches.
 
 ```sh
-swift build --scratch-path /private/tmp/scorebug-build
-swift test --scratch-path /private/tmp/scorebug-build
-swift run --scratch-path /private/tmp/scorebug-build CoreChecks
+zsh test.sh
 zsh build.sh
 ```
 
-`CoreChecks` exercises the core rules; `swift test` checks the invisible-window guard and launch flags. `build.sh` writes the app in a zip to `../Outputs`, outside the clone, and `install.sh` builds and installs it on your own Mac. To try it without touching your real data, run the built app with `--data-directory` pointing at an empty temporary folder and `--port` set to something other than 8600. Agent checks also pass `--agent-screen` to keep all windows invisible. `install.sh` installs at `/Applications/JuniorOS Apps/Scorebug.app`, so use that path in the commands above if you installed it that way. The launch flags, the local API and the check scripts are covered in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+`test.sh` builds once and runs every headless check: `swift test` (the invisible-window guard and launch flags), `CoreChecks` (the core rules), the model, style, grid, overlay, CLI and Stream Deck checks, light and dark snapshots of all 22 native pages and a two-launch check that the sidebar page survives quitting. Set `SCOREBUG_SCRATCH` for the build folder (default `/private/tmp/bama/build-scorebug`) and `SCOREBUG_SNAPSHOTS` for a folder to copy the snapshots into. Nothing shows a window or touches your real data or preferences. CI runs the same script. `build.sh` writes the app in a zip to `../Outputs`, outside the clone, and `install.sh` builds and installs it on your own Mac. To try it without touching your real data, run the built app with `--data-directory` pointing at an empty temporary folder and `--port` set to something other than 8600. Agent checks also pass `--agent-screen` to keep all windows invisible. `install.sh` installs at `/Applications/JuniorOS Apps/Scorebug.app`, so use that path in the commands above if you installed it that way. The launch flags, the local API and the check scripts are covered in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Licence
 

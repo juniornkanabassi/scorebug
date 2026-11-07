@@ -25,4 +25,4 @@ swiftc -swift-version 5 -parse-as-library -module-cache-path "$BUILD_ROOT/swift-
   Sources/Scorebug/AppModel.swift Sources/Scorebug/OverlayServer.swift Sources/Scorebug/UI/ErrorPresentation.swift Scripts/ModelChecks/Stubs.swift \
   "$TASK_ROOT/TestOffscreen.o" "$TASK_ROOT/GoalPromptProbe.swift" Scripts/ModelChecks/main.swift -o "$TASK_ROOT/ModelChecks"
 export SCOREBUG_CHECK_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
-"$TASK_ROOT/ModelChecks"
+perl -e 'alarm shift; exec @ARGV or die "exec: $!\n"' 300 "$TASK_ROOT/ModelChecks"   # deadline: a hung check is killed

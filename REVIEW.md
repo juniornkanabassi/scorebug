@@ -20,7 +20,7 @@ The save-then-broadcast path, the overlay server, the Stream Deck plugin command
 
 ## Check results
 
-Last results on 1 Nov 2026, revision `7924329`. `.github/workflows/fast-checks.yml` runs the first four on pull requests (macOS 15, read-only, no secrets); it has not run on GitHub yet. Report every check you run as PASS, FAIL, NOT RUN or NOT APPLICABLE with the revision.
+Last results on 1 Nov 2026, revision `7924329`. Since 7 Nov, `zsh test.sh` runs every headless check below plus `swift test`, the native style check, grid lint, the CLI check, snapshot path safety, the 22 light and dark native snapshots and the two-launch sidebar check; `.github/workflows/fast-checks.yml` runs `test.sh` on pull requests (macOS 15, read-only, no secrets) and uploads the snapshots. It has not run on GitHub yet. `plugin-check.mjs` needs the built Stream Deck plugin and stays manual. Report every check you run as PASS, FAIL, NOT RUN or NOT APPLICABLE with the revision.
 
 | Command | Proves | 1 Nov |
 |---|---|---|

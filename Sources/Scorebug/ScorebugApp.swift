@@ -84,7 +84,7 @@ struct ScorebugApp: App {
         }
         .defaultSize(width: 1180, height: 820)
         .defaultLaunchBehavior(launchOptions.background ? .suppressed : .presented)
-        // Every launch opens one fresh main window, as since f2a21af; the sidebar selection is still SceneStorage.
+        // Every launch opens one fresh main window, as since f2a21af; SidebarSection.remembered carries the page across quits.
         .restorationBehavior(.disabled)
         .commands {
             CommandGroup(after: .toolbar) {
@@ -168,12 +168,13 @@ struct SidebarMatchRow: View, Equatable {
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
-    @SceneStorage("selectedSection") private var selectionID = "primary"
+    // Empty until this window picks a page; then the window keeps its own page, and the last pick is remembered across quits.
+    @SceneStorage("selectedSection") private var selectionID = ""
     private let initialSection: SidebarSection?
     init(initialSection: SidebarSection? = nil) { self.initialSection = initialSection }
     private var selection: Binding<SidebarSection?> {
-        Binding(get: { initialSection ?? SidebarSection(storageID: selectionID) },
-                set: { if let section = $0 { selectionID = section.storageID } })
+        Binding(get: { initialSection ?? SidebarSection(storageID: selectionID.isEmpty ? SidebarSection.remembered : selectionID) },
+                set: { if let section = $0 { selectionID = section.storageID; SidebarSection.remembered = section.storageID } })
     }
 
     var body: some View {
@@ -210,5 +211,6 @@ struct ContentView: View {
         }
         .appErrorAlert(model: model)
         .overlay { if GridOverlay.enabled { GridOverlay() } }
+        .onAppear { if initialSection == nil { SidebarRestoreProbe.run(selection) } }
     }
 }
