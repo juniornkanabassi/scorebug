@@ -34,7 +34,7 @@ struct StoppageSection: View, Equatable {
                 Button { adjust(1) } label: { Image(systemName: "plus").scaledFont(.title2, weight: .semibold).scaledControl(square: true) }
                     .buttonStyle(.bordered).controlSize(.extraLarge)
                     .accessibilityLabel("Add a minute of added time").help("Add a minute of added time")
-                    .disabled((addedMinutes ?? 0) >= 15)
+                    .disabled((addedMinutes ?? 0) >= 30)
             }
             .frame(maxWidth: .infinity)
         }
@@ -51,9 +51,6 @@ struct StoppageSection: View, Equatable {
         Binding(get: { addedMinutes != nil }, set: { on in model.apply(.setAddedMinutes(on ? lastValue : nil), slot: slot) })
     }
 
-    private func adjust(_ delta: Int) {
-        let clamped = max(0, min(15, (addedMinutes ?? 0) + delta))
-        model.apply(.setAddedMinutes(clamped == 0 ? nil : clamped), slot: slot)
-    }
+    private func adjust(_ delta: Int) { model.apply(.adjustAddedMinutes(delta), slot: slot) }
 }
 

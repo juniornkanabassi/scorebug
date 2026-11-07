@@ -179,7 +179,7 @@ struct SlotView: View {
 
     private func clockSection(_ m: Match, _ zoomGeneration: Int) -> some View {
         ClockSection(phase: m.phase, clock: m.clock, hasKnockouts: hasKnockouts, slot: slot, model: model,
-                     zoomGeneration: zoomGeneration, addedMinutes: m.addedMinutes).equatable()
+                     zoomGeneration: zoomGeneration).equatable()
     }
 
     private func setupSection(_ m: Match, _ zoomGeneration: Int) -> some View {

@@ -14,7 +14,6 @@ struct ShootoutSection: View, Equatable {
     let slot: Int
     let model: AppModel
     let zoomGeneration: Int
-    @FocusState private var focusedKick: UUID?
 
     static func == (l: Self, r: Self) -> Bool {
         l.shootout == r.shootout && l.phase == r.phase && l.homeShortName == r.homeShortName
@@ -73,8 +72,11 @@ struct ShootoutSection: View, Equatable {
     private func quickButton(_ title: String, side: Side, result: KickResult, tint: Color) -> some View {
         // The engine takes kicks whenever a shootout exists, not only while `phase == .shootout` (a kick can
         // land after full time or extra time too), so the buttons follow the shootout, not the phase.
-        let enabled = shootout.map { $0.nextSide == side } ?? false
+        // Before any kick, both sides are live and the first press also decides who kicks first (the window
+        // starts the shootout with home, so the away team can still take kick one).
+        let enabled = shootout.map { $0.kicks.isEmpty || $0.nextSide == side } ?? false
         Button {
+            if let s = shootout, s.kicks.isEmpty, s.firstKicker != side { model.apply(.startShootout(side), slot: slot) }
             model.apply(.recordKick(side, result), slot: slot)
         } label: {
             HStack(spacing: Space.sm) {
@@ -117,7 +119,6 @@ struct ShootoutSection: View, Equatable {
                     .frame(width: cell, height: cell)
                     .contentShape(Rectangle())
                     .gridProbe("flow-kick-\(sideName)-\(i)", area: "flow-kicks-\(sideName)", edge: nil)
-                    .focused($focusedKick, equals: kick.id)
                     .help(helpText(for: kick.result))
                     .accessibilityLabel("\(side == .home ? homeShortName : awayShortName) penalty \(i + 1)")
                     .accessibilityValue(kick.result == .scored ? "Scored" : kick.result == .missed ? "Missed" : "Pending")

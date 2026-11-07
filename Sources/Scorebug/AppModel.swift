@@ -222,6 +222,8 @@ final class AppModel: ObservableObject {
         let index: Int
         /// The live-feed key this removal added to `removedLiveGoalKeys`, taken back out on restore.
         let suppressedKey: String?
+        /// The match's last-goal mark when it pointed at this goal, put back on restore.
+        let lastGoal: LastGoal?
         let revision: Int
     }
     @Published private var goalRemovals: [Int: GoalRemoval] = [:]
@@ -249,7 +251,8 @@ final class AppModel: ObservableObject {
         if let index, !after.goals.contains(where: { $0.id == before.goals[index].id }) {
             let goal = before.goals[index]
             let key = goal.autoAddedKey.flatMap { before.removedLiveGoalKeys.contains($0) ? nil : $0 }
-            goalRemovals[slot] = GoalRemoval(goal: goal, index: index, suppressedKey: key, revision: after.revision)
+            goalRemovals[slot] = GoalRemoval(goal: goal, index: index, suppressedKey: key,
+                                             lastGoal: before.lastGoal?.goalId == goal.id ? before.lastGoal : nil, revision: after.revision)
         } else {
             goalRemovals[slot] = nil
         }
@@ -268,6 +271,7 @@ final class AppModel: ObservableObject {
         m.goals.insert(removal.goal, at: min(removal.index, m.goals.count))
         if removal.goal.side == .home { m.homeScore += 1 } else { m.awayScore += 1 }
         if let key = removal.suppressedKey { m.removedLiveGoalKeys.removeAll { $0 == key } }
+        if let last = removal.lastGoal, m.lastGoal == nil { m.lastGoal = last }
         m.revision += 1
         state.matches[idx] = m
         guard persistAndBroadcast() else { return false }
@@ -575,7 +579,7 @@ final class AppModel: ObservableObject {
         // A failed save puts the last saved state back and broadcasts nothing (rule 3).
         if let error = store.commitState(state, broadcast: broadcast) {
             state = store.savedState; stateSaveFailed = true; stateSaveFailures += 1; report(.saveMatch, "Could not save state: \(error.localizedDescription)")
-        } else { stateSaveFailed = false }
+        } else if stateSaveFailed { stateSaveFailed = false }
         updateSlotSummaries()
         if deferUIUpdate {
             // Coalesce rapid API commands so the window diff cannot hold up the next response.

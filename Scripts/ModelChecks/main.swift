@@ -238,6 +238,8 @@ final class CannedProtocol: URLProtocol {
         check(model.undoableGoalRemoval(slot: 2) == nil && !model.undoGoalRemoval(slot: 2) && model.match(1).goals.count == 2, "A-F2 undo in the other slot restores nothing")
         check(model.undoGoalRemoval(slot: 1) && model.match(1).goals == undoMatch.goals && model.match(1).homeScore == 2 && model.match(1).awayScore == 1
               && !model.match(1).removedLiveGoalKeys.contains("12345:id:777"), "A-F2 undo restores scorer, minute, own goal, penalty, order and live identity")
+        check(model.removeGoalFromWindow(.goal(.home, -1), slot: 1) && model.match(1).lastGoal == nil
+              && model.undoGoalRemoval(slot: 1) && model.match(1).lastGoal?.goalId == undoMatch.goals.last?.id, "Review: undo of the latest goal puts the last-goal mark back")
         let undoSaved = try JSONCoding.decoder().decode(MatchState.self, from: Data(contentsOf: root.appendingPathComponent("state.json")))
         check(undoSaved.match(slot: 1)?.goals == undoMatch.goals, "A-F2 the restored goal is saved")
         check(!model.undoGoalRemoval(slot: 1) && model.match(1).goals.count == 3, "A-F2 undo applies once")

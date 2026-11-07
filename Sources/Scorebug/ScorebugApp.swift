@@ -198,9 +198,11 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 260)
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
+                    // Start-up is not a failure: the preview says "Starting" too, so the two agree.
+                    let starting = !model.serverRunning && model.serverStatus.hasPrefix("Starting")
                     HStack(spacing: Space.sm) {
-                        Circle().fill(model.stateSaveFailed || !model.serverRunning ? Surface.statusDanger : Surface.statusSuccess).frame(width: 8, height: 8).accessibilityHidden(true)
-                        Text(model.stateSaveFailed ? "Changes are not being saved" : model.serverRunning ? "Ready for OBS" : "Unable to start overlays")
+                        Circle().fill(model.stateSaveFailed || (!model.serverRunning && !starting) ? Surface.statusDanger : starting ? Color.secondary : Surface.statusSuccess).frame(width: 8, height: 8).accessibilityHidden(true)
+                        Text(model.stateSaveFailed ? "Changes are not being saved" : model.serverRunning ? "Ready for OBS" : starting ? "Starting overlays…" : "Unable to start overlays")
                             .scaledFont(.caption).foregroundStyle(.primary).lineLimit(2)
                             .help(model.stateSaveFailed ? "Changes have not reached OBS. Check the latest save error and try again." : model.serverStatus)
                     }

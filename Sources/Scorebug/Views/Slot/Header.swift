@@ -69,11 +69,8 @@ struct LiveMatchBar: View, Equatable {
         .gridProbe("livebar-button-play", area: "livebar-centre", edge: nil)
     }
 
-    /// The same step and limits as the Added time panel, so the live bar is a shortcut, not a second rule.
-    private func adjustAdded(_ delta: Int) {
-        let clamped = max(0, min(15, (addedMinutes ?? 0) + delta))
-        model.apply(.setAddedMinutes(clamped == 0 ? nil : clamped), slot: slot)
-    }
+    /// The engine's own step and cap (30, as the API and Stream Deck use), so the live bar is a shortcut, not a second rule.
+    private func adjustAdded(_ delta: Int) { model.apply(.adjustAddedMinutes(delta), slot: slot) }
 
     private func teamColumn(_ side: Side, team: TeamEntry, score: Int) -> some View {
         // The design system's 44 pt minimum, scaled: big enough to hit live, small enough to keep the bar short.
