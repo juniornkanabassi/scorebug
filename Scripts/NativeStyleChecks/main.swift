@@ -2,6 +2,21 @@ import AppKit
 import SwiftUI
 
 var checks = 0
+var shootoutChecks = 0
+
+func blend(_ top: NSColor, over bottom: NSColor) -> NSColor {
+    let a = top.alphaComponent
+    return NSColor(srgbRed: top.redComponent * a + bottom.redComponent * (1 - a),
+                   green: top.greenComponent * a + bottom.greenComponent * (1 - a),
+                   blue: top.blueComponent * a + bottom.blueComponent * (1 - a), alpha: 1)
+}
+
+func luminance(_ colour: NSColor) -> Double { Surface.relativeLuminance(of: Color(nsColor: colour)) }
+
+func contrast(_ a: NSColor, _ b: NSColor) -> Double {
+    let (x, y) = (luminance(a), luminance(b))
+    return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+}
 let competitions = ["premier-league", "champions-league", "europa-league", "conference-league",
                     "nations-league", "ligue1", "la-liga", "serie-a", "bundesliga", "club-world-cup", "unknown"]
 let samples: [Color] = competitions.map(CompetitionColours.colour)
@@ -23,6 +38,29 @@ for name in [NSAppearance.Name.aqua, .darkAqua] {
             let contrast = (max(background, foreground) + 0.05) / (min(background, foreground) + 0.05)
             precondition(contrast >= 4.5, "Shootout action text lacks contrast in \(name.rawValue): \(contrast)")
         }
+        // B19: the shootout buttons are a faint tint over the panel, with primary text that stays readable both
+        // enabled (4.5:1) and at the shared disabled opacity (2:1 and above the system's own disabled text).
+        precondition(Surface.tintFillOpacity <= 0.25, "Shootout fill is no longer translucent")
+        let panelColour = NSColor(Surface.subtleFill).usingColorSpace(.sRGB)!
+        for tint in [Surface.statusSuccess, Surface.statusDanger] {
+            let fill = blend(NSColor(Surface.tintFill(tint)).usingColorSpace(.sRGB)!, over: panelColour)
+            let text = blend(NSColor.labelColor.usingColorSpace(.sRGB)!, over: fill)
+            // The whole button at the shared disabled opacity: label and fill both fade towards the panel.
+            let dimmedText = blend(text.withAlphaComponent(Surface.disabledOpacity), over: panelColour)
+            let dimmedFill = blend(fill.withAlphaComponent(Surface.disabledOpacity), over: panelColour)
+            let system = contrast(blend(NSColor.disabledControlTextColor.usingColorSpace(.sRGB)!, over: panelColour), panelColour)
+            precondition(contrast(text, fill) >= 4.5, "Shootout label lacks contrast in \(name.rawValue): \(contrast(text, fill))")
+            precondition(contrast(dimmedText, dimmedFill) >= 2 && contrast(dimmedText, dimmedFill) > system,
+                         "Disabled shootout label unreadable in \(name.rawValue): \(contrast(dimmedText, dimmedFill)) against the system's \(system)")
+            shootoutChecks += 2
+        }
+        // N5: the Off air badge reads against the preview pane and the black preview canvas (3:1), its text on it (4.5:1).
+        let badge = blend(NSColor(Surface.stageBadge).usingColorSpace(.sRGB)!, over: NSColor(Surface.fill).usingColorSpace(.sRGB)!)
+        for pane in [NSColor(Surface.fill).usingColorSpace(.sRGB)!, NSColor.black.usingColorSpace(.sRGB)!] {
+            precondition(contrast(badge, blend(NSColor(Surface.fill).usingColorSpace(.sRGB)!, over: pane)) >= 4.5, "Off air text lacks contrast in \(name.rawValue)")
+        }
+        precondition(contrast(badge, NSColor(Surface.fill).usingColorSpace(.sRGB)!) >= 3, "Off air badge lacks contrast against the pane in \(name.rawValue)")
+        shootoutChecks += 2
         for fill in samples {
             let luminance = Surface.relativeLuminance(of: fill)
             let foreground = Surface.relativeLuminance(of: Surface.text(on: fill))
@@ -37,6 +75,7 @@ for name in [NSAppearance.Name.aqua, .darkAqua] {
     }
 }
 print("PASS NativeActionChecks: 2 neutral outline and 6 filled action text contrast checks")
+print("PASS NativeShootoutChecks: \(shootoutChecks) translucent fill, disabled-label and Off air badge contrast checks")
 print("PASS NativePanelChecks: 2 appearance contrast and semantic surface checks")
 print("PASS NativeStyleChecks: \(checks) light/dark foreground contrast checks")
 

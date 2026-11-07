@@ -298,23 +298,31 @@ struct LibraryView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 128, maximum: 128), spacing: Space.md)], spacing: Space.md) {
                 ForEach(filtered) { club in clubTile(club) }
             }.gridProbe("club tiles", area: "library grid", edge: nil)
+                .gridArea("flow-tiles", inset: 0).gridArea("flow-tile-frames", inset: 0)
                 .padding(Space.md).gridArea("library grid", inset: Space.md)
         }
     }
 
     private func clubTile(_ club: Club) -> some View {
         let isSelected = selected == club.id
+        // A fixed three-line slot for the name, so every crest and code sits on the same line (B22).
+        let captionFont = NSFont.systemFont(ofSize: NSFont.preferredFont(forTextStyle: .caption1).pointSize * ScaledFonts.scale)
+        let nameSlot = (NSLayoutManager().defaultLineHeight(for: captionFont) * 3).rounded(.up)
+        let id = club.id.uuidString
         return Button { selected = club.id } label: {
             VStack(spacing: Space.sm) {
                 ZStack {
                     Circle().fill(.quaternary).frame(width: 56, height: 56)
                     CachedCrestThumb(club: club, size: 44)
                 }
-                Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+                .gridProbe("flow-crest-\(id)", area: "flow-tiles", edge: nil)
+                Text(club.name).scaledFont(.caption).multilineTextAlignment(.center).lineLimit(3)
+                    .frame(height: nameSlot, alignment: .top)
                 Text(club.defaultCode).scaledFont(.caption2).foregroundStyle(.primary).monospaced()
             }
             .padding(Space.sm)
-            .frame(width: 128).frame(minHeight: 176)
+            .frame(width: 128, height: 176 * ScaledFonts.scale, alignment: .top)
+            .gridProbe("flow-tile-\(id)", area: "flow-tile-frames", edge: nil)
             .background(RoundedRectangle(cornerRadius: Radius.large).fill(isSelected ? Surface.selectedFill : Color.clear))
             .overlay(RoundedRectangle(cornerRadius: Radius.large).stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2))
             .contentShape(Rectangle())

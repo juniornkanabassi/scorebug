@@ -84,7 +84,7 @@ enum NativeSnapshots {
                     ("shootout", 640, AnyView(ShootoutSection(shootout: Shootout(kicks: (0..<10).flatMap { i in
                         [Kick(side: .home, result: .scored), Kick(side: .away, result: i == 3 ? .missed : .scored)]
                     }, firstKicker: .home), phase: .shootout, homeShortName: match.home.shortName,
-                        awayShortName: match.away.shortName, slot: 1, model: model, zoomGeneration: generation)))
+                        awayShortName: match.away.shortName, homeCode: match.home.code, awayCode: match.away.code, slot: 1, model: model, zoomGeneration: generation)))
                 ]
                 for (name, height, panel) in panels {
                     let page = panel.padding(Space.lg).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

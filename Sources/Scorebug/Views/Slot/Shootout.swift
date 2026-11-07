@@ -9,6 +9,8 @@ struct ShootoutSection: View, Equatable {
     let phase: Phase
     let homeShortName: String
     let awayShortName: String
+    let homeCode: String
+    let awayCode: String
     let slot: Int
     let model: AppModel
     let zoomGeneration: Int
@@ -16,13 +18,19 @@ struct ShootoutSection: View, Equatable {
 
     static func == (l: Self, r: Self) -> Bool {
         l.shootout == r.shootout && l.phase == r.phase && l.homeShortName == r.homeShortName
-            && l.awayShortName == r.awayShortName && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
+            && l.awayShortName == r.awayShortName && l.homeCode == r.homeCode && l.awayCode == r.awayCode && l.slot == r.slot && l.zoomGeneration == r.zoomGeneration
     }
 
     private var beforeKickoff: Bool { phase == .preMatch }
 
+    /// The penalty score leads the panel once a shootout exists, "Penalties NOR 3–2 RIV" (A F1).
+    private var heading: String {
+        guard let s = shootout else { return "Shootout" }
+        return "Penalties \(homeCode) \(s.tally(.home))–\(s.tally(.away)) \(awayCode)"
+    }
+
     var body: some View {
-        Panel("Shootout") {
+        Panel(heading) {
             VStack(alignment: .leading, spacing: Space.lg) {
                 if beforeKickoff {
                     Text("Available after kick-off").scaledFont(.caption).foregroundStyle(.primary)
@@ -51,30 +59,36 @@ struct ShootoutSection: View, Equatable {
                     Button {
                         model.apply(.startShootout(.home), slot: slot)
                     } label: {
-                        Text("Start shootout").frame(maxWidth: .infinity).scaledControl(64)
-                            .foregroundStyle(Surface.text(on: Color.accentColor))
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: Radius.medium))
+                        Text("Start shootout").scaledFont(.body, weight: .semibold).frame(maxWidth: .infinity).scaledControl(64)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(beforeKickoff).opacity(beforeKickoff ? 0.45 : 1)
+                    .buttonStyle(.borderedProminent).controlSize(.extraLarge).disabled(beforeKickoff)
                 }
             }
         }
     }
 
+    /// Translucent tint fill, 1 pt tint edge, primary text and a leading symbol in the tint (B19), the same
+    /// vocabulary as the kick circles. Only the side due to kick can be pressed (A F2); the other is dimmed.
     @ViewBuilder
     private func quickButton(_ title: String, side: Side, result: KickResult, tint: Color) -> some View {
+        // The engine takes kicks whenever a shootout exists, not only while `phase == .shootout` (a kick can
+        // land after full time or extra time too), so the buttons follow the shootout, not the phase.
+        let enabled = shootout.map { $0.nextSide == side } ?? false
         Button {
             model.apply(.recordKick(side, result), slot: slot)
         } label: {
-            Text(title).scaledFont(.body).frame(maxWidth: .infinity).scaledControl(64)
-                .foregroundStyle(Surface.text(on: tint))
-                .background(tint, in: RoundedRectangle(cornerRadius: Radius.medium))
+            HStack(spacing: Space.sm) {
+                Image(systemName: result == .scored ? "checkmark" : "xmark").scaledFont(.body, weight: .bold).foregroundStyle(tint)
+                Text(title).scaledFont(.body)
+            }
+            .foregroundStyle(.primary).frame(maxWidth: .infinity).scaledControl(64)
+            .background(Surface.tintFill(tint), in: RoundedRectangle(cornerRadius: Radius.medium))
+            .overlay(RoundedRectangle(cornerRadius: Radius.medium).strokeBorder(tint, lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: Radius.medium))
         }
-        .buttonStyle(.plain).tint(tint)
-        // The engine takes kicks whenever a shootout exists, not only while `phase == .shootout` (a kick can
-        // land after full time or extra time too), so the buttons follow the shootout's existence, not the phase.
-        .disabled(shootout == nil).opacity(shootout == nil ? 0.45 : 1)
+        .buttonStyle(.plain)
+        .disabled(!enabled).opacity(enabled ? 1 : Surface.disabledOpacity)
+        .help(shootout == nil || enabled ? title : "Not \(side == .home ? homeShortName : awayShortName)'s turn to kick")
     }
 
     /// This side's kicks in order, each a round cell that cycles scored → missed → removed on a press
@@ -82,39 +96,39 @@ struct ShootoutSection: View, Equatable {
     /// so the row stays compact; the button's hit target is padded out to 44 pt around it.
     private func kickRow(_ side: Side, _ s: Shootout) -> some View {
         let sideKicks = s.kicks.filter { $0.side == side }
-        return HStack(spacing: Space.sm) {
+        let sideName = side == .home ? "home" : "away"
+        let cell = 44 * ScaledFonts.scale
+        return HStack(alignment: .top, spacing: Space.sm) {
             Text(side == .home ? homeShortName : awayShortName).scaledFont(.body).lineLimit(2)
-                .frame(width: 140 * ScaledFonts.scale, alignment: .leading).fixedSize(horizontal: false, vertical: true)
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal) {
-                    HStack(spacing: Space.sm) {
-                        ForEach(Array(sideKicks.enumerated()), id: \.offset) { i, kick in
-                            Button { cycle(side: side, index: i, current: kick.result) } label: {
-                                Circle().fill(colour(kick.result)).frame(width: 28, height: 28)
-                                    .overlay {
-                                        Image(systemName: kick.result == .scored ? "checkmark" : kick.result == .missed ? "xmark" : "ellipsis")
-                                            .scaledFont(.caption, weight: .bold)
-                                            .foregroundStyle(Surface.text(on: colour(kick.result)))
-                                    }
+                .frame(width: 140 * ScaledFonts.scale, alignment: .leading).frame(minHeight: cell, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            // Wraps, so every kick is visible and "to kick" follows the last cell (B20).
+            KickFlow(spacing: Space.sm) {
+                ForEach(Array(sideKicks.enumerated()), id: \.offset) { i, kick in
+                    Button { cycle(side: side, index: i, current: kick.result) } label: {
+                        Circle().fill(colour(kick.result)).frame(width: 28, height: 28)
+                            .overlay {
+                                Image(systemName: kick.result == .scored ? "checkmark" : kick.result == .missed ? "xmark" : "ellipsis")
+                                    .scaledFont(.caption, weight: .bold)
+                                    .foregroundStyle(Surface.text(on: colour(kick.result)))
                             }
-                            .buttonStyle(.plain)
-                            .frame(width: 44 * ScaledFonts.scale, height: 44 * ScaledFonts.scale)
-                            .contentShape(Rectangle())
-                            .id(kick.id)
-                            .focused($focusedKick, equals: kick.id)
-                            .help(helpText(for: kick.result))
-                            .accessibilityLabel("\(side == .home ? homeShortName : awayShortName) penalty \(i + 1)")
-                            .accessibilityValue(kick.result == .scored ? "Scored" : kick.result == .missed ? "Missed" : "Pending")
-                            .accessibilityHint(helpText(for: kick.result))
-                        }
                     }
+                    .buttonStyle(.plain)
+                    .frame(width: cell, height: cell)
+                    .contentShape(Rectangle())
+                    .gridProbe("flow-kick-\(sideName)-\(i)", area: "flow-kicks-\(sideName)", edge: nil)
+                    .focused($focusedKick, equals: kick.id)
+                    .help(helpText(for: kick.result))
+                    .accessibilityLabel("\(side == .home ? homeShortName : awayShortName) penalty \(i + 1)")
+                    .accessibilityValue(kick.result == .scored ? "Scored" : kick.result == .missed ? "Missed" : "Pending")
+                    .accessibilityHint(helpText(for: kick.result))
                 }
-                .frame(maxWidth: .infinity, minHeight: 44 * ScaledFonts.scale)
-                .onChange(of: focusedKick) { _, id in
-                    if let id { proxy.scrollTo(id, anchor: .center) }
+                if s.nextSide == side && phase == .shootout {
+                    Text("to kick").scaledFont(.caption).foregroundStyle(.primary).frame(height: cell)
                 }
             }
-            if s.nextSide == side && phase == .shootout { Text("to kick").scaledFont(.caption).foregroundStyle(.primary) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .gridArea("flow-kicks-\(sideName)", inset: 0)
         }
     }
 
@@ -137,3 +151,30 @@ struct ShootoutSection: View, Equatable {
     }
 }
 
+/// Left-to-right cells that wrap onto the next line when the row is full; every cell keeps its own size.
+private struct KickFlow: Layout {
+    var spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(width: proposal.width ?? .infinity, subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (subview, origin) in zip(subviews, arrange(width: bounds.width, subviews).origins) {
+            subview.place(at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(width: CGFloat, _ subviews: Subviews) -> (size: CGSize, origins: [CGPoint]) {
+        var origins: [CGPoint] = []
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width { x = 0; y += rowHeight + spacing; rowHeight = 0 }
+            origins.append(CGPoint(x: x, y: y))
+            x += size.width; widest = max(widest, x); x += spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return (CGSize(width: widest, height: y + rowHeight), origins)
+    }
+}

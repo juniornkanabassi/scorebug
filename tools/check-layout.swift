@@ -18,6 +18,13 @@
 //      primary-* (a live second half): the Clock and Added time panels end inside the window;
 //      secondary-* (before kick-off): the Clock panel, whose first row is the 1st pill the live bar
 //      points at, ends inside the window and comes before Match setup.
+//   8. Live bar (any page with livebar-columns): the six goal and added-time minus and plus tiles are one size,
+//      square (Scorebug B17).
+//   9. Shootout kick rows (flow-kicks-*): every kick sits inside its row, so a long shootout wraps instead of
+//      clipping; panel-shootout-* has all 20 fixture kicks (B20).
+//  10. Grid tiles (flow-tile-*, flow-crest-*): the crest sits at the same offset in every tile, so crests share
+//      a y within a row (B22).
+//  Areas named livebar-* and flow-* divide the remaining width or wrap, so their x positions are not on the grid.
 // Prints PASS or FAIL per file and exits with 1 on any failure.
 
 import Foundation
@@ -40,6 +47,8 @@ struct LayoutFile: Decodable {
     var window: [String: Double]
     var probes: [Probe]
 }
+
+func fractional(_ area: String) -> Bool { area.hasPrefix("livebar-") || area.hasPrefix("flow-") }
 
 let tolerance = 0.26
 let gapTolerance = 0.51
@@ -81,7 +90,7 @@ for path in paths {
 
     for probe in file.probes where probe.width > 0 {
         // Responsive live-bar columns divide the remaining width; their fractional x positions are intentional.
-        if !probe.area.hasPrefix("livebar-"), !onGrid(probe.x, step: 0.5, within: pixelTolerance) {
+        if !fractional(probe.area), !onGrid(probe.x, step: 0.5, within: pixelTolerance) {
             problems.append("\(probe.name): x \(fmt(probe.x)) is between pixels")
         }
     }
@@ -98,7 +107,7 @@ for path in paths {
             continue
         }
         let lead = probe.x - area.x
-        if !probe.area.hasPrefix("livebar-"), !onGrid(lead, step: unit) {
+        if !fractional(probe.area), !onGrid(lead, step: unit) {
             problems.append("\(probe.name): starts \(fmt(lead)) pt into \(area.name), not a multiple of \(fmt(unit))")
         }
         if lead < area.inset - tolerance {
@@ -139,6 +148,28 @@ for path in paths {
     }
 
     let name = (path as NSString).lastPathComponent
+    if areas["livebar-columns"] != nil {
+        let tiles = probes.filter { $0.name.hasPrefix("livebar-button-goal-") || $0.name.hasPrefix("livebar-button-added-") }
+        if tiles.count != 6 { problems.append("live bar has \(tiles.count) nudge tiles, expected 6") }
+        if let first = tiles.first {
+            for tile in tiles where abs(tile.width - first.width) > gapTolerance || abs(tile.height - first.height) > gapTolerance
+                || abs(tile.width - tile.height) > gapTolerance {
+                problems.append("\(tile.name): \(fmt(tile.width)) × \(fmt(tile.height)) differs from \(first.name) \(fmt(first.width)) × \(fmt(first.height)) or is not square")
+            }
+        }
+    }
+    let kicks = probes.filter { $0.name.hasPrefix("flow-kick-") }
+    if name.hasPrefix("panel-shootout-"), kicks.count != 20 { problems.append("shootout panel shows \(kicks.count) of 20 kicks") }
+    let tiles = Dictionary(uniqueKeysWithValues: probes.filter { $0.name.hasPrefix("flow-tile-") }.map { (String($0.name.dropFirst("flow-tile-".count)), $0) })
+    let crestOffsets = probes.filter { $0.name.hasPrefix("flow-crest-") }.compactMap { crest in
+        tiles[String(crest.name.dropFirst("flow-crest-".count))].map { (crest.name, crest.y - $0.y) }
+    }
+    if let first = crestOffsets.first {
+        for (crest, offset) in crestOffsets where abs(offset - first.1) > gapTolerance {
+            problems.append("\(crest): crest sits \(fmt(offset)) pt into its tile, \(first.0) sits \(fmt(first.1)); crests do not line up")
+        }
+    }
+    if name.hasPrefix("library-icons-"), crestOffsets.count < 2 { problems.append("library icons: fewer than two crests measured") }
     let folds: [String: [String]] = ["primary-": ["panel-Clock", "panel-Added time"], "secondary-": ["panel-Clock"]]
     if let height = file.window["height"], let required = folds.first(where: { name.hasPrefix($0.key) })?.value {
         for key in required {

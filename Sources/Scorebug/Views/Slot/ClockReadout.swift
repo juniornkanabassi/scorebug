@@ -49,7 +49,7 @@ struct ClockReadout<Leading: View>: View {
         let live = phase.period != nil
         let minutes = addedMinutes ?? 0
         return HStack(spacing: Space.sm) {
-            addedButton("minus", delta: -1, adjust: adjust).disabled(!live || minutes <= 0)
+            addedButton("minus", delta: -1, adjust: adjust, enabled: live && minutes > 0)
             let chip = Text(display.added ?? "+0").scaledFont(.title3, weight: .semibold).monospacedDigit()
                 .padding(.horizontal, Space.sm).padding(.vertical, Space.xxs).fixedSize()
             VStack(spacing: Space.xxs) {
@@ -64,20 +64,27 @@ struct ClockReadout<Leading: View>: View {
             .accessibilityLabel("Added time").accessibilityValue(display.added ?? "None")
             .gridProbe("livebar-added-chip", area: "livebar-centre", edge: nil)
             if let c = display.addedCounter {
-                Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.primary)
-                    .accessibilityLabel("Added time played").accessibilityValue(c)
+                // A word over the time played, in the same caption style as "Added time" (A F6).
+                VStack(spacing: Space.xxs) {
+                    Text("Stoppage").scaledFont(.caption).foregroundStyle(.primary).lineLimit(1).fixedSize().accessibilityHidden(true)
+                    Text(c).scaledFont(.callout).monospacedDigit().foregroundStyle(.primary)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Added time played").accessibilityValue(c)
             }
-            addedButton("plus", delta: 1, adjust: adjust).disabled(!live || minutes >= 15)
+            addedButton("plus", delta: 1, adjust: adjust, enabled: live && minutes < 15)
         }
     }
 
-    private func addedButton(_ symbol: String, delta: Int, adjust: @escaping (Int) -> Void) -> some View {
+    private func addedButton(_ symbol: String, delta: Int, adjust: @escaping (Int) -> Void, enabled: Bool) -> some View {
         let words = delta < 0 ? "Remove a minute of added time" : "Add a minute of added time"
         return Button { adjust(delta) } label: {
-            Image(systemName: symbol).scaledFont(.body, weight: .semibold).scaledControl(square: true)
+            // The same tile as the goal minus and plus (B17).
+            NudgeTile(symbol: symbol, side: 44 * ScaledFonts.scale)
+                .gridProbe("livebar-button-added-\(symbol)", area: "livebar-centre", edge: nil)
         }
-        .buttonStyle(.bordered).accessibilityLabel(words)
-        .gridProbe("livebar-button-added-\(symbol)", area: "livebar-centre", edge: nil)
+        .buttonStyle(.plain).accessibilityLabel(words)
+        .disabled(!enabled).opacity(enabled ? 1 : Surface.disabledOpacity)
         .help(phase.period == nil ? "Only available while a period is live, not before kick-off or during a shootout" : words)
     }
 }

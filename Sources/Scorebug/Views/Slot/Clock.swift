@@ -51,7 +51,7 @@ struct ClockSection: View, Equatable {
                     Button {
                         model.apply(.endPeriod, slot: slot)
                     } label: {
-                        Text("End half").frame(maxWidth: .infinity).scaledControl(64)
+                        Text(phase == .extraFirst || phase == .extraSecond ? "End period" : "End half").frame(maxWidth: .infinity).scaledControl(64)
                     }
                     .disabled(phase.period == nil)
                     .help("End the current period (⇧⌘E)")

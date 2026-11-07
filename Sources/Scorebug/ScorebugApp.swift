@@ -151,7 +151,9 @@ struct SidebarMatchRow: View, Equatable {
     let summary: SlotSummary
     static func == (l: Self, r: Self) -> Bool { l.slot == r.slot && l.summary == r.summary }
     var body: some View {
-        Label {
+        // An HStack, like the Team Library row, so the icon keeps Space.sm from the title at every zoom (N11).
+        HStack(spacing: Space.sm) {
+            Image(systemName: slot == 1 ? "1.square" : "2.square").scaledFont(.body)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: Space.sm) {
                     Text(slot == 1 ? "Primary" : "Secondary").scaledFont(.body)
@@ -162,7 +164,8 @@ struct SidebarMatchRow: View, Equatable {
                 }
                 Text("\(summary.homeCode) \(summary.homeScore) – \(summary.awayScore) \(summary.awayCode)").scaledFont(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
-        } icon: { Image(systemName: slot == 1 ? "1.square" : "2.square").scaledFont(.body) }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

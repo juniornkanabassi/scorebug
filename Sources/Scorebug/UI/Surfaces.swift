@@ -11,6 +11,14 @@ enum Surface {
     static let statusSuccess = Color(nsColor: .systemGreen)
     static let statusDanger = Color(nsColor: .systemRed)
     static let statusWarning = Color(nsColor: .systemOrange)
+    /// Shootout scored and missed buttons: a faint tint fill with a tint edge, never an opaque colour slab (B19).
+    static let tintFillOpacity = 0.18
+    /// Every disabled custom control is dimmed by this opacity alone, so its outline and label stay readable.
+    static let disabledOpacity = 0.45
+    static func tintFill(_ tint: Color) -> Color { tint.opacity(tintFillOpacity) }
+    /// The "Off air" badge over the preview stage: label colour fill, window-surface text, so it reads on a light
+    /// pane, a dark pane and the black preview canvas (N5).
+    static let stageBadge = Color(nsColor: .labelColor)
     static let selectedFill = Color.accentColor.opacity(0.18)
     static let accentFill = Color.accentColor.opacity(0.35)
     // Transparent overlay previews need a video-canvas backing in both appearances.

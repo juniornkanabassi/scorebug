@@ -35,7 +35,7 @@ struct GoalsSection: View, Equatable {
                     if match.espnEventId != nil {
                         Label("Linked to ESPN · \(match.home.shortName) v \(match.away.shortName)", systemImage: "link")
                             .scaledFont(.caption).foregroundStyle(.primary).lineLimit(1)
-                        Button { model.apply(.setLiveLink(eventId: nil, league: nil), slot: slot) } label: { Text("Unlink").scaledFont(.caption).scaledControl() }.buttonStyle(.bordered)
+                        Button { model.apply(.setLiveLink(eventId: nil, league: nil), slot: slot) } label: { Text("Unlink").scaledFont(.body).padding(.horizontal, Space.md).scaledControl() }.buttonStyle(.bordered)
                     } else {
                         Text("Not linked to live data").scaledFont(.caption).foregroundStyle(.primary)
                         if linking {
@@ -45,7 +45,7 @@ struct GoalsSection: View, Equatable {
                             Button {
                                 linking = true
                                 Task { await model.linkESPN(slot: slot); linking = false }
-                            } label: { Text("Link").scaledFont(.caption).scaledControl() }
+                            } label: { Text("Link").scaledFont(.body).padding(.horizontal, Space.md).scaledControl() }
                             .buttonStyle(.bordered).help("Find this match on ESPN; press again to retry")
                         }
                     }
@@ -70,7 +70,7 @@ struct GoalsSection: View, Equatable {
                 ForEach(goals) { goal in
                     HStack(spacing: Space.md) {
                         Circle().fill(Color(hex: goal.side == .home ? homeColour : awayColour))
-                            .overlay(Circle().stroke(Surface.separator, lineWidth: 1)).frame(width: 8, height: 8)
+                            .overlay(Circle().stroke(Surface.controlOutline, lineWidth: 1)).frame(width: 8, height: 8)
                         Text(goal.side == .home ? homeCode : awayCode).scaledFont(.body).lineLimit(1).frame(width: 56 * ScaledFonts.scale, alignment: .leading)
                         GoalMinuteField(goal: goal, slot: slot)
                         if goal.autoAdded { Text("Auto").scaledFont(.caption, weight: .semibold).padding(.horizontal, Space.sm).padding(.vertical, Space.xs).background(.secondary.opacity(0.16), in: Capsule()) }

@@ -13,6 +13,7 @@ struct MatchSetupSection: View, Equatable {
     let zoomGeneration: Int
     @State private var isExpanded: Bool
     @State private var showingFixtures = false
+    @State private var pickingCompetition = false
 
     init(home: TeamEntry, away: TeamEntry, competitionId: String, phase: Phase, aggregate: Aggregate?, hasKnockouts: Bool, slot: Int, model: AppModel, zoomGeneration: Int) {
         self.home = home; self.away = away; self.competitionId = competitionId; self.phase = phase
@@ -29,13 +30,36 @@ struct MatchSetupSection: View, Equatable {
 
     private var competition: Competition? { model.library.competitions.first { $0.id == competitionId } }
 
+    private var competitionList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(model.library.competitions) { c in
+                    Button { model.setCompetition(c.id, slot: slot); pickingCompetition = false } label: {
+                        HStack(spacing: Space.sm) {
+                            Image(systemName: "checkmark").scaledFont(.body, weight: .semibold).opacity(c.id == competitionId ? 1 : 0)
+                            CompetitionMark(competition: c, size: 24)
+                            Text(c.name).scaledFont(.body)
+                            Spacer(minLength: Space.md)
+                        }
+                        .padding(.horizontal, Space.md).scaledControl().contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(c.id == competitionId ? [.isSelected] : [])
+                }
+            }
+        }
+        .frame(width: 280 * ScaledFonts.scale, height: min(360, CGFloat(model.library.competitions.count) * 44 * ScaledFonts.scale))
+    }
+
     var body: some View {
         // One heading: the panel's own, with the show/hide control beside it, instead of a second disclosure title.
         Panel("Match setup", accessory: {
             Button { isExpanded.toggle() } label: {
-                Label(isExpanded ? "Hide" : "Show", systemImage: isExpanded ? "chevron.up" : "chevron.down").scaledFont(.caption).scaledControl()
+                // The hit area is padding plus contentShape; the negative padding below takes it back out of the heading row.
+                Label(isExpanded ? "Hide" : "Show", systemImage: isExpanded ? "chevron.up" : "chevron.down").scaledFont(.caption)
+                    .foregroundStyle(.primary).padding(Space.md).contentShape(Rectangle())
             }
-            .buttonStyle(.borderless).help(isExpanded ? "Hide the teams and competition" : "Show the teams and competition")
+            .buttonStyle(.borderless).padding(.vertical, -Space.md).help(isExpanded ? "Hide the teams and competition" : "Show the teams and competition")
         }) {
             if !isExpanded {
                 Text("\(home.name) v \(away.name) · \(competition?.name ?? competitionId)").scaledFont(.body).foregroundStyle(.primary).lineLimit(1)
@@ -49,24 +73,30 @@ struct MatchSetupSection: View, Equatable {
                         }
                         .buttonStyle(.bordered).help("Swap home and away")
                     }
-                    Picker(selection: Binding(get: { competitionId }, set: { model.setCompetition($0, slot: slot) })) {
-                        ForEach(model.library.competitions) { c in Text(c.name).tag(c.id) }
-                    } label: {
+                    // The same label, bezel and height as the club pickers above it. A SwiftUI Menu on macOS flattens its
+                    // label to a title and ignores its size (checked in the snapshots), so this is the club pickers'
+                    // own button, opening a short list.
+                    Button { pickingCompetition = true } label: {
                         HStack(spacing: Space.sm) {
-                            if let c = competition { CompetitionMark(competition: c, size: 32, plate: true) }
-                            Text("Competition").scaledFont(.body)
+                            if let c = competition { CompetitionMark(competition: c, size: 24) }
+                            Text(competition?.name ?? competitionId).scaledFont(.callout).lineLimit(1)
+                            Spacer(minLength: 4)
+                            Image(systemName: "chevron.down").scaledFont(.caption2).foregroundStyle(.secondary)
                         }
+                        .frame(minWidth: 200 * ScaledFonts.scale, alignment: .leading)
+                        .scaledControl()
                     }
-                    .scaledFont(.body).controlSize(.extraLarge)
-                    .frame(maxWidth: .infinity, minHeight: 44 * ScaledFonts.scale)
-                    .accessibilityLabel("Competition")
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel("Competition: \(competition?.name ?? competitionId)")
+                    .lazyPopover(isPresented: $pickingCompetition) { competitionList }
                     if hasKnockouts {
-                        Toggle("Second leg of a tie", isOn: Binding(
+                        Toggle(isOn: Binding(
                             get: { aggregate != nil },
                             set: { on in model.apply(on ? .setAggregate(home: aggregate?.firstLegHome ?? 0, away: aggregate?.firstLegAway ?? 0) : .clearAggregate, slot: slot) }
-                        )).scaledFont(.body).controlSize(.large).frame(minHeight: 44 * ScaledFonts.scale)
+                        )) { Text("Second leg of a tie").scaledFont(.body) }
+                            .toggleStyle(.switch).frame(minHeight: 44 * ScaledFonts.scale)
                         if let agg = aggregate {
-                            HStack(spacing: Space.xs) {
+                            HStack(spacing: Space.sm) {
                                 Text("First leg \(home.code)").scaledFont(.body).foregroundStyle(.primary)
                                 AggregateField(value: agg.firstLegHome) { model.apply(.setAggregate(home: $0, away: agg.firstLegAway), slot: slot) }
                                     .accessibilityLabel("First leg home score")

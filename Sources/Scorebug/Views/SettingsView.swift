@@ -109,7 +109,15 @@ struct SettingsView: View {
                     LabeledContent("File") { Text(URL(fileURLWithPath: path).lastPathComponent).scaledFont(.body).foregroundStyle(.primary).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
                 }
                 Text("The backdrop appears only in this window. OBS never sees it.").scaledFont(.caption).foregroundStyle(.primary)
-                Stepper("Portrait top position: \(model.settings.portraitTop) px", value: $model.settings.portraitTop, in: 0...800, step: 10).scaledFont(.body).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
+                LabeledContent("Portrait top position") {
+                    HStack(spacing: Space.sm) {
+                        TextField("Portrait top position", value: Binding(get: { model.settings.portraitTop }, set: { model.settings.portraitTop = min(800, max(0, $0)) }), format: .number.grouping(.never))
+                            .scaledFont(.body).monospacedDigit().multilineTextAlignment(.trailing).textFieldStyle(.roundedBorder).frame(width: 72).labelsHidden()
+                            .accessibilityLabel("Portrait top position in pixels")
+                        Text("px").scaledFont(.body)
+                        Stepper("Portrait top position", value: $model.settings.portraitTop, in: 0...800, step: 10).labelsHidden()
+                    }
+                }.scaledFont(.body).onChange(of: model.settings.portraitTop) { _, _ in model.saveSettings() }
                 Text("Moves the score bug down from the top of the portrait overlay, including in OBS.").scaledFont(.caption).foregroundStyle(.primary)
             }
             .fileImporter(isPresented: $pickingBackdrop, allowedContentTypes: [.image, .movie]) { result in
@@ -185,13 +193,13 @@ struct SettingsView: View {
                 }
             }
             Section("Advanced") {
-                LabeledContent("Data folder") { Text(model.store.directory.path).scaledFont(.body).textSelection(.enabled).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
+                LabeledContent("Data folder") { Text(model.store.directory.path).scaledFont(.body).foregroundStyle(.primary).textSelection(.enabled).lineLimit(1).truncationMode(.middle) }.scaledFont(.body)
                 Toggle("Use my own overlay designs", isOn: $model.settings.themeOverridesEnabled).scaledFont(.body).onChange(of: model.settings.themeOverridesEnabled) { _, _ in model.saveSettings() }
                 Text("Loads your designs from the overlays folder inside the data folder. Turn this off to use Scorebug’s built-in designs.").scaledFont(.caption).foregroundStyle(.primary)
                 Button("Show Data Folder in Finder") { NSWorkspace.shared.activateFileViewerSelecting([model.store.directory]) }.scaledFont(.body)
             }.scaledFont(.body)
             Section {
-                LabeledContent("Scorebug", value: AppInfo.version).scaledFont(.body)
+                LabeledContent("Scorebug") { Text(AppInfo.version).scaledFont(.body).foregroundStyle(.primary) }.scaledFont(.body)
                 Text("© 2026 Junior Nkana Bassi.").scaledFont(.caption).foregroundStyle(.primary)
             }
         }.formStyle(.grouped)

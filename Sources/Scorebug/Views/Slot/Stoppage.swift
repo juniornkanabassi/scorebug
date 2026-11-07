@@ -29,8 +29,8 @@ struct StoppageSection: View, Equatable {
                     .buttonStyle(.bordered).controlSize(.extraLarge)
                     .accessibilityLabel("Remove a minute of added time").help("Remove a minute of added time")
                     .disabled((addedMinutes ?? 0) <= 0)
-                Text(addedMinutes.map { "+\($0)" } ?? "Off").scaledFont(size: 28, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 80 * ScaledFonts.scale)
-                    .accessibilityLabel("Added time").accessibilityValue(addedMinutes.map { "\($0) minutes" } ?? "Off")
+                Text(addedMinutes.map { "+\($0)" } ?? "+0").scaledFont(size: 28, weight: .bold, design: .rounded).monospacedDigit().frame(minWidth: 80 * ScaledFonts.scale)
+                    .accessibilityLabel("Added time").accessibilityValue(addedMinutes.map { "\($0) minutes" } ?? "None")
                 Button { adjust(1) } label: { Image(systemName: "plus").scaledFont(.title2, weight: .semibold).scaledControl(square: true) }
                     .buttonStyle(.bordered).controlSize(.extraLarge)
                     .accessibilityLabel("Add a minute of added time").help("Add a minute of added time")

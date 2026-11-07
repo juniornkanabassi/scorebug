@@ -150,8 +150,11 @@ struct SlotView: View {
     /// Drag to resize; the height is remembered. Arrow keys through VoiceOver's adjust action do the same.
     private func previewResizeHandle(current: CGFloat, window: CGFloat) -> some View {
         let step: CGFloat = 32
-        return Divider()
-            .frame(maxWidth: .infinity, minHeight: Space.sm, maxHeight: Space.sm)
+        // A short pill on the divider is the visible grip; the words are in the preview placeholder (B18).
+        return Color.clear
+            .frame(maxWidth: .infinity, minHeight: Space.md, maxHeight: Space.md)
+            .overlay { Capsule().fill(Surface.controlOutline).frame(width: 40, height: 4) }
+            .overlay(alignment: .bottom) { Divider() }
             .contentShape(Rectangle())
             .pointerStyle(.rowResize)
             .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
@@ -187,6 +190,7 @@ struct SlotView: View {
 
     private func shootoutSection(_ m: Match, _ zoomGeneration: Int) -> some View {
         ShootoutSection(shootout: m.shootout, phase: m.phase, homeShortName: m.home.shortName, awayShortName: m.away.shortName,
+                        homeCode: m.home.code, awayCode: m.away.code,
                         slot: slot, model: model, zoomGeneration: zoomGeneration).equatable()
     }
 
